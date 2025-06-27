@@ -1,0 +1,63 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.buildlog/
+.history
+.svn/
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# Flutter/Dart/Pub related
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub/
+.pub-cache/
+pubspec.lock
+**/doc/api/
+migrate_working_dir/
+
+# iOS
+**/ios/Flutter/.last_build_id
+/ios/Pods/
+/ios/.symlinks/
+/ios/Flutter/App.framework
+/ios/Flutter/engine.xcconfig
+/ios/Flutter/pod_cached_built_ios_frameworks
+/ios/Runner/Assets.xcassets/AppIcon.appiconset/
+/ios/Runner.xcworkspace/
+
+# Android
+/android/app/debug/
+/android/app/profile/
+/android/app/release/
+/android/.gradle/
+/android/app/build/
+/android/build/
+/android/app/src/main/jniLibs/
+
+# Build artifacts and compiled files
+/build/
+*.apk
+*.aab
+*.ipa
+*.jar
+app.*.symbols
+app.*.map.json
+
+# Sensitive files
+/android/key.properties
+/android/local.properties
+
+# Tesseract data files
+/assets/tessdata/
