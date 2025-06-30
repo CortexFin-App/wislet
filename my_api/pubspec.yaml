@@ -9,6 +9,8 @@ environment:
 dependencies:
   dart_frog: ^1.0.0
   supabase: ^2.8.0
+  googleapis: ^14.0.0
+  googleapis_auth: ^1.6.0
 
 dev_dependencies:
   mocktail: ^1.0.0

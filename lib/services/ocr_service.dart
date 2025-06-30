@@ -1,22 +1,33 @@
+import 'dart:convert';
 import 'dart:io';
-import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
+import 'package:http/http.dart' as http; // Нам потрібен http
+import 'api_client.dart'; // Припускаю, що ваш ApiClient знаходиться тут
 
 class OcrService {
-  // Ініціалізація розпізнавача значно простіша
-  final TextRecognizer _textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
+  final ApiClient _apiClient;
+
+  OcrService(this._apiClient);
 
   Future<String?> processImage(String imagePath) async {
     try {
-      final inputImage = InputImage.fromFile(File(imagePath));
-      final RecognizedText recognizedText = await _textRecognizer.processImage(inputImage);
-      return recognizedText.text;
+      // Читаємо файл картинки і кодуємо його в Base64
+      final imageBytes = await File(imagePath).readAsBytes();
+      final imageBase64 = base64Encode(imageBytes);
+
+      // Відправляємо POST-запит на наш бекенд
+      final response = await _apiClient.post(
+        '/ocr', // Наш новий ендпоінт
+        body: {'image': imageBase64},
+      );
+
+      // Повертаємо розпізнаний текст
+      if (response != null && response['text'] is String) {
+        return response['text'] as String;
+      }
+      return null;
     } catch (e) {
-      print("Помилка розпізнавання: $e");
+      print("OCR Service Error: $e");
       return null;
     }
-  }
-
-  void dispose() {
-    _textRecognizer.close();
   }
 }
