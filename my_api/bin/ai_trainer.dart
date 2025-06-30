@@ -5,11 +5,14 @@ import 'package:supabase/supabase.dart';
 Future<void> main() async {
   print('AI Trainer starting...');
 
-  final supabaseUrl = Platform.environment['https://xdofjorgomwdyawmwbcj.supabase.co'];
-  final supabaseServiceKey = Platform.environment['eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkb2Zqb3Jnb213ZHlhd213YmNqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0OTMzMTQxNywiZXhwIjoyMDY0OTA3NDE3fQ.EJ_vJroQOUXru7pHzM68Hr-ofNTm3OMi9fAINFfXLZo'];
+  // --- ІНТЕГРОВАНО ---
+  // Використовуємо правильні, стандартні імена змінних
+  final supabaseUrl = Platform.environment['SUPABASE_URL'];
+  final supabaseServiceKey = Platform.environment['SUPABASE_SERVICE_KEY'];
+  // --- КІНЕЦЬ ІНТЕГРАЦІЇ ---
 
   if (supabaseUrl == null || supabaseServiceKey == null) {
-    print('Error: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not found in environment variables.');
+    print('Error: SUPABASE_URL or SUPABASE_SERVICE_KEY not found in environment variables.');
     return;
   }
 
@@ -55,6 +58,6 @@ Future<void> main() async {
   } catch (e) {
     print('Error during AI training: $e');
   } finally {
-     print('AI Trainer finished.');
+      print('AI Trainer finished.');
   }
 }

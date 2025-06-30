@@ -47,11 +47,15 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.google.android.material:material:1.12.0")
     implementation("androidx.multidex:multidex:2.0.1")
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
     implementation("androidx.window:window:1.3.0")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+    
+    // =========================================================
+    // ОСЬ ГОЛОВНЕ ВИПРАВЛЕННЯ: додаємо бібліотеку сплеш-скрінів
+    // =========================================================
+    implementation("androidx.core:core-splashscreen:1.0.1")
 }
 
-// Наша страхова від lStar
 configurations.all {
     resolutionStrategy {
         force("com.google.android.material:material:1.12.0")

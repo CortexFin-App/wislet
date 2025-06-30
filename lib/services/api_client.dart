@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode;
 import 'package:http/http.dart' as http;
 
 class ApiException implements Exception {
@@ -19,13 +19,22 @@ class ApiClient {
   ApiClient() : _baseUrl = _getBaseUrl();
 
   static String _getBaseUrl() {
-    if (kIsWeb) {
+    // Перевіряємо, чи запущений додаток в режимі розробки (Debug)
+    const bool isDebugMode = !kReleaseMode;
+
+    if (isDebugMode) {
+      // Якщо так - використовуємо локальні адреси
+      if (kIsWeb) {
+        return 'http://localhost:8080';
+      }
+      if (Platform.isAndroid) {
+        return 'http://10.0.2.2:8080';
+      }
       return 'http://localhost:8080';
+    } else {
+      // Якщо це релізна збірка (Release) - використовуємо "бойову" адресу
+      return 'https://api.cortexfinapp.com';
     }
-    if (Platform.isAndroid) {
-      return 'http://10.0.2.2:8080';
-    }
-    return 'http://localhost:8080';
   }
 
   void setAuthToken(String? token) {

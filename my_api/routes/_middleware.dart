@@ -1,9 +1,29 @@
+import 'dart:io';
+
 import 'package:dart_frog/dart_frog.dart';
-import 'package:supabase/supabase.dart' hide HttpMethod;
+// ІНТЕГРОВАНО: ховаємо зайвий HttpMethod з бібліотеки supabase
+import 'package:supabase/supabase.dart' hide HttpMethod; 
 
 Handler middleware(Handler handler) {
   return (RequestContext context) async {
-    final supabase = SupabaseClient('https://xdofjorgomwdyawmwbcj.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkb2Zqb3Jnb213ZHlhd213YmNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkzMzE0MTcsImV4cCI6MjA2NDkwNzQxN30.2i9ru8fXLZEYD_jNHoHd0ZJmN4k9gKcPOChdiuL_AMY');
+    // Читаємо ключі з безпечних змінних оточення
+    final supabaseUrl = Platform.environment['SUPABASE_URL'];
+    final supabaseAnonKey = Platform.environment['SUPABASE_ANON_KEY'];
+
+    // Перевірка, чи змінні існують
+    if (supabaseUrl == null || supabaseAnonKey == null) {
+      // ІНТЕГРОВАНО: використовуємо stderr для логування помилок
+      stderr.writeln(
+        'CRITICAL ERROR: Supabase environment variables not found.',
+      );
+      return Response(
+        statusCode: HttpStatus.internalServerError,
+        body: 'Server configuration error',
+      );
+    }
+
+    // Створюємо клієнт з отриманими даними
+    final supabase = SupabaseClient(supabaseUrl, supabaseAnonKey);
     var newContext = context.provide<SupabaseClient>(() => supabase);
 
     if (newContext.request.method == HttpMethod.options) {
@@ -39,9 +59,9 @@ Handler middleware(Handler handler) {
     }
 
     newContext = newContext.provide<User>(() => userResponse.user!);
-    
+
     final response = await handler(newContext);
-    
+
     return response.copyWith(
       headers: {
         ...response.headers,

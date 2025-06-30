@@ -61,3 +61,4 @@ app.*.map.json
 
 # Tesseract data files
 /assets/tessdata/
+*.zip

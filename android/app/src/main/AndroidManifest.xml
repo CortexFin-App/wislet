@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.vlad.sage_wallet_reborn"> <!-- Встановлюємо ваш унікальний пакет -->
+    package="com.vlad.sage_wallet_reborn">
 
     <!-- Ваші дозволи -->
     <uses-permission android:name="android.permission.INTERNET"/>
@@ -14,7 +14,9 @@
     <application
         android:label="Гаманець Мудреця"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:theme="@style/Theme.App.Starting">
+        
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -56,7 +58,7 @@
     <queries>
         <intent>
             <action android:name="android.intent.action.VIEW" />
-            <data android:scheme="https" />
+            <data android:scheme="httpshttps" />
         </intent>
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>

@@ -80,16 +80,11 @@ flutter:
         - asset: assets/fonts/NotoSans-Italic.ttf
           style: italic
 
+# Цей блок залишається для старих версій Android та для iOS
 flutter_native_splash:
   color: "#FFFFFF"
   image: assets/splash_logo.png
-
-  # =========================================================
-  # ДОДАНО ЦЕЙ БЛОК ДЛЯ ПІДТРИМКИ ANDROID 12+
-  # =========================================================
-  android_12:
-    image: assets/splash_logo.png
-    color: "#FFFFFF"
+  # Блок android_12 видалено, оскільки ми налаштовуємо це нативно
 
 flutter_icons:
   android: true
