@@ -14,7 +14,7 @@ class ApiWalletRepositoryImpl implements WalletRepository {
 
   @override
   Future<int> createWallet(
-      {required String name, required int ownerUserId, bool isDefault = false}) async {
+      {required String name, required String ownerUserId, bool isDefault = false}) async {
     final responseData = await _apiClient.post(
       '/wallets',
       body: {'name': name, 'is_default': isDefault, 'owner_user_id': ownerUserId},
@@ -25,6 +25,7 @@ class ApiWalletRepositoryImpl implements WalletRepository {
   @override
   Future<Wallet?> getWallet(int id) async {
     final responseData = await _apiClient.get('/wallets/$id');
+    if (responseData == null) return null;
     return Wallet.fromMap(responseData);
   }
 

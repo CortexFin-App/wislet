@@ -16,7 +16,7 @@ import '../../services/navigation_service.dart';
 import '../settings/accept_invitation_screen.dart';
 import 'pin_entry_screen.dart';
 
-enum AuthStatus { loading, onboarding, needsBiometricAuth, needsPinAuth, authenticated }
+enum AuthStatus { loading, onboarding, needsPinAuth, authenticated }
 
 class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
@@ -30,7 +30,6 @@ class _AuthWrapperState extends State<AuthWrapper> {
   final SubscriptionService _subscriptionService = getIt<SubscriptionService>();
   final _appLinks = AppLinks();
   StreamSubscription<Uri>? _linkSubscription;
-
   AuthStatus _status = AuthStatus.loading;
 
   @override
@@ -49,10 +48,16 @@ class _AuthWrapperState extends State<AuthWrapper> {
   }
 
   Future<void> _initializeApp() async {
+    if (_authService.currentUser != null) {
+      if (mounted) setState(() => _status = AuthStatus.authenticated);
+      await _runStartupChecks();
+      return;
+    }
+
     final prefs = await SharedPreferences.getInstance();
     final bool onboardingCompleted =
         prefs.getBool(AppConstants.prefsKeyOnboardingComplete) ?? false;
-
+    
     if (!onboardingCompleted) {
       if (mounted) setState(() => _status = AuthStatus.onboarding);
       return;
@@ -70,23 +75,8 @@ class _AuthWrapperState extends State<AuthWrapper> {
       return;
     }
 
-    final biometricsEnabled = await _authService.isBiometricsEnabled();
-    if (biometricsEnabled) {
-      if (mounted) setState(() => _status = AuthStatus.needsBiometricAuth);
-    } else {
-      if (mounted) setState(() => _status = AuthStatus.needsPinAuth);
-    }
-  }
-
-  Future<void> _triggerBiometrics() async {
-    final authenticated = await _authService.authenticateWithBiometrics();
-    if (authenticated && mounted) {
-      setState(() => _status = AuthStatus.authenticated);
-      await _runStartupChecks();
-    } else if (mounted) {
-      // Якщо біометрія не пройдена (скасована/помилка), переходимо до PIN
-      setState(() => _status = AuthStatus.needsPinAuth);
-    }
+    // Біометрію тепер можна пропонувати на екрані пін-коду
+    if (mounted) setState(() => _status = AuthStatus.needsPinAuth);
   }
 
   Future<void> _runStartupChecks() async {
@@ -113,7 +103,6 @@ class _AuthWrapperState extends State<AuthWrapper> {
     } catch (e) {
       // ignore
     }
-
     _linkSubscription = _appLinks.uriLinkStream.listen((uri) {
       if (mounted) {
         _handleIncomingLink(uri);
@@ -144,25 +133,6 @@ class _AuthWrapperState extends State<AuthWrapper> {
         return OnboardingScreen(onFinished: _handleOnboardingFinished);
       case AuthStatus.authenticated:
         return const AppNavigationShell();
-      case AuthStatus.needsBiometricAuth:
-        return Scaffold(
-            body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.fingerprint, size: 80),
-                  const SizedBox(height: 24),
-                  Text('Вхід у Гаманець Мудреця', style: Theme.of(context).textTheme.headlineSmall),
-                  const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    icon: const Icon(Icons.lock_open),
-                    label: const Text('Увійти за допомогою біометрії'),
-                    onPressed: _triggerBiometrics,
-                  )
-                ],
-              ),
-            ),
-          );
       case AuthStatus.needsPinAuth:
         return PinEntryScreen(onSuccess: () async {
           if (mounted) {

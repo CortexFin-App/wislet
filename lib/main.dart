@@ -18,11 +18,12 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   tz.initializeTimeZones();
   await configureDependencies();
-
+  
+  await getIt<AuthService>().tryToRestoreSession();
+  
   if (!kIsWeb) {
     await getIt<NotificationService>().init();
   }
-
   runApp(const MyApp());
 }
 

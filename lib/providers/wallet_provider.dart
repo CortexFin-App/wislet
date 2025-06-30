@@ -1,6 +1,5 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/constants/app_constants.dart';
 import '../models/wallet.dart';
@@ -53,15 +52,12 @@ class WalletProvider with ChangeNotifier {
   Future<void> loadWallets() async {
     _isLoading = true;
     notifyListeners();
-
     try {
       _wallets = await _walletRepository.getAllWallets();
-
       if (_wallets.isEmpty && !_appModeProvider.isOnline) {
         await _walletRepository.createInitialWallet();
         _wallets = await _walletRepository.getAllWallets();
       }
-
       final prefs = await SharedPreferences.getInstance();
       final lastWalletId = prefs.getInt(AppConstants.prefsKeySelectedWalletId);
 
@@ -70,8 +66,8 @@ class WalletProvider with ChangeNotifier {
         if (lastWalletId != null && _wallets.any((w) => w.id == lastWalletId)) {
           walletToLoadId = lastWalletId;
         } else {
-          final defaultWallet = _wallets.firstWhere((w) => w.isDefault,
-              orElse: () => _wallets.first);
+          final defaultWallet =
+              _wallets.firstWhere((w) => w.isDefault, orElse: () => _wallets.first);
           walletToLoadId = defaultWallet.id!;
         }
         await switchWallet(walletToLoadId, shouldNotify: false);
@@ -93,7 +89,6 @@ class WalletProvider with ChangeNotifier {
     if (walletObject == null) return;
 
     final currentUserId = _authService.currentUser?.id;
-
     if (currentUserId != null) {
       final myMembership = walletObject.members.firstWhereOrNull(
         (member) => member.user.id == currentUserId,
@@ -104,9 +99,9 @@ class WalletProvider with ChangeNotifier {
     }
 
     _currentWallet = walletObject;
-
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(AppConstants.prefsKeySelectedWalletId, walletId);
+
     if (shouldNotify) {
       notifyListeners();
     }
@@ -114,7 +109,7 @@ class WalletProvider with ChangeNotifier {
 
   Future<void> createWallet(String name) async {
     try {
-      final userId = _authService.currentUser?.id ?? 1;
+      final userId = _authService.currentUser?.id ?? '1';
       await _walletRepository.createWallet(
           name: name, ownerUserId: userId, isDefault: _wallets.isEmpty);
       await loadWallets();
@@ -144,7 +139,7 @@ class WalletProvider with ChangeNotifier {
     }
   }
 
-  Future<void> addUserToWallet(int walletId, int userId, String role) async {
+  Future<void> addUserToWallet(int walletId, String userId, String role) async {
     try {
       await _userRepository.addUserToWallet(walletId, userId, role);
       notifyListeners();

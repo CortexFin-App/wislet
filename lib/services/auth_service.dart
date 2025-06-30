@@ -22,13 +22,33 @@ class AuthService {
 
   AuthService(this._apiClient, this._tokenStorage, this._localAuth);
 
+  Future<bool> tryToRestoreSession() async {
+    final token = await _tokenStorage.readToken();
+    if (token == null || token.isEmpty) {
+      return false;
+    }
+    
+    _apiClient.setAuthToken(token);
+    try {
+      final userData = await _apiClient.get('/auth/me');
+      if (userData != null) {
+        currentUser = fin_user.User.fromMap(userData);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      await logout();
+      return false;
+    }
+  }
+
   Future<void> login(String email, String password) async {
     final response = await _apiClient.post(
       '/auth/login',
       body: {'email': email, 'password': password},
     );
     final token = response['token'] as String;
-    final userId = response['user_id'] as int;
+    final userId = response['user_id'] as String;
     final userName = response['user_name'] as String? ?? 'User';
 
     await _tokenStorage.saveToken(token);
@@ -42,7 +62,7 @@ class AuthService {
       body: {'email': email, 'password': password},
     );
     final token = response['token'] as String;
-    final userId = response['user_id'] as int;
+    final userId = response['user_id'] as String;
     final userName = response['user_name'] as String? ?? 'User';
 
     await _tokenStorage.saveToken(token);

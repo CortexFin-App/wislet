@@ -1,8 +1,8 @@
 class User {
-  final int? id;
+  final String id;
   final String name;
 
-  User({this.id, required this.name});
+  User({required this.id, required this.name});
 
   Map<String, dynamic> toMap() {
     return {
@@ -13,8 +13,8 @@ class User {
 
   factory User.fromMap(Map<String, dynamic> map) {
     return User(
-      id: map['id'],
-      name: map['name'],
+      id: map['id'].toString(),
+      name: map['name'] as String,
     );
   }
 }

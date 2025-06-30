@@ -9,7 +9,7 @@ class LocalUserRepositoryImpl implements UserRepository {
   @override
   Future<int> createDefaultUser() async {
     final db = await _dbHelper.database;
-    return await db.insert(DatabaseHelper.tableUsers, {'name': 'Основний користувач'});
+    return await db.insert(DatabaseHelper.tableUsers, {'name': 'Основний користувач', 'id': '1'}); // Додаємо ID за замовчуванням
   }
   
   @override
@@ -33,7 +33,7 @@ class LocalUserRepositoryImpl implements UserRepository {
   }
 
   @override
-  Future<int> addUserToWallet(int walletId, int userId, String role) async {
+  Future<int> addUserToWallet(int walletId, String userId, String role) async {
     final db = await _dbHelper.database;
     return await db.insert(
       DatabaseHelper.tableWalletUsers,
@@ -46,7 +46,7 @@ class LocalUserRepositoryImpl implements UserRepository {
   }
 
   @override
-  Future<int> removeUserFromWallet(int walletId, int userId) async {
+  Future<int> removeUserFromWallet(int walletId, String userId) async {
     final db = await _dbHelper.database;
     return await db.delete(
       DatabaseHelper.tableWalletUsers,
@@ -58,7 +58,7 @@ class LocalUserRepositoryImpl implements UserRepository {
 
   @override
   Future<int> updateUserRoleInWallet(
-      int walletId, int userId, String newRole) async {
+      int walletId, String userId, String newRole) async {
     final db = await _dbHelper.database;
     return await db.update(
       DatabaseHelper.tableWalletUsers,
@@ -70,7 +70,7 @@ class LocalUserRepositoryImpl implements UserRepository {
   }
 
   @override
-  Future<User?> getUser(int id) async {
+  Future<User?> getUser(String id) async {
     final db = await _dbHelper.database;
     final maps = await db.query(
       DatabaseHelper.tableUsers,

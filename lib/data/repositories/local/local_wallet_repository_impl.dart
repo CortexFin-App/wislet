@@ -17,7 +17,6 @@ class LocalWalletRepositoryImpl implements WalletRepository {
       JOIN ${DatabaseHelper.tableUsers} u ON wu.${DatabaseHelper.colWalletUsersUserId} = u.${DatabaseHelper.colUserId}
       WHERE wu.${DatabaseHelper.colWalletUsersWalletId} = ?
     ''', [walletId]);
-
     return membersMaps.map((m) {
       return WalletUser(
         user: User.fromMap(m),
@@ -31,7 +30,6 @@ class LocalWalletRepositoryImpl implements WalletRepository {
     final db = await _dbHelper.database;
     final List<Map<String, dynamic>> walletMaps =
         await db.query(DatabaseHelper.tableWallets);
-
     final List<Wallet> wallets = [];
     for (var walletMap in walletMaps) {
       final members =
@@ -62,7 +60,7 @@ class LocalWalletRepositoryImpl implements WalletRepository {
   @override
   Future<int> createWallet(
       {required String name,
-      required int ownerUserId,
+      required String ownerUserId,
       bool isDefault = false}) async {
     final db = await _dbHelper.database;
     return await db.transaction((txn) async {
@@ -85,8 +83,8 @@ class LocalWalletRepositoryImpl implements WalletRepository {
   Future<void> createInitialWallet() async {
     final db = await _dbHelper.database;
     await db.transaction((txn) async {
-      int userId =
-          await txn.insert(DatabaseHelper.tableUsers, {'name': 'Основний користувач'});
+      const userId = '1'; // Використовуємо String '1' для локального користувача
+      await txn.insert(DatabaseHelper.tableUsers, {'id': userId, 'name': 'Основний користувач'}, conflictAlgorithm: ConflictAlgorithm.ignore);
       int walletId = await txn.insert(DatabaseHelper.tableWallets, {
         'name': 'Особистий гаманець',
         'isDefault': 1,
@@ -94,7 +92,6 @@ class LocalWalletRepositoryImpl implements WalletRepository {
       });
       await txn.insert(DatabaseHelper.tableWalletUsers,
           {'walletId': walletId, 'userId': userId, 'role': 'owner'});
-
       for (var catData in defaultCategories) {
         final categoryMap = Map<String, dynamic>.from(catData);
         categoryMap[DatabaseHelper.colCategoryWalletId] = walletId;
@@ -133,7 +130,7 @@ class LocalWalletRepositoryImpl implements WalletRepository {
       {'role': newRole},
       where:
           '${DatabaseHelper.colWalletUsersWalletId} = ? AND ${DatabaseHelper.colWalletUsersUserId} = ?',
-      whereArgs: [walletId, int.parse(userId)],
+      whereArgs: [walletId, userId],
     );
   }
 
@@ -144,7 +141,7 @@ class LocalWalletRepositoryImpl implements WalletRepository {
       DatabaseHelper.tableWalletUsers,
       where:
           '${DatabaseHelper.colWalletUsersWalletId} = ? AND ${DatabaseHelper.colWalletUsersUserId} = ?',
-      whereArgs: [walletId, int.parse(userId)],
+      whereArgs: [walletId, userId],
     );
   }
 }

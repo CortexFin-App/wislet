@@ -68,13 +68,13 @@ Future<void> configureDependencies() async {
   getIt.registerLazySingleton<DatabaseHelper>(() => DatabaseHelper.instance);
   getIt.registerLazySingleton(() => ApiClient());
   getIt.registerLazySingleton(() => TokenStorageService());
-  getIt.registerLazySingleton(() => OcrService());
+  getIt.registerLazySingleton(() => OcrService(getIt()));
   getIt.registerLazySingleton(() => ReceiptParser());
   getIt.registerLazySingleton(() => ReportGenerationService());
   getIt.registerLazySingleton(() => ExchangeRateService());
   getIt.registerLazySingleton(() => NavigationService());
   getIt.registerLazySingleton<InvitationRepository>(
-      () => kIsWeb ? ApiInvitationRepositoryImpl(getIt()) : LocalInvitationRepositoryImpl());
+    () => ApiInvitationRepositoryImpl(getIt()));
   getIt.registerLazySingleton(() => AppModeProvider());
   getIt.registerLazySingleton<ThemeRepository>(() => LocalThemeRepositoryImpl(getIt()));
 

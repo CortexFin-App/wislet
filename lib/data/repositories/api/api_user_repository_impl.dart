@@ -25,23 +25,23 @@ class ApiUserRepositoryImpl implements UserRepository {
   }
 
   @override
-  Future<int> addUserToWallet(int walletId, int userId, String role) {
+  Future<int> addUserToWallet(int walletId, String userId, String role) {
     throw UnimplementedError();
   }
 
   @override
-  Future<int> removeUserFromWallet(int walletId, int userId) {
+  Future<int> removeUserFromWallet(int walletId, String userId) {
     throw UnimplementedError();
   }
 
   @override
   Future<int> updateUserRoleInWallet(
-      int walletId, int userId, String newRole) {
+      int walletId, String userId, String newRole) {
     throw UnimplementedError();
   }
 
   @override
-  Future<User?> getUser(int id) {
+  Future<User?> getUser(String id) {
     throw UnimplementedError();
   }
 }

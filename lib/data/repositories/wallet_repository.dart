@@ -4,7 +4,7 @@ abstract class WalletRepository {
   Future<List<Wallet>> getAllWallets();
   Future<Wallet?> getWallet(int id);
   Future<int> createWallet(
-      {required String name, required int ownerUserId, bool isDefault = false});
+      {required String name, required String ownerUserId, bool isDefault = false});
   Future<void> createInitialWallet();
   Future<int> updateWallet(Wallet wallet);
   Future<int> deleteWallet(int walletId);
