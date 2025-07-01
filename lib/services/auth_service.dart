@@ -14,7 +14,6 @@ class AuthService {
   final LocalAuthentication _localAuth;
   final ApiClient _apiClient;
   final TokenStorageService _tokenStorage;
-
   static const _pinKey = 'user_pin_code_hashed';
   static const _pinSaltKey = 'user_pin_salt';
 
@@ -23,11 +22,11 @@ class AuthService {
   AuthService(this._apiClient, this._tokenStorage, this._localAuth);
 
   Future<bool> tryToRestoreSession() async {
-    final token = await _tokenStorage.readToken();
+    final token = await _tokenStorage.readAccessToken();
     if (token == null || token.isEmpty) {
       return false;
     }
-    
+
     _apiClient.setAuthToken(token);
     try {
       final userData = await _apiClient.get('/auth/me');
@@ -47,12 +46,13 @@ class AuthService {
       '/auth/login',
       body: {'email': email, 'password': password},
     );
-    final token = response['token'] as String;
+    final accessToken = response['access_token'] as String;
+    final refreshToken = response['refresh_token'] as String;
     final userId = response['user_id'] as String;
     final userName = response['user_name'] as String? ?? 'User';
 
-    await _tokenStorage.saveToken(token);
-    _apiClient.setAuthToken(token);
+    await _tokenStorage.saveTokens(accessToken: accessToken, refreshToken: refreshToken);
+    _apiClient.setAuthToken(accessToken);
     currentUser = fin_user.User(id: userId, name: userName);
   }
 
@@ -61,17 +61,18 @@ class AuthService {
       '/auth/register',
       body: {'email': email, 'password': password},
     );
-    final token = response['token'] as String;
+    final accessToken = response['access_token'] as String;
+    final refreshToken = response['refresh_token'] as String;
     final userId = response['user_id'] as String;
     final userName = response['user_name'] as String? ?? 'User';
 
-    await _tokenStorage.saveToken(token);
-    _apiClient.setAuthToken(token);
+    await _tokenStorage.saveTokens(accessToken: accessToken, refreshToken: refreshToken);
+    _apiClient.setAuthToken(accessToken);
     currentUser = fin_user.User(id: userId, name: userName);
   }
 
   Future<void> logout() async {
-    await _tokenStorage.deleteToken();
+    await _tokenStorage.deleteTokens();
     _apiClient.setAuthToken(null);
     currentUser = null;
   }
@@ -133,7 +134,7 @@ class AuthService {
     final hashedPinToCheck = _hashPin(pin, storedSalt);
     return storedHash == hashedPinToCheck;
   }
-  
+
   Future<bool> hasPin() async {
     final storedPin = await _tokenStorage.read(key: _pinKey);
     return storedPin != null && storedPin.isNotEmpty;

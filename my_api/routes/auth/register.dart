@@ -22,9 +22,11 @@ Future<Response> onRequest(RequestContext context) async {
 
     if (session != null) {
       return Response.json(body: {
-        'token': session.accessToken,
-        'user_id': session.user.id,
-      },);
+  'access_token': session.accessToken,
+  'refresh_token': session.refreshToken,
+  'user_id': session.user.id,
+  'user_name': response.user?.userMetadata?['user_name'] ?? 'User',
+});
     } else {
       return Response(statusCode: HttpStatus.unauthorized, body: 'Registration failed');
     }

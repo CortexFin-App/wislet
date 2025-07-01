@@ -9,26 +9,23 @@ Future<Response> onRequest(RequestContext context) async {
 
   final supabase = context.read<SupabaseClient>();
   final body = await context.request.json() as Map<String, dynamic>;
-  final email = body['email'] as String?;
-  final password = body['password'] as String?;
+  final refreshToken = body['refresh_token'] as String?;
 
-  if (email == null || password == null) {
-    return Response(statusCode: HttpStatus.badRequest, body: 'Email and password are required');
+  if (refreshToken == null) {
+    return Response(statusCode: HttpStatus.badRequest, body: 'Refresh token is required');
   }
 
   try {
-    final response = await supabase.auth.signInWithPassword(email: email, password: password);
+    final response = await supabase.auth.refreshSession(refreshToken);
     final session = response.session;
-    
+
     if (session != null) {
       return Response.json(body: {
         'access_token': session.accessToken,
         'refresh_token': session.refreshToken,
-        'user_id': session.user.id,
-        'user_name': response.user?.userMetadata?['user_name'] ?? 'User',
       });
     } else {
-      return Response(statusCode: HttpStatus.unauthorized, body: 'Invalid credentials');
+      return Response(statusCode: HttpStatus.unauthorized, body: 'Invalid refresh token');
     }
   } catch (e) {
     return Response(statusCode: HttpStatus.internalServerError, body: e.toString());

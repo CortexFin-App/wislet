@@ -2,6 +2,9 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode;
 import 'package:http/http.dart' as http;
+import 'package:sage_wallet_reborn/core/di/injector.dart';
+import 'package:sage_wallet_reborn/services/token_storage_service.dart';
+import 'package:sage_wallet_reborn/services/auth_service.dart';
 
 class ApiException implements Exception {
   final String message;
@@ -15,15 +18,13 @@ class ApiException implements Exception {
 class ApiClient {
   final String _baseUrl;
   String? _token;
+  bool _isRefreshing = false;
 
   ApiClient() : _baseUrl = _getBaseUrl();
 
   static String _getBaseUrl() {
-    // Перевіряємо, чи запущений додаток в режимі розробки (Debug)
     const bool isDebugMode = !kReleaseMode;
-
     if (isDebugMode) {
-      // Якщо так - використовуємо локальні адреси
       if (kIsWeb) {
         return 'http://localhost:8080';
       }
@@ -32,7 +33,6 @@ class ApiClient {
       }
       return 'http://localhost:8080';
     } else {
-      // Якщо це релізна збірка (Release) - використовуємо "бойову" адресу
       return 'https://api.cortexfinapp.com';
     }
   }
@@ -41,42 +41,82 @@ class ApiClient {
     _token = token;
   }
 
-  Future<dynamic> get(String path, {Map<String, String>? queryParams}) async {
-    final uri = Uri.parse('$_baseUrl$path').replace(queryParameters: queryParams);
-    final response = await http.get(uri, headers: _getHeaders());
+  Future<dynamic> _refreshToken() async {
+    final tokenStorage = getIt<TokenStorageService>();
+    final refreshToken = await tokenStorage.readRefreshToken();
+
+    if (refreshToken == null) {
+      await getIt<AuthService>().logout();
+      throw ApiException(message: 'Session expired. Please log in again.', statusCode: 401);
+    }
+
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/auth/refresh'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'refresh_token': refreshToken}),
+      );
+
+      if (response.statusCode == 200) {
+        final newTokens = jsonDecode(response.body);
+        final newAccessToken = newTokens['access_token'] as String;
+        final newRefreshToken = newTokens['refresh_token'] as String;
+
+        await tokenStorage.saveTokens(accessToken: newAccessToken, refreshToken: newRefreshToken);
+        setAuthToken(newAccessToken);
+        return newAccessToken;
+      } else {
+        await getIt<AuthService>().logout();
+        throw ApiException(message: 'Failed to refresh session. Please log in again.', statusCode: response.statusCode);
+      }
+    } catch (e) {
+      await getIt<AuthService>().logout();
+      throw ApiException(message: 'Network error during token refresh.', statusCode: 500);
+    }
+  }
+
+  Future<dynamic> _request(Future<http.Response> Function() requestFunc) async {
+    var response = await requestFunc();
+
+    if (response.statusCode == 401 && !_isRefreshing) {
+      _isRefreshing = true;
+      try {
+        await _refreshToken();
+        response = await requestFunc();
+      } finally {
+        _isRefreshing = false;
+      }
+    }
+
     return _processResponse(response);
   }
 
-  Future<dynamic> post(String path,
-      {required Map<String, dynamic> body,
-      Map<String, String>? queryParams}) async {
-    final uri = Uri.parse('$_baseUrl$path').replace(queryParameters: queryParams);
-    final response = await http.post(
-      uri,
-      headers: _getHeaders(),
-      body: jsonEncode(body),
-    );
-    return _processResponse(response);
+  Future<dynamic> get(String path, {Map<String, String>? queryParams}) async {
+    return _request(() {
+      final uri = Uri.parse('$_baseUrl$path').replace(queryParameters: queryParams);
+      return http.get(uri, headers: _getHeaders());
+    });
+  }
+
+  Future<dynamic> post(String path, {required Map<String, dynamic> body, Map<String, String>? queryParams}) async {
+    return _request(() {
+      final uri = Uri.parse('$_baseUrl$path').replace(queryParameters: queryParams);
+      return http.post(uri, headers: _getHeaders(), body: jsonEncode(body));
+    });
   }
 
   Future<dynamic> put(String path, {required Map<String, dynamic> body}) async {
-    final uri = Uri.parse('$_baseUrl$path');
-    final response = await http.put(
-      uri,
-      headers: _getHeaders(),
-      body: jsonEncode(body),
-    );
-    return _processResponse(response);
+    return _request(() {
+      final uri = Uri.parse('$_baseUrl$path');
+      return http.put(uri, headers: _getHeaders(), body: jsonEncode(body));
+    });
   }
 
   Future<void> delete(String path, {Map<String, dynamic>? body}) async {
-    final uri = Uri.parse('$_baseUrl$path');
-    final response = await http.delete(
-      uri,
-      headers: _getHeaders(),
-      body: body != null ? jsonEncode(body) : null,
-    );
-    _processResponse(response);
+    await _request(() {
+      final uri = Uri.parse('$_baseUrl$path');
+      return http.delete(uri, headers: _getHeaders(), body: body != null ? jsonEncode(body) : null);
+    });
   }
 
   Map<String, String> _getHeaders() {
