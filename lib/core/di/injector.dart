@@ -30,6 +30,7 @@ import 'package:sage_wallet_reborn/providers/pro_status_provider.dart';
 import 'package:sage_wallet_reborn/providers/theme_provider.dart';
 import 'package:sage_wallet_reborn/services/ai_categorization_service.dart';
 import 'package:sage_wallet_reborn/services/analytics_service.dart';
+import 'package:sage_wallet_reborn/services/billing_service.dart';
 import 'package:sage_wallet_reborn/services/cashflow_forecast_service.dart';
 import 'package:sage_wallet_reborn/services/exchange_rate_service.dart';
 import 'package:sage_wallet_reborn/services/navigation_service.dart';
@@ -74,7 +75,7 @@ Future<void> configureDependencies() async {
   getIt.registerLazySingleton(() => ExchangeRateService());
   getIt.registerLazySingleton(() => NavigationService());
   getIt.registerLazySingleton<InvitationRepository>(
-    () => ApiInvitationRepositoryImpl(getIt()));
+      () => ApiInvitationRepositoryImpl(getIt()));
   getIt.registerLazySingleton(() => AppModeProvider());
   getIt.registerLazySingleton<ThemeRepository>(() => LocalThemeRepositoryImpl(getIt()));
 
@@ -128,6 +129,7 @@ Future<void> configureDependencies() async {
 
   getIt.registerLazySingleton(() => AuthService(getIt(), getIt(), getIt()));
   getIt.registerLazySingleton(() => NotificationService(getIt(), getIt()));
+  getIt.registerLazySingleton(() => BillingService()); // <--- ІНТЕГРОВАНО
   getIt
       .registerLazySingleton(() => AICategorizationService(getIt()));
   getIt.registerLazySingleton(

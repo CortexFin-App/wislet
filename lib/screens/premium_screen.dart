@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/pro_status_provider.dart';
+import '../../core/di/injector.dart';
+import '../../providers/pro_status_provider.dart';
+import '../../services/billing_service.dart';
 
 class PremiumScreen extends StatelessWidget {
   const PremiumScreen({super.key});
@@ -17,7 +19,10 @@ class PremiumScreen extends StatelessWidget {
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [Theme.of(context).colorScheme.primary, Theme.of(context).colorScheme.secondary],
+              colors: [
+                Theme.of(context).colorScheme.primary,
+                Theme.of(context).colorScheme.secondary
+              ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -32,25 +37,31 @@ class PremiumScreen extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Theme.of(context).colorScheme.primary, Theme.of(context).colorScheme.secondary],
+                  colors: [
+                    Theme.of(context).colorScheme.primary,
+                    Theme.of(context).colorScheme.secondary
+                  ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
               ),
               child: Column(
                 children: [
-                  Icon(Icons.workspace_premium, size: 80, color: Colors.white.withOpacity(0.9)),
+                  Icon(Icons.workspace_premium,
+                      size: 80, color: Colors.white.withAlpha(230)),
                   const SizedBox(height: 16),
                   Text(
                     'Розблокуйте Повний Потенціал',
                     textAlign: TextAlign.center,
-                    style: textTheme.headlineMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
+                    style: textTheme.headlineMedium
+                        ?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Отримайте доступ до ексклюзивних функцій, щоб досягти фінансової майстерності.',
                     textAlign: TextAlign.center,
-                    style: textTheme.bodyLarge?.copyWith(color: Colors.white.withOpacity(0.8)),
+                    style: textTheme.bodyLarge
+                        ?.copyWith(color: Colors.white.withAlpha(204)),
                   ),
                 ],
               ),
@@ -64,25 +75,29 @@ class PremiumScreen extends StatelessWidget {
                     context,
                     icon: Icons.auto_awesome,
                     title: 'AI-Асистент для категорій',
-                    subtitle: 'Дозвольте штучному інтелекту автоматично визначати категорії ваших транзакцій.',
+                    subtitle:
+                        'Дозвольте штучному інтелекту автоматично визначати категорії ваших транзакцій.',
                   ),
                   _buildFeatureTile(
                     context,
                     icon: Icons.document_scanner_outlined,
                     title: 'Сканування чеків (OCR)',
-                    subtitle: 'Фотографуйте чеки, а додаток сам заповнить дані про транзакцію.',
+                    subtitle:
+                        'Фотографуйте чеки, а додаток сам заповнить дані про транзакцію.',
                   ),
                   _buildFeatureTile(
                     context,
                     icon: Icons.insights_outlined,
                     title: 'Розширена аналітика та звіти',
-                    subtitle: 'Отримуйте глибокі звіти, експортуйте дані в PDF/CSV для детального аналізу.',
+                    subtitle:
+                        'Отримуйте глибокі звіти, експортуйте дані в PDF/CSV для детального аналізу.',
                   ),
                   _buildFeatureTile(
                     context,
                     icon: Icons.cloud_sync_outlined,
                     title: 'Хмарна синхронізація',
-                    subtitle: 'Безпечно синхронізуйте ваші дані між усіма пристроями, включаючи веб-версію.',
+                    subtitle:
+                        'Безпечно синхронізуйте ваші дані між усіма пристроями, включаючи веб-версію.',
                   ),
                   const SizedBox(height: 40),
                   ElevatedButton(
@@ -90,18 +105,21 @@ class PremiumScreen extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       backgroundColor: Theme.of(context).colorScheme.primary,
                       foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                      textStyle: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                      textStyle: textTheme.titleMedium
+                          ?.copyWith(fontWeight: FontWeight.bold),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30)),
                     ),
                     onPressed: proStatusProvider.isPro
                         ? null
-                        : () {
-                            proStatusProvider.setProStatus(true);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Вітаємо! Pro-версію активовано.')),
-                            );
+                        : () async {
+                            final billingService = getIt<BillingService>();
+                            await billingService.buyProSubscription();
                           },
-                    child: Center(child: Text(proStatusProvider.isPro ? 'Pro-версія вже активна' : 'Активувати Pro (Тест)')),
+                    child: Center(
+                        child: Text(proStatusProvider.isPro
+                            ? 'Pro-версія вже активна'
+                            : 'Активувати Pro')),
                   ),
                 ],
               ),
@@ -112,7 +130,10 @@ class PremiumScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildFeatureTile(BuildContext context, {required IconData icon, required String title, required String subtitle}) {
+  Widget _buildFeatureTile(BuildContext context,
+      {required IconData icon,
+      required String title,
+      required String subtitle}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12.0),
       child: Row(
@@ -126,12 +147,16 @@ class PremiumScreen extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant),
                 ),
               ],
             ),
