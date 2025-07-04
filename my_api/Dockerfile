@@ -1,25 +1,34 @@
-# Використовуємо офіційний, повний образ Dart як єдине середовище
-FROM dart:stable
+# Stage 1: Compile the application
+FROM dart:stable AS build
 
 WORKDIR /app
 
-# Встановлюємо інструменти Dart Frog
+# Install Dart Frog CLI
 RUN dart pub global activate dart_frog_cli
 
-# Копіюємо всі файли нашого проекту
+# Copy all project files
 COPY . .
 
-# Завантажуємо залежності
+# Get dependencies
 RUN dart pub get
 
-# Генеруємо виробничу збірку
+# Generate production build (this creates the .dart_frog folder)
 RUN dart_frog build
 
-# Компілюємо виконуваний файл
+# Compile the generated server entrypoint into a single executable
 RUN dart compile exe build/bin/server.dart -o build/server
 
-# Відкриваємо порт
+# Stage 2: Create the minimal production image from scratch
+FROM scratch
+
+# Copy the compiled executable from the build stage
+COPY --from=build /app/build/server /app/server
+
+# Copy runtime dependencies for Dart executable
+COPY --from=build /runtime/ /
+
+# Expose the port
 EXPOSE 8080
 
-# Запускаємо скомпільований сервер
-CMD ["./build/server"]
+# The command to run the executable
+CMD ["/app/server"]
