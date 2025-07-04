@@ -5,11 +5,8 @@ import 'package:supabase/supabase.dart';
 Future<void> main() async {
   print('AI Trainer starting...');
 
-  // --- ІНТЕГРОВАНО ---
-  // Використовуємо правильні, стандартні імена змінних
   final supabaseUrl = Platform.environment['SUPABASE_URL'];
   final supabaseServiceKey = Platform.environment['SUPABASE_SERVICE_KEY'];
-  // --- КІНЕЦЬ ІНТЕГРАЦІЇ ---
 
   if (supabaseUrl == null || supabaseServiceKey == null) {
     print('Error: SUPABASE_URL or SUPABASE_SERVICE_KEY not found in environment variables.');

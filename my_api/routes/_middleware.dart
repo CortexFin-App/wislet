@@ -1,18 +1,14 @@
 import 'dart:io';
 
 import 'package:dart_frog/dart_frog.dart';
-// ІНТЕГРОВАНО: ховаємо зайвий HttpMethod з бібліотеки supabase
 import 'package:supabase/supabase.dart' hide HttpMethod; 
 
 Handler middleware(Handler handler) {
   return (RequestContext context) async {
-    // Читаємо ключі з безпечних змінних оточення
     final supabaseUrl = Platform.environment['SUPABASE_URL'];
     final supabaseAnonKey = Platform.environment['SUPABASE_ANON_KEY'];
 
-    // Перевірка, чи змінні існують
     if (supabaseUrl == null || supabaseAnonKey == null) {
-      // ІНТЕГРОВАНО: використовуємо stderr для логування помилок
       stderr.writeln(
         'CRITICAL ERROR: Supabase environment variables not found.',
       );
@@ -22,7 +18,6 @@ Handler middleware(Handler handler) {
       );
     }
 
-    // Створюємо клієнт з отриманими даними
     final supabase = SupabaseClient(supabaseUrl, supabaseAnonKey);
     var newContext = context.provide<SupabaseClient>(() => supabase);
 

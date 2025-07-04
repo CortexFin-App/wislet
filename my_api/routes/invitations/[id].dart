@@ -4,7 +4,7 @@ import 'package:supabase/supabase.dart' hide HttpMethod;
 
 Future<Response> onRequest(RequestContext context, String id) async {
   final supabase = context.read<SupabaseClient>();
-  final userId = context.read<String>(); // ID того, хто приймає запрошення
+  final userId = context.read<String>();
 
   if (context.request.method == HttpMethod.put) {
     try {

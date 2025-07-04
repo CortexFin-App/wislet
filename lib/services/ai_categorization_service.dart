@@ -42,7 +42,6 @@ class AICategorizationService {
         });
       }
     } catch (e) {
-      // Ignored
     }
     _isInitialized = true;
   }
@@ -77,7 +76,6 @@ class AICategorizationService {
         'category_name': category.name,
       });
     } catch (e) {
-      // Ignored
     }
   }
 

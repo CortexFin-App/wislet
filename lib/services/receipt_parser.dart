@@ -64,11 +64,9 @@ class ReceiptParser {
   DateTime? _parseDpsDateTime(String dateStr, String timeStr) {
     if (dateStr.length != 8) return null;
     try {
-      // Нормалізуємо рядок часу: видаляємо пробіли та розділювачі
       final cleanedTimeStr = timeStr.trim().replaceAll(':', '');
       final fullDateTimeString = '$dateStr$cleanedTimeStr';
       
-      // Використовуємо універсальний парсер, що обробляє формати з/без секунд
       return _parseFiscalDateTime(fullDateTimeString);
     } catch (e) {
       return null;

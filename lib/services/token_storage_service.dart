@@ -23,7 +23,6 @@ class TokenStorageService {
     await _storage.delete(key: _refreshTokenKey);
   }
 
-  // Залишаємо ці методи для сумісності з PIN-кодом
   Future<void> write({required String key, required String value}) async {
     await _storage.write(key: key, value: value);
   }

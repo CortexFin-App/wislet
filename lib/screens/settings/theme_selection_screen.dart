@@ -21,7 +21,7 @@ class ThemeSelectionScreen extends StatelessWidget {
         itemBuilder: (context, index) {
           final profile = themeProvider.allProfiles[index];
           final bool isSelected = profile.name == themeProvider.currentProfile.name;
-          final bool isDefault = index < 3; // Припускаємо, що перші 3 теми - дефолтні
+          final bool isDefault = index < 3;
 
           return Card(
             elevation: isSelected ? 4 : 1,

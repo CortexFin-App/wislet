@@ -17,13 +17,11 @@ Future<Response> onRequest(RequestContext context) async {
   }
 
   try {
-    // Авторизація в Google Cloud за допомогою ключа, який ми передали в Docker
     final client = await clientViaApplicationDefaultCredentials(
       scopes: [vision.VisionApi.cloudVisionScope],
     );
     final visionApi = vision.VisionApi(client);
 
-    // Створюємо запит до Vision API
     final request = vision.BatchAnnotateImagesRequest(
       requests: [
         vision.AnnotateImageRequest(
@@ -33,7 +31,6 @@ Future<Response> onRequest(RequestContext context) async {
       ],
     );
 
-    // Відправляємо запит і отримуємо відповідь
     final response = await visionApi.images.annotate(request);
     final fullText = response.responses?.first.fullTextAnnotation?.text;
 

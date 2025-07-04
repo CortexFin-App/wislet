@@ -75,7 +75,6 @@ class _AuthWrapperState extends State<AuthWrapper> {
       return;
     }
 
-    // Біометрію тепер можна пропонувати на екрані пін-коду
     if (mounted) setState(() => _status = AuthStatus.needsPinAuth);
   }
 
@@ -101,7 +100,6 @@ class _AuthWrapperState extends State<AuthWrapper> {
         _handleIncomingLink(initialUri);
       }
     } catch (e) {
-      // ignore
     }
     _linkSubscription = _appLinks.uriLinkStream.listen((uri) {
       if (mounted) {

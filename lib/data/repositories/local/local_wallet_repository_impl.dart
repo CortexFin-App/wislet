@@ -83,7 +83,7 @@ class LocalWalletRepositoryImpl implements WalletRepository {
   Future<void> createInitialWallet() async {
     final db = await _dbHelper.database;
     await db.transaction((txn) async {
-      const userId = '1'; // Використовуємо String '1' для локального користувача
+      const userId = '1';
       await txn.insert(DatabaseHelper.tableUsers, {'id': userId, 'name': 'Основний користувач'}, conflictAlgorithm: ConflictAlgorithm.ignore);
       int walletId = await txn.insert(DatabaseHelper.tableWallets, {
         'name': 'Особистий гаманець',

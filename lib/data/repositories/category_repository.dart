@@ -7,7 +7,6 @@ abstract class CategoryRepository {
   Future<int> updateCategory(Category category);
   Future<int> deleteCategory(int id);
   Future<String> getCategoryNameById(int categoryId);
-  // Додано новий абстрактний метод, який потрібно реалізувати
   Future<Category> createCategoryFromMap(
       Map<String, dynamic> categoryMap, int walletId);
 }

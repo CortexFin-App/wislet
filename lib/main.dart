@@ -11,7 +11,7 @@ import 'providers/theme_provider.dart';
 import 'providers/wallet_provider.dart';
 import 'screens/auth/auth_wrapper.dart';
 import 'services/auth_service.dart';
-import 'services/billing_service.dart'; // <--- ІНТЕГРОВАНО
+import 'services/billing_service.dart';
 import 'services/navigation_service.dart';
 import 'services/notification_service.dart';
 
@@ -22,7 +22,6 @@ void main() async {
 
   await getIt<AuthService>().tryToRestoreSession();
   
-  // Ініціалізуємо сервіс покупок
   if (!kIsWeb) {
     await getIt<BillingService>().init();
     await getIt<NotificationService>().init();
