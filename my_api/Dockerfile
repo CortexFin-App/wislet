@@ -1,37 +1,25 @@
-# Stage 1: Compile the application
-FROM dart:stable AS build
+# Використовуємо офіційний, повний образ Dart як єдине середовище
+FROM dart:stable
 
 WORKDIR /app
 
-# Install Dart Frog CLI
+# Встановлюємо інструменти Dart Frog
 RUN dart pub global activate dart_frog_cli
 
-# Copy project files
+# Копіюємо всі файли нашого проекту
 COPY . .
 
-# Get dependencies
+# Завантажуємо залежності
 RUN dart pub get
 
-# Generate production build
+# Генеруємо виробничу збірку
 RUN dart_frog build
 
-# Compile the generated server entrypoint
+# Компілюємо виконуваний файл
 RUN dart compile exe build/bin/server.dart -o build/server
 
-
-# Stage 2: Create the minimal production image
-FROM alpine:latest
-
-# Required for Dart executable to run on Alpine
-RUN apk --no-cache add libc6-compat
-
-WORKDIR /app
-
-# Copy the compiled executable from the build stage
-COPY --from=build /app/build/server .
-
-# Expose the port
+# Відкриваємо порт
 EXPOSE 8080
 
-# Run the executable
-CMD ["./server"]
+# Запускаємо скомпільований сервер
+CMD ["./build/server"]
