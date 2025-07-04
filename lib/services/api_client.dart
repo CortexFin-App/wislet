@@ -75,16 +75,28 @@ class ApiClient {
     }
   }
 
-  Future<dynamic> _request(Future<http.Response> Function() requestFunc) async {
+  Map<String, String> _getHeaders(String path) {
+    final headers = <String, String>{
+      'Content-Type': 'application/json; charset=UTF-8',
+    };
+    if (_token != null && !path.startsWith('/auth/')) {
+      headers[HttpHeaders.authorizationHeader] = 'Bearer $_token';
+    }
+    return headers;
+  }
+  
+  Future<dynamic> _request(String path, Future<http.Response> Function() requestFunc) async {
     var response = await requestFunc();
 
-    if (response.statusCode == 401 && !_isRefreshing) {
-      _isRefreshing = true;
-      try {
-        await _refreshToken();
-        response = await requestFunc();
-      } finally {
-        _isRefreshing = false;
+    if (response.statusCode == 401 && !path.startsWith('/auth/')) {
+      if (!_isRefreshing) {
+        _isRefreshing = true;
+        try {
+          await _refreshToken();
+          response = await requestFunc();
+        } finally {
+          _isRefreshing = false;
+        }
       }
     }
 
@@ -92,41 +104,31 @@ class ApiClient {
   }
 
   Future<dynamic> get(String path, {Map<String, String>? queryParams}) async {
-    return _request(() {
+    return _request(path, () {
       final uri = Uri.parse('$_baseUrl$path').replace(queryParameters: queryParams);
-      return http.get(uri, headers: _getHeaders());
+      return http.get(uri, headers: _getHeaders(path));
     });
   }
 
   Future<dynamic> post(String path, {required Map<String, dynamic> body, Map<String, String>? queryParams}) async {
-    return _request(() {
+    return _request(path, () {
       final uri = Uri.parse('$_baseUrl$path').replace(queryParameters: queryParams);
-      return http.post(uri, headers: _getHeaders(), body: jsonEncode(body));
+      return http.post(uri, headers: _getHeaders(path), body: jsonEncode(body));
     });
   }
 
   Future<dynamic> put(String path, {required Map<String, dynamic> body}) async {
-    return _request(() {
+    return _request(path, () {
       final uri = Uri.parse('$_baseUrl$path');
-      return http.put(uri, headers: _getHeaders(), body: jsonEncode(body));
+      return http.put(uri, headers: _getHeaders(path), body: jsonEncode(body));
     });
   }
 
   Future<void> delete(String path, {Map<String, dynamic>? body}) async {
-    await _request(() {
+    await _request(path, () {
       final uri = Uri.parse('$_baseUrl$path');
-      return http.delete(uri, headers: _getHeaders(), body: body != null ? jsonEncode(body) : null);
+      return http.delete(uri, headers: _getHeaders(path), body: body != null ? jsonEncode(body) : null);
     });
-  }
-
-  Map<String, String> _getHeaders() {
-    final headers = <String, String>{
-      'Content-Type': 'application/json; charset=UTF-8',
-    };
-    if (_token != null) {
-      headers[HttpHeaders.authorizationHeader] = 'Bearer $_token';
-    }
-    return headers;
   }
 
   dynamic _processResponse(http.Response response) {
