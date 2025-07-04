@@ -1,25 +1,37 @@
-# Використовуємо офіційний, повний образ Dart.
-# Це менш оптимізовано, але на 100% надійно для діагностики.
-FROM dart:stable
+# Stage 1: Compile the application
+FROM dart:stable AS build
 
-# Встановлюємо робочу директорію
 WORKDIR /app
 
-# Встановлюємо інструменти Dart Frog
+# Install Dart Frog CLI
 RUN dart pub global activate dart_frog_cli
 
-# Копіюємо всі файли нашого проекту
+# Copy project files
 COPY . .
 
-# Завантажуємо залежності
+# Get dependencies
 RUN dart pub get
 
-# Генеруємо код для роутингу
+# Generate production build
 RUN dart_frog build
 
-# Відкриваємо порт
+# Compile the generated server entrypoint
+RUN dart compile exe build/bin/server.dart -o build/server
+
+
+# Stage 2: Create the minimal production image
+FROM alpine:latest
+
+# Required for Dart executable to run on Alpine
+RUN apk --no-cache add libc6-compat
+
+WORKDIR /app
+
+# Copy the compiled executable from the build stage
+COPY --from=build /app/build/server .
+
+# Expose the port
 EXPOSE 8080
 
-# Запускаємо сервер в режимі розробки, щоб бачити всі логи.
-# Це фінальний діагностичний крок.
-CMD ["dart_frog", "dev", "--port", "8080", "--host", "0.0.0.0"]
+# Run the executable
+CMD ["./server"]
