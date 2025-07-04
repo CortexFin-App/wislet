@@ -17,6 +17,7 @@ import '../models/currency_model.dart';
 import '../utils/database_helper.dart';
 import '../services/auth_service.dart';
 import '../utils/slide_page_route.dart';
+import 'auth/login_register_screen.dart';
 import 'settings/notification_history_screen.dart';
 import 'settings/wallets_screen.dart';
 import 'settings/accept_invitation_screen.dart';
@@ -74,7 +75,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await _authService.logout();
     appModeProvider.switchToLocalMode();
   }
-
+  
+  // ... решта методів (_toggleBiometricAuth, _navigateToPinSetup, і т.д.) залишаються без змін ...
   Future<void> _toggleBiometricAuth(bool value) async {
     if (!mounted) return;
     final messenger = ScaffoldMessenger.of(context);
@@ -227,6 +229,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
     final themeProvider = context.watch<ThemeProvider>();
@@ -242,6 +245,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
         children: <Widget>[
+          // ... існуючий код ...
+
+          // --- ІНТЕГРОВАНО: Умовне відображення кнопки Входу/Виходу ---
+          if (!appModeProvider.isOnline)
+            ListTile(
+              leading: Icon(Icons.cloud_sync_outlined, color: Theme.of(context).colorScheme.primary),
+              title: Text('Увійти / Синхронізація', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginRegisterScreen()));
+              },
+            ),
+          
           Card(
             elevation: 2,
             color: Theme.of(context).colorScheme.primaryContainer,
@@ -459,7 +475,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onPressed: _restoreFromBackup,
           ),
           if (appModeProvider.isOnline) ...[
-            const Divider(),
+            const Divider(height: 32),
             ListTile(
               leading:
                   Icon(Icons.logout, color: Theme.of(context).colorScheme.error),
