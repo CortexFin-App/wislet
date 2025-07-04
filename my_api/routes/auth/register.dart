@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:supabase/supabase.dart' hide HttpMethod;
-import '../../src/logger.dart';
 
 Future<Response> onRequest(RequestContext context) async {
   if (context.request.method != HttpMethod.post) {
@@ -18,17 +17,11 @@ Future<Response> onRequest(RequestContext context) async {
   }
 
   try {
-    final response = await supabase.auth.signUp(email: email, password: password);
-
-    if (response.user != null && response.session == null) {
-      return Response.json(body: {'status': 'needs_confirmation'});
-    } else {
-      return Response(statusCode: HttpStatus.badRequest, body: 'User might already exist or another issue occurred.');
-    }
+    await supabase.auth.signUp(email: email, password: password);
+    return Response(body: 'Success! Please check your email to confirm your account.');
   } on AuthException catch (e) {
     return Response(statusCode: HttpStatus.badRequest, body: e.message);
-  } catch (e, stackTrace) {
-    logger.severe('Generic signUp ERROR', e, stackTrace);
-    return Response(statusCode: HttpStatus.internalServerError, body: 'An unexpected server error occurred.');
+  } catch (e) {
+    return Response(statusCode: 500, body: 'An unexpected error occurred: ${e.toString()}');
   }
 }

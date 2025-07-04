@@ -1,53 +1,48 @@
 import 'dart:io';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:supabase/supabase.dart' hide HttpMethod;
-import '../src/logger.dart';
-
-SupabaseClient _initSupabase() {
-  final supabaseUrl = Platform.environment['SUPABASE_URL'];
-  final supabaseAnonKey = Platform.environment['SUPABASE_ANON_KEY'];
-
-  if (supabaseUrl == null || supabaseAnonKey == null) {
-    throw Exception('CRITICAL: Supabase environment variables not found.');
-  }
-  return SupabaseClient(supabaseUrl, supabaseAnonKey);
-}
-
-final _supabaseClient = _initSupabase();
 
 Handler middleware(Handler handler) {
-  return handler
-      .use(requestLogger())
-      // КРОК 1: Спочатку НАДАЄМО SupabaseClient у контекст.
-      .use(provider<SupabaseClient>((_) => _supabaseClient))
-      // КРОК 2: І тільки потім застосовуємо middleware, який його ВИКОРИСТОВУЄ.
-      .use(_authMiddleware());
-}
+  return (context) async {
+    // Кожен запит буде проходити через цей код послідовно.
 
-Middleware _authMiddleware() {
-  return (handler) {
-    return (context) async {
-      final path = context.request.url.path;
+    // 1. Ініціалізуємо Supabase
+    final supabaseUrl = Platform.environment['SUPABASE_URL'];
+    final supabaseAnonKey = Platform.environment['SUPABASE_ANON_KEY'];
 
-      if (path.startsWith('/auth/')) {
-        return handler(context);
-      }
-      
-      final supabase = context.read<SupabaseClient>();
-      final authHeader = context.request.headers['Authorization'];
+    if (supabaseUrl == null || supabaseAnonKey == null) {
+      return Response(statusCode: 500, body: 'Server config error');
+    }
+    final supabase = SupabaseClient(supabaseUrl, supabaseAnonKey);
 
-      if (authHeader == null || !authHeader.startsWith('Bearer ')) {
-        return Response(statusCode: HttpStatus.unauthorized, body: 'Unauthorized');
-      }
+    // 2. Надаємо клієнт в контекст
+    var newContext = context.provide<SupabaseClient>(() => supabase);
 
-      final token = authHeader.substring(7);
-      final userResponse = await supabase.auth.getUser(token);
+    // 3. Перевіряємо шлях
+    final path = newContext.request.url.path;
 
-      if (userResponse.user == null) {
-        return Response(statusCode: HttpStatus.unauthorized, body: 'Invalid Token');
-      }
-      
-      return handler(context.provide<User>(() => userResponse.user!));
-    };
+    if (path.startsWith('/auth/')) {
+      // Якщо це публічний роут, одразу передаємо керування далі
+      return handler(newContext);
+    }
+
+    // --- З ЦЬОГО МОМЕНТУ ВСІ РОУТИ ВВАЖАЮТЬСЯ ЗАХИЩЕНИМИ ---
+
+    // 4. Перевіряємо заголовок авторизації
+    final authHeader = newContext.request.headers['Authorization'];
+    if (authHeader == null || !authHeader.startsWith('Bearer ')) {
+      return Response(statusCode: 401, body: 'Unauthorized: No token');
+    }
+
+    // 5. Валідуємо токен
+    final token = authHeader.substring(7);
+    final userResponse = await supabase.auth.getUser(token);
+    if (userResponse.user == null) {
+      return Response(statusCode: 401, body: 'Unauthorized: Invalid token');
+    }
+
+    // 6. Надаємо користувача в контекст і передаємо керування далі
+    newContext = newContext.provide<User>(() => userResponse.user!);
+    return handler(newContext);
   };
 }
