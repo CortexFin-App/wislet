@@ -14,37 +14,21 @@ Future<Response> onRequest(RequestContext context) async {
   final password = body['password'] as String?;
 
   if (email == null || password == null) {
-    return Response(
-      statusCode: HttpStatus.badRequest,
-      body: 'Email and password are required',
-    );
+    return Response(statusCode: HttpStatus.badRequest, body: 'Email and password are required');
   }
 
   try {
-    final response = await supabase.auth.signUp(
-      email: email,
-      password: password,
-    );
+    final response = await supabase.auth.signUp(email: email, password: password);
 
-    final user = response.user;
-    if (user != null && response.session == null) {
+    if (response.user != null && response.session == null) {
       return Response.json(body: {'status': 'needs_confirmation'});
     } else {
-      return Response(
-        statusCode: HttpStatus.badRequest,
-        body: 'User might already exist or another issue occurred.',
-      );
+      return Response(statusCode: HttpStatus.badRequest, body: 'User might already exist or another issue occurred.');
     }
-  } on AuthException catch (e, stackTrace) {
-    // Грамотно обробляємо помилку автентифікації
-    logger.severe('!!! Supabase AuthException !!!', e, stackTrace);
+  } on AuthException catch (e) {
     return Response(statusCode: HttpStatus.badRequest, body: e.message);
   } catch (e, stackTrace) {
-    // Грамотно обробляємо будь-яку іншу помилку
-    logger.severe('!!! Generic signUp ERROR !!!', e, stackTrace);
-    return Response(
-      statusCode: HttpStatus.internalServerError,
-      body: 'An unexpected server error occurred.',
-    );
+    logger.severe('Generic signUp ERROR', e, stackTrace);
+    return Response(statusCode: HttpStatus.internalServerError, body: 'An unexpected server error occurred.');
   }
 }
