@@ -42,9 +42,9 @@ class _LoginRegisterScreenState extends State<LoginRegisterScreen>
       ),
       body: TabBarView(
         controller: _tabController,
-        children: const [
-          _AuthForm(isLogin: true),
-          _AuthForm(isLogin: false),
+        children: [
+          _AuthForm(isLogin: true, tabController: _tabController),
+          _AuthForm(isLogin: false, tabController: _tabController),
         ],
       ),
     );
@@ -53,7 +53,8 @@ class _LoginRegisterScreenState extends State<LoginRegisterScreen>
 
 class _AuthForm extends StatefulWidget {
   final bool isLogin;
-  const _AuthForm({required this.isLogin});
+  final TabController tabController;
+  const _AuthForm({required this.isLogin, required this.tabController});
 
   @override
   State<_AuthForm> createState() => _AuthFormState();
@@ -66,6 +67,7 @@ class _AuthFormState extends State<_AuthForm> {
   final _authService = getIt<AuthService>();
   bool _isLoading = false;
   String? _errorMessage;
+  bool _showConfirmationMessage = false;
 
   @override
   void dispose() {
@@ -85,17 +87,29 @@ class _AuthFormState extends State<_AuthForm> {
     try {
       if (widget.isLogin) {
         await _authService.login(
-            _emailController.text, _passwordController.text);
+            _emailController.text.trim(), _passwordController.text.trim());
+        if (mounted) {
+          context.read<AppModeProvider>().switchToOnlineMode();
+          Navigator.of(context).pop();
+        }
       } else {
-        await _authService.register(
-            _emailController.text, _passwordController.text);
+        final result = await _authService.register(
+            _emailController.text.trim(), _passwordController.text.trim());
+        if (mounted) {
+          if (result == RegistrationResult.needsConfirmation) {
+            setState(() {
+              _showConfirmationMessage = true;
+            });
+          } else if (result == RegistrationResult.success) {
+            context.read<AppModeProvider>().switchToOnlineMode();
+            Navigator.of(context).pop();
+          } else {
+            setState(() {
+              _errorMessage = 'Не вдалося зареєструватися. Можливо, користувач вже існує.';
+            });
+          }
+        }
       }
-      
-      if (mounted) {
-        context.read<AppModeProvider>().switchToOnlineMode();
-        Navigator.of(context).pop();
-      }
-
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -113,6 +127,35 @@ class _AuthFormState extends State<_AuthForm> {
 
   @override
   Widget build(BuildContext context) {
+    if (_showConfirmationMessage) {
+      return Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const Icon(Icons.mark_email_read_outlined, size: 80, color: Colors.green),
+            const SizedBox(height: 24),
+            Text(
+              'Реєстрація майже завершена!',
+              style: Theme.of(context).textTheme.headlineSmall,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Ми надіслали лист на ${_emailController.text} для підтвердження вашої пошти. Будь ласка, перейдіть за посиланням у листі, щоб активувати акаунт.',
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            TextButton(
+              onPressed: () => widget.tabController.animateTo(0),
+              child: const Text('Перейти на вкладку "Вхід"'),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Form(
       key: _formKey,
       child: ListView(
@@ -149,7 +192,7 @@ class _AuthFormState extends State<_AuthForm> {
               padding: const EdgeInsets.symmetric(vertical: 16),
             ),
             child: _isLoading
-                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator())
+                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
                 : Text(widget.isLogin ? 'Увійти' : 'Зареєструватися'),
           ),
         ],

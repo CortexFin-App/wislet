@@ -15,26 +15,34 @@ Future<Response> onRequest(RequestContext context) async {
 
   if (email == null || password == null) {
     return Response(
-        statusCode: HttpStatus.badRequest, body: 'Email and password are required');
+        statusCode: HttpStatus.badRequest,
+        body: 'Email and password are required');
   }
 
   try {
     final response = await supabase.auth.signUp(email: email, password: password);
     final session = response.session;
+    final user = response.user;
+
     if (session != null) {
       return Response.json(
         body: {
+          'status': 'session_created',
           'access_token': session.accessToken,
           'refresh_token': session.refreshToken,
           'user_id': session.user.id,
-          'user_name': response.user?.userMetadata?['user_name'] ?? 'User',
+          'user_name': user?.userMetadata?['user_name'] ?? 'User',
         },
       );
-    } else {
-      logger.warning('Registration attempt failed, but no exception was thrown. User might already exist or signups are disabled.');
+    } 
+    else if (user != null && user.aud == 'authenticated') {
+      return Response.json(body: {'status': 'needs_confirmation'});
+    } 
+    else {
+      logger.warning('Registration attempt failed: ${response.toString()}');
       return Response(
-        statusCode: HttpStatus.unauthorized,
-        body: 'Registration failed. Please check if signups are enabled in Supabase settings.',
+        statusCode: HttpStatus.badRequest,
+        body: 'User might already exist or another issue occurred.',
       );
     }
   } catch (e, stackTrace) {

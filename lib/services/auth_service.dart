@@ -10,6 +10,8 @@ import '../core/constants/app_constants.dart';
 import 'api_client.dart';
 import 'token_storage_service.dart';
 
+enum RegistrationResult { success, needsConfirmation, failure }
+
 class AuthService {
   final LocalAuthentication _localAuth;
   final ApiClient _apiClient;
@@ -51,24 +53,36 @@ class AuthService {
     final userId = response['user_id'] as String;
     final userName = response['user_name'] as String? ?? 'User';
 
-    await _tokenStorage.saveTokens(accessToken: accessToken, refreshToken: refreshToken);
+    await _tokenStorage.saveTokens(
+        accessToken: accessToken, refreshToken: refreshToken);
     _apiClient.setAuthToken(accessToken);
     currentUser = fin_user.User(id: userId, name: userName);
   }
 
-  Future<void> register(String email, String password) async {
+  Future<RegistrationResult> register(String email, String password) async {
     final response = await _apiClient.post(
       '/auth/register',
       body: {'email': email, 'password': password},
     );
-    final accessToken = response['access_token'] as String;
-    final refreshToken = response['refresh_token'] as String;
-    final userId = response['user_id'] as String;
-    final userName = response['user_name'] as String? ?? 'User';
 
-    await _tokenStorage.saveTokens(accessToken: accessToken, refreshToken: refreshToken);
-    _apiClient.setAuthToken(accessToken);
-    currentUser = fin_user.User(id: userId, name: userName);
+    final status = response['status'] as String?;
+
+    if (status == 'session_created') {
+      final accessToken = response['access_token'] as String;
+      final refreshToken = response['refresh_token'] as String;
+      final userId = response['user_id'] as String;
+      final userName = response['user_name'] as String? ?? 'User';
+
+      await _tokenStorage.saveTokens(
+          accessToken: accessToken, refreshToken: refreshToken);
+      _apiClient.setAuthToken(accessToken);
+      currentUser = fin_user.User(id: userId, name: userName);
+      return RegistrationResult.success;
+    } else if (status == 'needs_confirmation') {
+      return RegistrationResult.needsConfirmation;
+    }
+
+    return RegistrationResult.failure;
   }
 
   Future<void> logout() async {
