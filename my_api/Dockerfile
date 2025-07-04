@@ -1,24 +1,39 @@
-# Stage 1: Build the application
+# Stage 1: Compile the application
 FROM dart:stable AS build
 
 WORKDIR /app
 
-# Copy and get dependencies
-COPY pubspec.* ./
-RUN dart pub get
+# Install Dart Frog CLI
+RUN dart pub global activate dart_frog_cli
 
-# Copy the rest of the application
+# Copy project files
 COPY . .
 
-# Build the executable from the correct source path
-RUN dart compile exe bin/server.dart -o build/bin/server
+# Get dependencies
+RUN dart pub get
+
+# Generate production build
+RUN dart_frog build
+
+# Compile the generated server entrypoint
+RUN dart compile exe build/bin/server.dart -o build/server
 
 # Stage 2: Create the minimal production image
-FROM scratch
-COPY --from=build /runtime/ /
-COPY --from=build /app/build/ /app/build/
-COPY --from=build /app/public/ /app/public/
+FROM alpine:latest
 
-# Expose port and run the server
+# Required for Dart executable to run on Alpine
+RUN apk --no-cache add libc6-compat
+
+WORKDIR /app
+
+# Copy the compiled executable from the build stage
+COPY --from=build /app/build/server .
+
+# Copy the public assets directory from the build stage
+COPY --from=build /app/public ./public
+
+# Expose the port
 EXPOSE 8080
-CMD ["/app/build/bin/server"]
+
+# Run the executable
+CMD ["./server"]
