@@ -9,60 +9,36 @@ Handler middleware(Handler handler) {
     final supabaseAnonKey = Platform.environment['SUPABASE_ANON_KEY'];
 
     if (supabaseUrl == null || supabaseAnonKey == null) {
-      stderr.writeln(
-        'CRITICAL ERROR: Supabase environment variables not found.',
-      );
-      return Response(
-        statusCode: HttpStatus.internalServerError,
-        body: 'Server configuration error',
-      );
+      return Response(statusCode: HttpStatus.internalServerError);
     }
-
     final supabase = SupabaseClient(supabaseUrl, supabaseAnonKey);
     var newContext = context.provide<SupabaseClient>(() => supabase);
 
-    logger.info('Incoming request to: ${newContext.request.uri.path}');
+    final path = newContext.request.url.path;
 
-    if (newContext.request.method == HttpMethod.options) {
-      return Response(
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-          'Access-Control-Allow-Headers':
-              'Origin, Content-Type, Authorization',
-        },
-      );
+    // ================== НАШ ГОЛОВНИЙ ДЕБАГ ==================
+    print('--- DEBUG: Received request for path: "$path" ---');
+    // =======================================================
+
+    if (path.startsWith('/auth/')) {
+      print('--- DEBUG: Path matches /auth/. Bypassing auth check. ---');
+      return handler(newContext);
     }
     
-    if (newContext.request.url.path.startsWith('/auth/')) {
-      final response = await handler(newContext);
-      return response.copyWith(
-        headers: {
-          ...response.headers,
-          'Access-Control-Allow-Origin': '*',
-        },
-      );
-    }
-
+    print('--- DEBUG: Path does NOT match /auth/. Applying auth check. ---');
     final authHeader = newContext.request.headers['Authorization'];
     if (authHeader == null || !authHeader.startsWith('Bearer ')) {
-      return Response(statusCode: 401, body: 'Unauthorized');
+      return Response(statusCode: HttpStatus.unauthorized, body: 'Unauthorized');
     }
 
     final token = authHeader.substring(7);
     final userResponse = await supabase.auth.getUser(token);
     if (userResponse.user == null) {
-      return Response(statusCode: 401, body: 'Invalid Token');
+      return Response(statusCode: HttpStatus.unauthorized, body: 'Invalid Token');
     }
-
+    
     newContext = newContext.provide<User>(() => userResponse.user!);
-    final response = await handler(newContext);
+    return handler(newContext);
 
-    return response.copyWith(
-      headers: {
-        ...response.headers,
-        'Access-Control-Allow-Origin': '*',
-      },
-    );
   }.use(requestLogger());
 }
