@@ -25,14 +25,12 @@ Future<Response> _get(
 ) async {
   final params = context.request.url.queryParameters;
   final walletId = int.tryParse(params['walletId'] ?? '');
-
   if (walletId == null) {
     return Response(
       statusCode: HttpStatus.badRequest,
       body: 'Wallet ID is required.',
     );
   }
-
   final isMember = await supabase.isUserMember(user.id, walletId);
   if (!isMember) return Response(statusCode: HttpStatus.forbidden);
 
@@ -58,11 +56,10 @@ Future<Response> _get(
   }
 
   final finalQuery = query.order('date', ascending: false);
-
   if (params['limit'] != null) {
     finalQuery.limit(int.parse(params['limit']!));
   }
-
+  
   final response = await finalQuery;
   return Response.json(body: response);
 }
@@ -81,13 +78,30 @@ Future<Response> _post(
       body: 'Wallet ID is required in body.',
     );
   }
-
   final canEdit = await supabase.canUserEdit(user.id, walletId);
   if (!canEdit) return Response(statusCode: HttpStatus.forbidden);
 
-  body['user_id'] = user.id;
+  final transactionData = {
+    'user_id': user.id,
+    'wallet_id': walletId,
+    'type': body['type'],
+    'original_amount': body['originalAmount'],
+    'original_currency_code': body['originalCurrencyCode'],
+    'amount_in_base_currency': body['amountInBaseCurrency'],
+    'exchange_rate_used': body['exchangeRateUsed'],
+    'category_id': body['categoryId'],
+    'date': body['date'],
+    'description': body['description'],
+    'linked_goal_id': body['linkedGoalId'],
+    'subscription_id': body['subscriptionId'],
+    'linked_transfer_id': body['linkedTransferId'],
+  };
 
-  final response =
-      await supabase.from('transactions').insert(body).select().single();
+  final response = await supabase
+      .from('transactions')
+      .insert(transactionData)
+      .select()
+      .single();
+
   return Response.json(statusCode: HttpStatus.created, body: response);
 }
