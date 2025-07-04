@@ -7,7 +7,6 @@ Future<Response> onRequest(RequestContext context) async {
     return Response(statusCode: HttpStatus.methodNotAllowed);
   }
 
-  // Ініціалізуємо Supabase прямо тут, щоб виключити всі інші фактори.
   final supabaseUrl = Platform.environment['SUPABASE_URL'];
   final supabaseAnonKey = Platform.environment['SUPABASE_ANON_KEY'];
 
@@ -17,8 +16,11 @@ Future<Response> onRequest(RequestContext context) async {
       body: 'FATAL: Supabase environment variables are not set!',
     );
   }
-
-  final supabase = SupabaseClient(supabaseUrl, supabaseAnonKey);
+  
+  // ----- ОСЬ ВИПРАВЛЕННЯ -----
+  // Ми додаємо '!', щоб запевнити компілятор, що ми вже перевірили ці змінні
+  final supabase = SupabaseClient(supabaseUrl!, supabaseAnonKey!);
+  // -------------------------
 
   try {
     final body = await context.request.json() as Map<String, dynamic>;
@@ -30,13 +32,11 @@ Future<Response> onRequest(RequestContext context) async {
     }
 
     await supabase.auth.signUp(email: email, password: password);
-
-    return Response(body: 'SUCCESS! CHECK YOUR EMAIL!');
+    
+    return Response(body: 'Success! Please check your email for confirmation.');
   } on AuthException catch (e) {
-    // Якщо помилка від Supabase (напр. юзер існує)
     return Response(statusCode: 400, body: 'AuthException: ${e.message}');
   } catch (e) {
-    // Будь-яка інша помилка
     return Response(statusCode: 500, body: 'Generic Error: ${e.toString()}');
   }
 }
