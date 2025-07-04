@@ -78,7 +78,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _toggleBiometricAuth(bool value) async {
     if (!mounted) return;
     final messenger = ScaffoldMessenger.of(context);
-    
+
     if (value) {
       final canUse = await _authService.canUseBiometrics();
       if (!canUse) {
@@ -87,7 +87,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         );
         return;
       }
-      
+
       final authenticated = await _authService.authenticateWithBiometrics();
       if (authenticated) {
         await _authService.setBiometricsEnabled(true);
@@ -281,11 +281,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
           SegmentedButton<ThemeMode>(
             segments: const <ButtonSegment<ThemeMode>>[
               ButtonSegment<ThemeMode>(
-                  value: ThemeMode.light, label: Text('Світла'), icon: Icon(Icons.wb_sunny_outlined)),
+                  value: ThemeMode.light,
+                  label: Text('Світла'),
+                  icon: Icon(Icons.wb_sunny_outlined)),
               ButtonSegment<ThemeMode>(
-                  value: ThemeMode.dark, label: Text('Темна'), icon: Icon(Icons.nightlight_outlined)),
+                  value: ThemeMode.dark,
+                  label: Text('Темна'),
+                  icon: Icon(Icons.nightlight_outlined)),
               ButtonSegment<ThemeMode>(
-                  value: ThemeMode.system, label: Text('Системна'), icon: Icon(Icons.settings_suggest_outlined)),
+                  value: ThemeMode.system,
+                  label: Text('Системна'),
+                  icon: Icon(Icons.settings_suggest_outlined)),
             ],
             selected: <ThemeMode>{themeProvider.themeMode},
             onSelectionChanged: (Set<ThemeMode> newSelection) {
