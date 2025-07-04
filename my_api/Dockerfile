@@ -29,8 +29,7 @@ WORKDIR /app
 # Copy the compiled executable from the build stage
 COPY --from=build /app/build/server .
 
-# Copy the public assets directory from the build stage
-COPY --from=build /app/public ./public
+# РЯДОК, ЩО КОПІЮВАВ ПАПКУ /public, ВИДАЛЕНО
 
 # Expose the port
 EXPOSE 8080
