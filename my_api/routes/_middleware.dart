@@ -1,10 +1,14 @@
 import 'dart:io';
-
 import 'package:dart_frog/dart_frog.dart';
-import 'package:supabase/supabase.dart' hide HttpMethod; 
+import 'package:supabase/supabase.dart' hide HttpMethod;
+import '../src/logger.dart';
 
 Handler middleware(Handler handler) {
   return (RequestContext context) async {
+    // --- ДІАГНОСТИЧНЕ ЛОГУВАННЯ ---
+    logger.info('Incoming request to: ${context.request.uri.path} with headers: ${context.request.headers}');
+    // -----------------------------
+
     final supabaseUrl = Platform.environment['SUPABASE_URL'];
     final supabaseAnonKey = Platform.environment['SUPABASE_ANON_KEY'];
 
@@ -17,7 +21,7 @@ Handler middleware(Handler handler) {
         body: 'Server configuration error',
       );
     }
-
+    
     final supabase = SupabaseClient(supabaseUrl, supabaseAnonKey);
     var newContext = context.provide<SupabaseClient>(() => supabase);
 
@@ -30,7 +34,7 @@ Handler middleware(Handler handler) {
         },
       );
     }
-
+    
     if (newContext.request.url.path.startsWith('/auth/')) {
       final response = await handler(newContext);
       return response.copyWith(
@@ -40,23 +44,22 @@ Handler middleware(Handler handler) {
         },
       );
     }
-
+    
     final authHeader = newContext.request.headers['Authorization'];
     if (authHeader == null || !authHeader.startsWith('Bearer ')) {
       return Response(statusCode: 401, body: 'Unauthorized');
     }
-
+    
     final token = authHeader.substring(7);
     final userResponse = await supabase.auth.getUser(token);
 
     if (userResponse.user == null) {
       return Response(statusCode: 401, body: 'Invalid Token');
     }
-
+    
     newContext = newContext.provide<User>(() => userResponse.user!);
-
     final response = await handler(newContext);
-
+    
     return response.copyWith(
       headers: {
         ...response.headers,
