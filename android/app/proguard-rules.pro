@@ -12,6 +12,10 @@
     @android.webkit.JavascriptInterface <methods>;
 }
 
+# Rules for flutter_local_notifications plugin
+-keep class com.dexterous.flutterlocalnotifications.** { *; }
+-keep class com.google.gson.** { *; }
+
 # Rules for local_auth plugin
 -keep class androidx.appcompat.app.AppCompatDialogFragment
 -keep class androidx.fragment.app.Fragment

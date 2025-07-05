@@ -46,6 +46,7 @@ class ApiClient {
     final refreshToken = await tokenStorage.readRefreshToken();
 
     if (refreshToken == null) {
+      // Використовуємо listen: false, щоб уникнути помилок під час виклику з фону
       await getIt<AuthService>().logout();
       throw ApiException(message: 'Session expired. Please log in again.', statusCode: 401);
     }
@@ -61,7 +62,6 @@ class ApiClient {
         final newTokens = jsonDecode(response.body);
         final newAccessToken = newTokens['access_token'] as String;
         final newRefreshToken = newTokens['refresh_token'] as String;
-
         await tokenStorage.saveTokens(accessToken: newAccessToken, refreshToken: newRefreshToken);
         setAuthToken(newAccessToken);
         return newAccessToken;
@@ -75,7 +75,7 @@ class ApiClient {
     }
   }
 
-  Map<String, String> _getHeaders(String path) {
+  Map<String, String> _getHeaders() {
     final headers = <String, String>{
       'Content-Type': 'application/json; charset=UTF-8',
     };
@@ -84,11 +84,14 @@ class ApiClient {
     }
     return headers;
   }
-  
+
   Future<dynamic> _request(String path, Future<http.Response> Function(Map<String, String> headers) requestFunc) async {
     final isPublicRoute = path.startsWith('/auth/');
+    var headers = _getHeaders();
     
-    final headers = isPublicRoute ? {'Content-Type': 'application/json; charset=UTF-8'} : _getHeaders(path);
+    if (isPublicRoute) {
+      headers.remove(HttpHeaders.authorizationHeader);
+    }
 
     var response = await requestFunc(headers);
 
@@ -97,14 +100,13 @@ class ApiClient {
         _isRefreshing = true;
         try {
           await _refreshToken();
-          final newHeaders = _getHeaders(path);
+          var newHeaders = _getHeaders();
           response = await requestFunc(newHeaders);
         } finally {
           _isRefreshing = false;
         }
       }
     }
-
     return _processResponse(response);
   }
 

@@ -20,31 +20,26 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   tz.initializeTimeZones();
 
-  // --- ІНІЦІАЛІЗАЦІЯ SUPABASE ---
   await Supabase.initialize(
     url: 'https://xdofjorgomwdyawmwbcj.supabase.co',
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkb2Zqb3Jnb213ZHlhd213YmNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkzMzE0MTcsImV4cCI6MjA2NDkwNzQxN30.2i9ru8fXLZEYD_jNHoHd0ZJmN4k9gKcPOChdiuL_AMY',
+    anonKey:
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkb2Zqb3Jnb213ZHlhd213YmNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkzMzE0MTcsImV4cCI6MjA2NDkwNzQxN30.2i9ru8fXLZEYD_jNHoHd0ZJmN4k9gKcPOChdiuL_AMY',
   );
-  // ---------------------------------
 
   await configureDependencies();
 
-  // tryToRestoreSession тепер буде оброблятися інакше, через слухач Supabase
-  final authService = getIt<AuthService>();
-  authService.listenToAuthChanges();
-  
+  getIt<AuthService>().listenToAuthChanges();
+
   if (!kIsWeb) {
     await getIt<BillingService>().init();
     await getIt<NotificationService>().init();
   }
-  
+
   runApp(const MyApp());
 }
 
-// Решта файлу MyApp без змін...
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
@@ -57,6 +52,7 @@ class MyApp extends StatelessWidget {
           create: (context) => WalletProvider(
             getIt(),
             getIt(),
+            getIt(), // Додано InvitationRepository
             context.read<AppModeProvider>(),
             getIt<AuthService>(),
           ),

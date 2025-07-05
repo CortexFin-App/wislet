@@ -1,16 +1,20 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../core/di/injector.dart';
 import '../core/constants/app_constants.dart';
 import '../models/wallet.dart';
 import '../data/repositories/wallet_repository.dart';
 import '../data/repositories/user_repository.dart';
+import '../data/repositories/invitation_repository.dart';
 import '../services/auth_service.dart';
 import 'app_mode_provider.dart';
 
 class WalletProvider with ChangeNotifier {
   final WalletRepository _walletRepository;
   final UserRepository _userRepository;
+  final InvitationRepository _invitationRepository;
   final AppModeProvider _appModeProvider;
   final AuthService _authService;
 
@@ -30,8 +34,13 @@ class WalletProvider with ChangeNotifier {
     return role == 'owner' || role == 'editor';
   }
 
-  WalletProvider(this._walletRepository, this._userRepository,
-      this._appModeProvider, this._authService) {
+  WalletProvider(
+    this._walletRepository,
+    this._userRepository,
+    this._invitationRepository,
+    this._appModeProvider,
+    this._authService,
+  ) {
     _appModeProvider.addListener(onAppModeChanged);
   }
 
@@ -63,11 +72,12 @@ class WalletProvider with ChangeNotifier {
 
       if (_wallets.isNotEmpty) {
         int walletToLoadId;
-        if (lastWalletId != null && _wallets.any((w) => w.id == lastWalletId)) {
+        if (lastWalletId != null &&
+            _wallets.any((w) => w.id == lastWalletId)) {
           walletToLoadId = lastWalletId;
         } else {
-          final defaultWallet =
-              _wallets.firstWhere((w) => w.isDefault, orElse: () => _wallets.first);
+          final defaultWallet = _wallets.firstWhere((w) => w.isDefault,
+              orElse: () => _wallets.first);
           walletToLoadId = defaultWallet.id!;
         }
         await switchWallet(walletToLoadId, shouldNotify: false);
@@ -145,6 +155,19 @@ class WalletProvider with ChangeNotifier {
       notifyListeners();
     } catch (e) {
       throw Exception('Не вдалося додати користувача: $e');
+    }
+  }
+
+  Future<void> createAndShareInvitation(int walletId, String walletName) async {
+    try {
+      final token = await _invitationRepository.generateInvitation(walletId);
+      final invitationLink = 'https://cortexfinapp.com/invite?token=$token';
+      final message =
+          'Привіт! Приєднуйся до мого гаманця "$walletName" у Sage Wallet. Ось посилання: $invitationLink';
+      await Share.share(message,
+          subject: 'Запрошення до гаманця "$walletName"');
+    } catch (e) {
+      debugPrint('Failed to create and share invitation: $e');
     }
   }
 }

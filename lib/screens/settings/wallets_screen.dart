@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:sage_wallet_reborn/services/supabase_extensions.dart';
 import '../../providers/wallet_provider.dart';
 import '../../models/wallet.dart';
 import '../../data/repositories/invitation_repository.dart';
