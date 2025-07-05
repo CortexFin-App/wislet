@@ -1,94 +1,80 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
+import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
-import 'package:crypto/crypto.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sage_wallet_reborn/models/user.dart' as fin_user;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/constants/app_constants.dart';
-import 'api_client.dart';
 import 'token_storage_service.dart';
 
 enum RegistrationResult { success, needsConfirmation, failure }
 
 class AuthService {
+  final SupabaseClient _supabase = Supabase.instance.client;
   final LocalAuthentication _localAuth;
-  final ApiClient _apiClient;
   final TokenStorageService _tokenStorage;
-  static const _pinKey = 'user_pin_code_hashed';
-  static const _pinSaltKey = 'user_pin_salt';
 
   fin_user.User? currentUser;
+  StreamSubscription<AuthState>? _authStateSubscription;
 
-  AuthService(this._apiClient, this._tokenStorage, this._localAuth);
+  AuthService(this._localAuth, this._tokenStorage);
 
-  Future<bool> tryToRestoreSession() async {
-    final token = await _tokenStorage.readAccessToken();
-    if (token == null || token.isEmpty) {
-      return false;
-    }
-
-    _apiClient.setAuthToken(token);
-    try {
-      final userData = await _apiClient.get('/auth/me');
-      if (userData != null) {
-        currentUser = fin_user.User.fromMap(userData);
-        return true;
+  void listenToAuthChanges() {
+    _authStateSubscription = _supabase.auth.onAuthStateChange.listen((data) {
+      final Session? session = data.session;
+      if (session != null && session.user != null) {
+        currentUser = fin_user.User(
+          id: session.user.id,
+          name: session.user.userMetadata?['user_name'] ?? 'User',
+        );
+      } else {
+        currentUser = null;
       }
-      return false;
-    } catch (e) {
-      await logout();
-      return false;
+    });
+
+    final initialSession = _supabase.auth.currentSession;
+    if (initialSession != null) {
+      currentUser = fin_user.User(
+          id: initialSession.user.id,
+          name: initialSession.user.userMetadata?['user_name'] ?? 'User');
     }
   }
 
   Future<void> login(String email, String password) async {
-    final response = await _apiClient.post(
-      '/auth/login',
+    final response = await _supabase.functions.invoke(
+      'login',
       body: {'email': email, 'password': password},
     );
-    final accessToken = response['access_token'] as String;
-    final refreshToken = response['refresh_token'] as String;
-    final userId = response['user_id'] as String;
-    final userName = response['user_name'] as String? ?? 'User';
 
-    await _tokenStorage.saveTokens(
-        accessToken: accessToken, refreshToken: refreshToken);
-    _apiClient.setAuthToken(accessToken);
-    currentUser = fin_user.User(id: userId, name: userName);
+    if (response.status != 200) {
+      throw Exception(response.data?['error'] ?? 'Login failed');
+    }
   }
 
   Future<RegistrationResult> register(String email, String password) async {
-    final response = await _apiClient.post(
-      '/auth/register',
+    final response = await _supabase.functions.invoke(
+      'register',
       body: {'email': email, 'password': password},
     );
 
-    final status = response['status'] as String?;
-
-    if (status == 'session_created') {
-      final accessToken = response['access_token'] as String;
-      final refreshToken = response['refresh_token'] as String;
-      final userId = response['user_id'] as String;
-      final userName = response['user_name'] as String? ?? 'User';
-
-      await _tokenStorage.saveTokens(
-          accessToken: accessToken, refreshToken: refreshToken);
-      _apiClient.setAuthToken(accessToken);
-      currentUser = fin_user.User(id: userId, name: userName);
-      return RegistrationResult.success;
-    } else if (status == 'needs_confirmation') {
-      return RegistrationResult.needsConfirmation;
+    if (response.status != 200) {
+      throw Exception(response.data?['error'] ?? 'Registration failed');
     }
 
-    return RegistrationResult.failure;
+    return RegistrationResult.needsConfirmation;
   }
 
   Future<void> logout() async {
-    await _tokenStorage.deleteTokens();
-    _apiClient.setAuthToken(null);
+    await _supabase.auth.signOut();
     currentUser = null;
+  }
+
+  void dispose() {
+    _authStateSubscription?.cancel();
   }
 
   Future<bool> canUseBiometrics() async {
@@ -133,15 +119,19 @@ class AuthService {
   }
 
   Future<void> setPin(String newPin) async {
+    const pinKey = 'user_pin_code_hashed';
+    const pinSaltKey = 'user_pin_salt';
     final salt = _generateSalt();
     final hashedPin = _hashPin(newPin, salt);
-    await _tokenStorage.write(key: _pinKey, value: hashedPin);
-    await _tokenStorage.write(key: _pinSaltKey, value: salt);
+    await _tokenStorage.write(key: pinKey, value: hashedPin);
+    await _tokenStorage.write(key: pinSaltKey, value: salt);
   }
 
   Future<bool> verifyPin(String pin) async {
-    final storedHash = await _tokenStorage.read(key: _pinKey);
-    final storedSalt = await _tokenStorage.read(key: _pinSaltKey);
+    const pinKey = 'user_pin_code_hashed';
+    const pinSaltKey = 'user_pin_salt';
+    final storedHash = await _tokenStorage.read(key: pinKey);
+    final storedSalt = await _tokenStorage.read(key: pinSaltKey);
     if (storedHash == null || storedSalt == null) {
       return false;
     }
@@ -150,7 +140,8 @@ class AuthService {
   }
 
   Future<bool> hasPin() async {
-    final storedPin = await _tokenStorage.read(key: _pinKey);
+    const pinKey = 'user_pin_code_hashed';
+    final storedPin = await _tokenStorage.read(key: pinKey);
     return storedPin != null && storedPin.isNotEmpty;
   }
 

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'core/di/injector.dart';
 import 'providers/app_mode_provider.dart';
@@ -15,12 +16,22 @@ import 'services/billing_service.dart';
 import 'services/navigation_service.dart';
 import 'services/notification_service.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   tz.initializeTimeZones();
+
+  // --- ІНІЦІАЛІЗАЦІЯ SUPABASE ---
+  await Supabase.initialize(
+    url: 'https://xdofjorgomwdyawmwbcj.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkb2Zqb3Jnb213ZHlhd213YmNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkzMzE0MTcsImV4cCI6MjA2NDkwNzQxN30.2i9ru8fXLZEYD_jNHoHd0ZJmN4k9gKcPOChdiuL_AMY',
+  );
+  // ---------------------------------
+
   await configureDependencies();
 
-  await getIt<AuthService>().tryToRestoreSession();
+  // tryToRestoreSession тепер буде оброблятися інакше, через слухач Supabase
+  final authService = getIt<AuthService>();
+  authService.listenToAuthChanges();
   
   if (!kIsWeb) {
     await getIt<BillingService>().init();
@@ -30,6 +41,7 @@ void main() async {
   runApp(const MyApp());
 }
 
+// Решта файлу MyApp без змін...
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 

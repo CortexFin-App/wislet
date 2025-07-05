@@ -1,11 +1,12 @@
-import 'package:sage_wallet_reborn/models/notification_history_item.dart';
-import 'package:sage_wallet_reborn/data/repositories/notification_repository.dart';
+import '../../../models/notification_history_item.dart';
+import '../notification_repository.dart';
 
-class ApiNotificationRepositoryImpl implements NotificationRepository {
-  ApiNotificationRepositoryImpl();
-
+class SupabaseNotificationRepositoryImpl implements NotificationRepository {
+  SupabaseNotificationRepositoryImpl();
+  
   @override
   Future<void> addNotificationToHistory(String title, String body, String? payload) async {
+    // Client-side notifications are not stored on the server.
     return;
   }
 
