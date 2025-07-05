@@ -5,6 +5,9 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'core/di/injector.dart';
+import 'data/repositories/invitation_repository.dart';
+import 'data/repositories/user_repository.dart';
+import 'data/repositories/wallet_repository.dart';
 import 'providers/app_mode_provider.dart';
 import 'providers/currency_provider.dart';
 import 'providers/pro_status_provider.dart';
@@ -45,15 +48,16 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => getIt<ThemeProvider>()),
         ChangeNotifierProvider(create: (_) => getIt<CurrencyProvider>()),
         ChangeNotifierProvider(create: (_) => getIt<ProStatusProvider>()),
-        ChangeNotifierProvider(create: (_) => getIt<AppModeProvider>()),
-        ChangeNotifierProvider(
-          create: (context) => WalletProvider(
-            getIt(),
-            getIt(),
-            getIt(),
-            context.read<AppModeProvider>(),
-            getIt<AuthService>(),
-          ),
+        ChangeNotifierProvider(create: (_) => getIt<AuthService>()),
+        ChangeNotifierProxyProvider<AuthService, AppModeProvider>(
+          create: (_) => getIt<AppModeProvider>(),
+          update: (_, authService, appModeProvider) =>
+              appModeProvider!..onAuthChanged(authService),
+        ),
+        ChangeNotifierProxyProvider<AppModeProvider, WalletProvider>(
+          create: (_) => getIt<WalletProvider>(),
+          update: (_, appModeProvider, walletProvider) =>
+              walletProvider!..onAppModeChanged(appModeProvider),
         ),
       ],
       child: Consumer<ThemeProvider>(
@@ -90,7 +94,7 @@ class MyApp extends StatelessWidget {
             ),
             navigatorKey: NavigationService.navigatorKey,
             localizationsDelegates: const [
-              GlobalMaterialLocalizations.delegate,
+              GlobalMaterializations.delegate,
               GlobalWidgetsLocalizations.delegate,
               GlobalCupertinoLocalizations.delegate,
             ],
