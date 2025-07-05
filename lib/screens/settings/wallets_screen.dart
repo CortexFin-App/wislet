@@ -6,6 +6,7 @@ import '../../models/wallet.dart';
 import '../../data/repositories/invitation_repository.dart';
 import '../../core/di/injector.dart';
 import '../../data/repositories/wallet_repository.dart';
+import 'add_edit_wallet_screen.dart';
 
 class WalletsScreen extends StatefulWidget {
   const WalletsScreen({super.key});
@@ -54,7 +55,7 @@ class _WalletsScreenState extends State<WalletsScreen> {
     final messenger = ScaffoldMessenger.of(context);
     try {
       final invitationToken = await _invitationRepo.generateInvitation(wallet.id!);
-      final link = 'sagelink://invite?code=$invitationToken';
+      final link = 'https://cortexfinapp.com/invite?code=$invitationToken';
       await Share.share(
           'Привіт! Запрошую тебе до свого спільного гаманця "${wallet.name}" в додатку Гаманець Мудреця:\n\n$link');
     } catch (e) {
