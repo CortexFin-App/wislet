@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:sage_wallet_reborn/core/di/injector.dart';
-import 'package:sage_wallet_reborn/providers/app_mode_provider.dart';
 import 'package:sage_wallet_reborn/services/auth_service.dart';
 
 class LoginRegisterScreen extends StatefulWidget {
@@ -11,8 +9,7 @@ class LoginRegisterScreen extends StatefulWidget {
   State<LoginRegisterScreen> createState() => _LoginRegisterScreenState();
 }
 
-class _LoginRegisterScreenState extends State<LoginRegisterScreen>
-    with SingleTickerProviderStateMixin {
+class _LoginRegisterScreenState extends State<LoginRegisterScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
@@ -64,7 +61,6 @@ class _AuthFormState extends State<_AuthForm> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _authService = getIt<AuthService>();
   bool _isLoading = false;
   String? _errorMessage;
   bool _showConfirmationMessage = false;
@@ -85,41 +81,29 @@ class _AuthFormState extends State<_AuthForm> {
     });
 
     try {
+      final authService = context.read<AuthService>();
       if (widget.isLogin) {
-        await _authService.login(
+        await authService.login(
             _emailController.text.trim(), _passwordController.text.trim());
-        if (mounted) {
-          Navigator.of(context).pop();
-        }
+        if (mounted) Navigator.of(context).pop();
       } else {
-        final result = await _authService.register(
+        final result = await authService.register(
             _emailController.text.trim(), _passwordController.text.trim());
         if (mounted) {
           if (result == RegistrationResult.needsConfirmation) {
-            setState(() {
-              _showConfirmationMessage = true;
-            });
+            setState(() => _showConfirmationMessage = true);
           } else if (result == RegistrationResult.success) {
             Navigator.of(context).pop();
-          } else {
-            setState(() {
-              _errorMessage =
-                  'Не вдалося зареєструватися. Можливо, користувач вже існує.';
-            });
           }
         }
       }
     } catch (e) {
       if (mounted) {
-        setState(() {
-          _errorMessage = e.toString();
-        });
+        setState(() => _errorMessage = e.toString());
       }
     } finally {
       if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+        setState(() => _isLoading = false);
       }
     }
   }
@@ -133,19 +117,15 @@ class _AuthFormState extends State<_AuthForm> {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const Icon(Icons.mark_email_read_outlined,
-                size: 80, color: Colors.green),
+            const Icon(Icons.mark_email_read_outlined, size: 80, color: Colors.green),
             const SizedBox(height: 24),
-            Text(
-              'Реєстрація майже завершена!',
-              style: Theme.of(context).textTheme.headlineSmall,
-              textAlign: TextAlign.center,
-            ),
+            Text('Реєстрація майже завершена!',
+                style: Theme.of(context).textTheme.headlineSmall,
+                textAlign: TextAlign.center),
             const SizedBox(height: 16),
             Text(
-              'Ми надіслали лист на ${_emailController.text} для підтвердження вашої пошти. Будь ласка, перейдіть за посиланням у листі, щоб активувати акаунт.',
-              textAlign: TextAlign.center,
-            ),
+                'Ми надіслали лист на ${_emailController.text} для підтвердження вашої пошти. Будь ласка, перейдіть за посиланням у листі, щоб активувати акаунт.',
+                textAlign: TextAlign.center),
             const SizedBox(height: 24),
             TextButton(
               onPressed: () => widget.tabController.animateTo(0),
@@ -173,9 +153,8 @@ class _AuthFormState extends State<_AuthForm> {
             controller: _passwordController,
             decoration: const InputDecoration(labelText: 'Пароль'),
             obscureText: true,
-            validator: (value) => value == null || value.length < 6
-                ? 'Пароль має бути не менше 6 символів'
-                : null,
+            validator: (value) =>
+                value == null || value.length < 6 ? 'Пароль має бути не менше 6 символів' : null,
           ),
           const SizedBox(height: 24),
           if (_errorMessage != null)
@@ -193,10 +172,7 @@ class _AuthFormState extends State<_AuthForm> {
               padding: const EdgeInsets.symmetric(vertical: 16),
             ),
             child: _isLoading
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2))
+                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
                 : Text(widget.isLogin ? 'Увійти' : 'Зареєструватися'),
           ),
         ],

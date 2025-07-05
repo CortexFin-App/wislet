@@ -1,64 +1,45 @@
-# Гаманець Мудреця (Sage's Wallet) by CortexFin
+# Sage's Wallet (by CortexFin)
 
-**Гаманець Мудреця** — це сучасний, крос-платформний мобільний додаток для управління особистими фінансами, розроблений компанією CortexFin. Його мета — надати користувачам потужні інструменти для відстеження витрат, планування бюджетів та досягнення фінансових цілей.
+Sage's Wallet is a modern, cross-platform mobile application for personal finance management, developed by CortexFin. Its goal is to provide users with powerful tools for tracking expenses, planning budgets, and achieving financial goals.
 
-Проєкт побудований на сучасному стеку з фокусом на якість, масштабованість та безпеку.
+The project is built on a modern tech stack with a focus on quality, scalability, and security, featuring a full offline-first approach.
 
-## ✨ Основні Можливості
+---
 
-* **Мульти-гаманці:** Керування кількома незалежними гаманцями.
-* **Спільний доступ:** Можливість запрошувати інших користувачів до гаманців з різними ролями (власник, редактор).
-* **Транзакції:** Повноцінне CRUD-управління доходами та витратами.
-* **Мультивалютність:** Підтримка кількох валют з автоматичним отриманням курсів від НБУ.
-* **Бюджетування:** Створення бюджетів за різними стратегіями (включаючи конвертну систему).
-* **Фінансові цілі та борги:** Інструменти для відстеження накопичень та управління боргами.
-* **OCR та QR Сканування:** Автоматичне розпізнавання даних з чеків за допомогою камери та QR-кодів.
-* **Безпека:** PIN-код та біометрична автентифікація для захисту даних.
-* **Офлайн-режим:** Повноцінна робота з локальною базою даних SQLite з подальшою синхронізацією.
+### ✨ Key Features
 
-## 🛠️ Технологічний Стек
+* **Multi-Wallet Management:** Create and manage multiple independent wallets.
+* **Shared Access:** Invite other users to wallets with different roles (owner, editor).
+* **Full Transaction CRUD:** Comprehensive management of incomes, expenses, and transfers.
+* **Multi-Currency Support:** Support for multiple currencies with real-time exchange rates.
+* **Budgeting:** Create budgets using various strategies, including an envelope system.
+* **Financial Goals & Debt Tracking:** Tools for tracking savings and managing debts.
+* **OCR & QR Code Scanning:** Automatically recognize data from receipts using the camera and QR codes.
+* **Enhanced Security:** PIN code and biometric authentication to protect user data.
+* **Offline-First Mode:** Full functionality with a local SQLite database, with background data synchronization.
 
-### Frontend (Мобільний додаток)
+---
 
-* **Фреймворк:** Flutter
-* **Архітектура:** Repository Pattern
+### 🛠️ Tech Stack & Architecture
+
+This project was built using modern technologies and best practices to ensure high quality and maintainability.
+
+#### **Frontend (Mobile App)**
+
+* **Framework:** Flutter
+* **Architecture:** Clean Architecture & Repository Pattern
 * **State Management:** Provider
 * **Dependency Injection:** GetIt
-* **Локальна база даних:** SQLite
-* **Безпечне сховище:** flutter_secure_storage (для токенів)
-* **Монетизація:** Google Play Billing
+* **Local Database:** SQLite
+* **Secure Storage:** flutter_secure_storage (for auth tokens)
+* **Monetization:** Google Play Billing
 
-### Backend (API)
+#### **Backend (Serverless)**
 
-* **Фреймворк:** Dart Frog
-* **База даних:** Supabase (PostgreSQL)
-* **Автентифікація:** Supabase Auth
-* **AI Сервіси:** Google Cloud (Vertex AI Vision API) для OCR.
-* **Деплоймент:** Docker
+* **Platform:** **Supabase**
+* **Database:** PostgreSQL
+* **Authentication:** Supabase Auth
+* **Cloud Logic:** Supabase Edge Functions (TypeScript) for secure server-side operations.
+* **AI Services:** Google Cloud (Vertex AI Vision API) for OCR functionality.
 
-### Інфраструктура
-
-* **Хостинг:** DigitalOcean (Droplet Ubuntu 24.04)
-* **Веб-сервер / Reverse Proxy:** Caddy (з автоматичним HTTPS від Let's Encrypt)
-* **Домен:** cortexfinapp.com
-
-## 🚀 Запуск та Встановлення
-
-Для запуску проєкту в режимі розробки необхідно виконати наступні кроки.
-
-### Вимоги
-
-* Встановлений Flutter SDK
-* Встановлений Docker
-
-### Запуск Backend
-
-1.  Перейдіть у директорію API: `cd my_api`
-2.  Створіть файл `.env` з необхідними ключами (`SUPABASE_URL`, `SUPABASE_SERVICE_KEY` і т.д.).
-3.  Запустіть сервер для розробки: `dart_frog dev`
-
-### Запуск Frontend
-
-1.  Перейдіть у директорію додатку: `cd sage_wallet_reborn`
-2.  Встановіть залежності: `flutter pub get`
-3.  Запустіть додаток: `flutter run`
+*A note on architecture: The backend was strategically migrated from a self-hosted stack (Dart Frog, Docker) to a managed serverless architecture to dramatically increase stability, security, and reduce operational overhead.*
