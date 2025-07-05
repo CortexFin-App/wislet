@@ -42,6 +42,10 @@ import '../../data/repositories/supabase/supabase_transaction_repository_impl.da
 import '../../data/repositories/supabase/supabase_user_repository_impl.dart';
 import '../../data/repositories/supabase/supabase_wallet_repository_impl.dart';
 import '../../providers/app_mode_provider.dart';
+import '../../providers/currency_provider.dart';
+import '../../providers/pro_status_provider.dart';
+import '../../providers/theme_provider.dart';
+import '../../providers/wallet_provider.dart';
 import '../../services/ai_categorization_service.dart';
 import '../../services/analytics_service.dart';
 import '../../services/auth_service.dart';
@@ -64,7 +68,6 @@ Future<void> configureDependencies() async {
   getIt.registerSingleton<SupabaseClient>(Supabase.instance.client);
   getIt.registerLazySingleton(() => LocalAuthentication());
   getIt.registerLazySingleton(() => TokenStorageService());
-  getIt.registerLazySingleton(() => AuthService(getIt(), getIt()));
   getIt.registerLazySingleton<DatabaseHelper>(() => DatabaseHelper.instance);
   getIt.registerLazySingleton(() => FlutterLocalNotificationsPlugin());
   getIt.registerLazySingleton(() => OcrService(getIt()));
@@ -73,6 +76,7 @@ Future<void> configureDependencies() async {
   getIt.registerLazySingleton(() => ExchangeRateService());
   getIt.registerLazySingleton(() => NavigationService());
   getIt.registerLazySingleton<ThemeRepository>(() => LocalThemeRepositoryImpl(getIt()));
+
   getIt.registerLazySingleton(() => NotificationService(getIt(), getIt()));
   getIt.registerLazySingleton(() => BillingService());
   getIt.registerLazySingleton(() => AICategorizationService(getIt()));
@@ -80,7 +84,7 @@ Future<void> configureDependencies() async {
   getIt.registerLazySingleton(() => RepeatingTransactionService(getIt(), getIt(), getIt()));
   getIt.registerLazySingleton(() => SubscriptionService(getIt(), getIt(), getIt(), getIt()));
   getIt.registerLazySingleton(() => AnalyticsService(getIt(), getIt(), getIt()));
-
+  
   _registerRepositories();
 }
 
@@ -140,8 +144,9 @@ void _registerFactory<T extends Object>({
   required T Function() supabase,
 }) {
   getIt.registerFactory<T>(() {
-    final appMode = getIt<AppModeProvider>();
-    if (appMode.isOnline) {
+    final authService = getIt<AuthService>();
+    final isOnline = authService.currentUser != null;
+    if (isOnline) {
       return supabase();
     } else {
       return local();
