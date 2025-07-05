@@ -1,13 +1,12 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
-import 'package:sage_wallet_reborn/data/repositories/invitation_repository.dart';
-import 'package:sage_wallet_reborn/data/repositories/user_repository.dart';
-import 'package:sage_wallet_reborn/data/repositories/wallet_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'core/di/injector.dart';
+import 'data/repositories/invitation_repository.dart';
+import 'data/repositories/user_repository.dart';
+import 'data/repositories/wallet_repository.dart';
 import 'providers/app_mode_provider.dart';
 import 'providers/currency_provider.dart';
 import 'providers/pro_status_provider.dart';
@@ -31,11 +30,6 @@ Future<void> main() async {
 
   await configureDependencies();
 
-  if (!kIsWeb) {
-    await getIt<BillingService>().init();
-    await getIt<NotificationService>().init();
-  }
-
   runApp(const MyApp());
 }
 
@@ -49,20 +43,16 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => getIt<CurrencyProvider>()),
         ChangeNotifierProvider(create: (_) => getIt<ProStatusProvider>()),
         ChangeNotifierProvider(create: (_) => getIt<AuthService>()),
-        ChangeNotifierProxyProvider<AuthService, AppModeProvider>(
-          create: (_) => getIt<AppModeProvider>(),
-          update: (_, auth, appModeProvider) {
-            appModeProvider!.update(auth);
-            return appModeProvider;
-          },
+        ChangeNotifierProvider(
+          create: (context) => AppModeProvider(context.read<AuthService>()),
         ),
         ChangeNotifierProxyProvider<AppModeProvider, WalletProvider>(
-          create: (_) => WalletProvider(
+          create: (context) => WalletProvider(
             getIt<WalletRepository>(),
             getIt<UserRepository>(),
             getIt<InvitationRepository>(),
-            getIt<AppModeProvider>(),
-            getIt<AuthService>(),
+            context.read<AppModeProvider>(),
+            context.read<AuthService>(),
           ),
           update: (_, appMode, walletProvider) {
             walletProvider!.onAppModeChanged();
@@ -83,11 +73,6 @@ class MyApp extends StatelessWidget {
                 brightness: Brightness.light,
               ),
               useMaterial3: true,
-              cardTheme: CardThemeData(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(profile.borderRadius),
-                ),
-              ),
             ),
             darkTheme: ThemeData(
               fontFamily: profile.fontFamily,
@@ -96,11 +81,6 @@ class MyApp extends StatelessWidget {
                 brightness: Brightness.dark,
               ),
               useMaterial3: true,
-              cardTheme: CardThemeData(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(profile.borderRadius),
-                ),
-              ),
             ),
             navigatorKey: NavigationService.navigatorKey,
             localizationsDelegates: const [

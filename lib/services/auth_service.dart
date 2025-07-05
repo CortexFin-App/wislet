@@ -26,8 +26,7 @@ class AuthService with ChangeNotifier {
 
   void _initialize() {
     _supabase.auth.onAuthStateChange.listen((data) {
-      final session = data.session;
-      _updateUser(session);
+      _updateUser(data.session);
     });
 
     final initialSession = _supabase.auth.currentSession;
@@ -37,10 +36,11 @@ class AuthService with ChangeNotifier {
   }
   
   void _updateUser(Session? session) {
-    if (session != null && session.user != null) {
+    final user = session?.user;
+    if (user != null) {
       currentUser = fin_user.User(
-        id: session.user.id,
-        name: session.user.userMetadata?['user_name'] ?? 'User',
+        id: user.id,
+        name: user.userMetadata?['user_name'] ?? 'User',
       );
     } else {
       currentUser = null;

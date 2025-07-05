@@ -42,9 +42,6 @@ import '../../data/repositories/supabase/supabase_transaction_repository_impl.da
 import '../../data/repositories/supabase/supabase_user_repository_impl.dart';
 import '../../data/repositories/supabase/supabase_wallet_repository_impl.dart';
 import '../../providers/app_mode_provider.dart';
-import '../../providers/currency_provider.dart';
-import '../../providers/pro_status_provider.dart';
-import '../../providers/theme_provider.dart';
 import '../../services/ai_categorization_service.dart';
 import '../../services/analytics_service.dart';
 import '../../services/auth_service.dart';
@@ -76,9 +73,6 @@ Future<void> configureDependencies() async {
   getIt.registerLazySingleton(() => ExchangeRateService());
   getIt.registerLazySingleton(() => NavigationService());
   getIt.registerLazySingleton<ThemeRepository>(() => LocalThemeRepositoryImpl(getIt()));
-
-  _registerRepositories();
-
   getIt.registerLazySingleton(() => NotificationService(getIt(), getIt()));
   getIt.registerLazySingleton(() => BillingService());
   getIt.registerLazySingleton(() => AICategorizationService(getIt()));
@@ -86,9 +80,8 @@ Future<void> configureDependencies() async {
   getIt.registerLazySingleton(() => RepeatingTransactionService(getIt(), getIt(), getIt()));
   getIt.registerLazySingleton(() => SubscriptionService(getIt(), getIt(), getIt(), getIt()));
   getIt.registerLazySingleton(() => AnalyticsService(getIt(), getIt(), getIt()));
-  getIt.registerLazySingleton(() => ThemeProvider(getIt()));
-  getIt.registerLazySingleton(() => CurrencyProvider());
-  getIt.registerLazySingleton(() => ProStatusProvider());
+
+  _registerRepositories();
 }
 
 void _registerRepositories() {
