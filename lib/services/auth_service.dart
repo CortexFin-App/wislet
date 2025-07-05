@@ -18,13 +18,16 @@ class AuthService {
   final LocalAuthentication _localAuth;
   final TokenStorageService _tokenStorage;
 
+  final _authStreamController = StreamController<fin_user.User?>.broadcast();
+  Stream<fin_user.User?> get onAuthChanged => _authStreamController.stream;
   fin_user.User? currentUser;
-  StreamSubscription<AuthState>? _authStateSubscription;
 
-  AuthService(this._localAuth, this._tokenStorage);
+  AuthService(this._localAuth, this._tokenStorage) {
+    _initialize();
+  }
 
-  void listenToAuthChanges() {
-    _authStateSubscription = _supabase.auth.onAuthStateChange.listen((data) {
+  void _initialize() {
+    _supabase.auth.onAuthStateChange.listen((data) {
       final Session? session = data.session;
       if (session != null && session.user != null) {
         currentUser = fin_user.User(
@@ -34,6 +37,7 @@ class AuthService {
       } else {
         currentUser = null;
       }
+      _authStreamController.add(currentUser);
     });
 
     final initialSession = _supabase.auth.currentSession;
@@ -45,36 +49,35 @@ class AuthService {
   }
 
   Future<void> login(String email, String password) async {
-    final response = await _supabase.functions.invoke(
-      'login',
-      body: {'email': email, 'password': password},
+    final response = await _supabase.auth.signInWithPassword(
+      email: email,
+      password: password,
     );
-
-    if (response.status != 200) {
-      throw Exception(response.data?['error'] ?? 'Login failed');
+    if (response.user == null) {
+      throw Exception('Login failed');
     }
   }
 
   Future<RegistrationResult> register(String email, String password) async {
-    final response = await _supabase.functions.invoke(
-      'register',
-      body: {'email': email, 'password': password},
+    final response = await _supabase.auth.signUp(
+      email: email,
+      password: password,
     );
-
-    if (response.status != 200) {
-      throw Exception(response.data?['error'] ?? 'Registration failed');
+    if (response.user != null && response.session == null) {
+      return RegistrationResult.needsConfirmation;
     }
-
-    return RegistrationResult.needsConfirmation;
+    if (response.user != null && response.session != null) {
+      return RegistrationResult.success;
+    }
+    throw Exception('Registration failed');
   }
 
   Future<void> logout() async {
     await _supabase.auth.signOut();
-    currentUser = null;
   }
 
   void dispose() {
-    _authStateSubscription?.cancel();
+    _authStreamController.close();
   }
 
   Future<bool> canUseBiometrics() async {
@@ -90,7 +93,6 @@ class AuthService {
   Future<bool> authenticateWithBiometrics() async {
     try {
       if (!await canUseBiometrics()) {
-        debugPrint('Biometrics are not supported or not enabled.');
         return false;
       }
       return await _localAuth.authenticate(
@@ -100,8 +102,7 @@ class AuthService {
           biometricOnly: false,
         ),
       );
-    } on PlatformException catch (e) {
-      debugPrint('Biometric authentication error: ${e.code} - ${e.message}');
+    } on PlatformException {
       return false;
     }
   }

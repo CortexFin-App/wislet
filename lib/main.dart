@@ -28,8 +28,6 @@ Future<void> main() async {
 
   await configureDependencies();
 
-  getIt<AuthService>().listenToAuthChanges();
-
   if (!kIsWeb) {
     await getIt<BillingService>().init();
     await getIt<NotificationService>().init();
@@ -52,7 +50,7 @@ class MyApp extends StatelessWidget {
           create: (context) => WalletProvider(
             getIt(),
             getIt(),
-            getIt(), // Додано InvitationRepository
+            getIt(),
             context.read<AppModeProvider>(),
             getIt<AuthService>(),
           ),

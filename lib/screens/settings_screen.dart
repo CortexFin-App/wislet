@@ -70,13 +70,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _logout() async {
-    if (!mounted) return;
-    final appModeProvider = context.read<AppModeProvider>();
     await _authService.logout();
-    appModeProvider.switchToLocalMode();
   }
-  
-  // ... решта методів (_toggleBiometricAuth, _navigateToPinSetup, і т.д.) залишаються без змін ...
+
   Future<void> _toggleBiometricAuth(bool value) async {
     if (!mounted) return;
     final messenger = ScaffoldMessenger.of(context);
@@ -85,7 +81,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final canUse = await _authService.canUseBiometrics();
       if (!canUse) {
         messenger.showSnackBar(
-          const SnackBar(content: Text('Біометрію не налаштовано на вашому пристрої.')),
+          const SnackBar(
+              content: Text('Біометрію не налаштовано на вашому пристрої.')),
         );
         return;
       }
@@ -101,7 +98,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         );
       } else {
         messenger.showSnackBar(
-          const SnackBar(content: Text('Автентифікацію скасовано або не пройдено.')),
+          const SnackBar(
+              content: Text('Автентифікацію скасовано або не пройдено.')),
         );
       }
     } else {
@@ -147,8 +145,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final String timestamp =
           DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
       final String fileName = 'finance_app_backup_$timestamp.json';
-      final file =
-          XFile.fromData(jsonBytes, mimeType: 'application/json', name: fileName);
+      final file = XFile.fromData(jsonBytes,
+          mimeType: 'application/json', name: fileName);
       await Share.shareXFiles([file],
           subject: 'Резервна копія Гаманця Мудреця');
     } catch (e) {
@@ -209,8 +207,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
         messenger.showSnackBar(
           const SnackBar(
-              content: Text(
-                  'Дані успішно відновлено! Перезапустіть додаток.')),
+              content:
+                  Text('Дані успішно відновлено! Перезапустіть додаток.')),
         );
       } else {
         messenger.showSnackBar(
@@ -229,7 +227,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     final themeProvider = context.watch<ThemeProvider>();
@@ -245,19 +242,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
         children: <Widget>[
-          // ... існуючий код ...
-
-          // --- ІНТЕГРОВАНО: Умовне відображення кнопки Входу/Виходу ---
           if (!appModeProvider.isOnline)
             ListTile(
-              leading: Icon(Icons.cloud_sync_outlined, color: Theme.of(context).colorScheme.primary),
-              title: Text('Увійти / Синхронізація', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+              leading: Icon(Icons.cloud_sync_outlined,
+                  color: Theme.of(context).colorScheme.primary),
+              title: Text('Увійти / Синхронізація',
+                  style: TextStyle(
+                      color: Theme.of(context).colorScheme.primary)),
               trailing: const Icon(Icons.chevron_right),
               onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginRegisterScreen()));
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const LoginRegisterScreen()));
               },
             ),
-          
           Card(
             elevation: 2,
             color: Theme.of(context).colorScheme.primaryContainer,
@@ -267,7 +266,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               title: Text('Гаманець Мудреця Pro',
                   style: textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onPrimaryContainer)),
+                      color:
+                          Theme.of(context).colorScheme.onPrimaryContainer)),
               subtitle: Text(
                   proStatusProvider.isPro
                       ? 'Статус активовано'
@@ -337,8 +337,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: const Text('Управління гаманцями'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (context) => const WalletsScreen()));
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const WalletsScreen()));
             },
           ),
           if (appModeProvider.isOnline)
@@ -358,8 +360,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: const Text('Управління категоріями'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (context) => const CategoriesScreen()));
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const CategoriesScreen()));
             },
           ),
           ListTile(

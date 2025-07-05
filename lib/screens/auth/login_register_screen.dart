@@ -89,7 +89,6 @@ class _AuthFormState extends State<_AuthForm> {
         await _authService.login(
             _emailController.text.trim(), _passwordController.text.trim());
         if (mounted) {
-          context.read<AppModeProvider>().switchToOnlineMode();
           Navigator.of(context).pop();
         }
       } else {
@@ -101,11 +100,11 @@ class _AuthFormState extends State<_AuthForm> {
               _showConfirmationMessage = true;
             });
           } else if (result == RegistrationResult.success) {
-            context.read<AppModeProvider>().switchToOnlineMode();
             Navigator.of(context).pop();
           } else {
             setState(() {
-              _errorMessage = 'Не вдалося зареєструватися. Можливо, користувач вже існує.';
+              _errorMessage =
+                  'Не вдалося зареєструватися. Можливо, користувач вже існує.';
             });
           }
         }
@@ -134,7 +133,8 @@ class _AuthFormState extends State<_AuthForm> {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const Icon(Icons.mark_email_read_outlined, size: 80, color: Colors.green),
+            const Icon(Icons.mark_email_read_outlined,
+                size: 80, color: Colors.green),
             const SizedBox(height: 24),
             Text(
               'Реєстрація майже завершена!',
@@ -173,8 +173,9 @@ class _AuthFormState extends State<_AuthForm> {
             controller: _passwordController,
             decoration: const InputDecoration(labelText: 'Пароль'),
             obscureText: true,
-            validator: (value) =>
-                value == null || value.length < 6 ? 'Пароль має бути не менше 6 символів' : null,
+            validator: (value) => value == null || value.length < 6
+                ? 'Пароль має бути не менше 6 символів'
+                : null,
           ),
           const SizedBox(height: 24),
           if (_errorMessage != null)
@@ -192,7 +193,10 @@ class _AuthFormState extends State<_AuthForm> {
               padding: const EdgeInsets.symmetric(vertical: 16),
             ),
             child: _isLoading
-                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2))
                 : Text(widget.isLogin ? 'Увійти' : 'Зареєструватися'),
           ),
         ],
