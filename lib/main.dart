@@ -2,12 +2,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
+import 'package:sage_wallet_reborn/data/repositories/invitation_repository.dart';
+import 'package:sage_wallet_reborn/data/repositories/user_repository.dart';
+import 'package:sage_wallet_reborn/data/repositories/wallet_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'core/di/injector.dart';
-import 'data/repositories/invitation_repository.dart';
-import 'data/repositories/user_repository.dart';
-import 'data/repositories/wallet_repository.dart';
 import 'providers/app_mode_provider.dart';
 import 'providers/currency_provider.dart';
 import 'providers/pro_status_provider.dart';
@@ -51,13 +51,23 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => getIt<AuthService>()),
         ChangeNotifierProxyProvider<AuthService, AppModeProvider>(
           create: (_) => getIt<AppModeProvider>(),
-          update: (_, authService, appModeProvider) =>
-              appModeProvider!..onAuthChanged(authService),
+          update: (_, auth, appModeProvider) {
+            appModeProvider!.update(auth);
+            return appModeProvider;
+          },
         ),
         ChangeNotifierProxyProvider<AppModeProvider, WalletProvider>(
-          create: (_) => getIt<WalletProvider>(),
-          update: (_, appModeProvider, walletProvider) =>
-              walletProvider!..onAppModeChanged(appModeProvider),
+          create: (_) => WalletProvider(
+            getIt<WalletRepository>(),
+            getIt<UserRepository>(),
+            getIt<InvitationRepository>(),
+            getIt<AppModeProvider>(),
+            getIt<AuthService>(),
+          ),
+          update: (_, appMode, walletProvider) {
+            walletProvider!.onAppModeChanged();
+            return walletProvider;
+          },
         ),
       ],
       child: Consumer<ThemeProvider>(
@@ -94,7 +104,7 @@ class MyApp extends StatelessWidget {
             ),
             navigatorKey: NavigationService.navigatorKey,
             localizationsDelegates: const [
-              GlobalMaterializations.delegate,
+              GlobalMaterialLocalizations.delegate,
               GlobalWidgetsLocalizations.delegate,
               GlobalCupertinoLocalizations.delegate,
             ],

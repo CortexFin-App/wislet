@@ -75,7 +75,6 @@ Future<void> configureDependencies() async {
   getIt.registerLazySingleton(() => ReportGenerationService());
   getIt.registerLazySingleton(() => ExchangeRateService());
   getIt.registerLazySingleton(() => NavigationService());
-  getIt.registerLazySingleton(() => AppModeProvider(getIt()));
   getIt.registerLazySingleton<ThemeRepository>(() => LocalThemeRepositoryImpl(getIt()));
 
   _registerRepositories();

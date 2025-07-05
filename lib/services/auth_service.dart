@@ -13,13 +13,11 @@ import 'token_storage_service.dart';
 
 enum RegistrationResult { success, needsConfirmation, failure }
 
-class AuthService {
+class AuthService with ChangeNotifier {
   final SupabaseClient _supabase = Supabase.instance.client;
   final LocalAuthentication _localAuth;
   final TokenStorageService _tokenStorage;
 
-  final _authStreamController = StreamController<fin_user.User?>.broadcast();
-  Stream<fin_user.User?> get onAuthChanged => _authStreamController.stream;
   fin_user.User? currentUser;
 
   AuthService(this._localAuth, this._tokenStorage) {
@@ -28,24 +26,26 @@ class AuthService {
 
   void _initialize() {
     _supabase.auth.onAuthStateChange.listen((data) {
-      final Session? session = data.session;
-      if (session != null && session.user != null) {
-        currentUser = fin_user.User(
-          id: session.user.id,
-          name: session.user.userMetadata?['user_name'] ?? 'User',
-        );
-      } else {
-        currentUser = null;
-      }
-      _authStreamController.add(currentUser);
+      final session = data.session;
+      _updateUser(session);
     });
 
     final initialSession = _supabase.auth.currentSession;
     if (initialSession != null) {
-      currentUser = fin_user.User(
-          id: initialSession.user.id,
-          name: initialSession.user.userMetadata?['user_name'] ?? 'User');
+      _updateUser(initialSession);
     }
+  }
+  
+  void _updateUser(Session? session) {
+    if (session != null && session.user != null) {
+      currentUser = fin_user.User(
+        id: session.user.id,
+        name: session.user.userMetadata?['user_name'] ?? 'User',
+      );
+    } else {
+      currentUser = null;
+    }
+    notifyListeners();
   }
 
   Future<void> login(String email, String password) async {
@@ -74,10 +74,6 @@ class AuthService {
 
   Future<void> logout() async {
     await _supabase.auth.signOut();
-  }
-
-  void dispose() {
-    _authStreamController.close();
   }
 
   Future<bool> canUseBiometrics() async {

@@ -4,20 +4,17 @@ import '../services/auth_service.dart';
 enum AppMode { local, online }
 
 class AppModeProvider with ChangeNotifier {
-  final AuthService _authService;
   AppMode _mode = AppMode.local;
-
-  AppModeProvider(this._authService) {
-    _mode = _authService.currentUser != null ? AppMode.online : AppMode.local;
-    _authService.onAuthChanged.listen((user) {
-      final newMode = user != null ? AppMode.online : AppMode.local;
-      if (_mode != newMode) {
-        _mode = newMode;
-        notifyListeners();
-      }
-    });
-  }
 
   AppMode get mode => _mode;
   bool get isOnline => _mode == AppMode.online;
+
+  void update(AuthService authService) {
+    final newMode = authService.currentUser != null ? AppMode.online : AppMode.local;
+    if (_mode != newMode) {
+      _mode = newMode;
+      // Важливо! Сповіщуємо слухачів у наступному кадрі, щоб уникнути помилок під час білду.
+      Future.microtask(() => notifyListeners());
+    }
+  }
 }
