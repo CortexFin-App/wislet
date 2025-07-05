@@ -23,27 +23,23 @@ class SupabaseInvitationRepositoryImpl implements InvitationRepository {
       }
       return response.data['invite_token'] as String;
     } catch (e) {
-      // Тут можна додати більш детальну обробку помилок
       rethrow;
     }
   }
 
   @override
   Future<void> acceptInvitation(String token) async {
-    // TODO: Implement accepting an invitation
     throw UnimplementedError('acceptInvitation has not been implemented yet.');
   }
 
   @override
   Future<List<Invitation>> getMyPendingInvitations() async {
-    // TODO: Implement fetching pending invitations
     return [];
   }
 
   @override
   Future<void> respondToInvitation(
       String invitationId, InvitationStatus status) async {
-    // TODO: Implement responding to an invitation
     throw UnimplementedError('respondToInvitation has not been implemented yet.');
   }
 }

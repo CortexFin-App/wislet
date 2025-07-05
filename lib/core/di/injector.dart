@@ -60,7 +60,6 @@ import '../../services/repeating_transaction_service.dart';
 import '../../services/subscription_service.dart';
 import '../../services/token_storage_service.dart';
 import '../../utils/database_helper.dart';
-import '../../services/api_client.dart';
 
 final getIt = GetIt.instance;
 
@@ -71,7 +70,6 @@ Future<void> configureDependencies() async {
   getIt.registerLazySingleton(() => AuthService(getIt(), getIt()));
   getIt.registerLazySingleton<DatabaseHelper>(() => DatabaseHelper.instance);
   getIt.registerLazySingleton(() => FlutterLocalNotificationsPlugin());
-  getIt.registerLazySingleton(() => ApiClient());
   getIt.registerLazySingleton(() => OcrService(getIt()));
   getIt.registerLazySingleton(() => ReceiptParser());
   getIt.registerLazySingleton(() => ReportGenerationService());

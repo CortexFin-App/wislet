@@ -2,12 +2,11 @@ import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../core/di/injector.dart';
 import '../core/constants/app_constants.dart';
+import '../data/repositories/invitation_repository.dart';
 import '../models/wallet.dart';
 import '../data/repositories/wallet_repository.dart';
 import '../data/repositories/user_repository.dart';
-import '../data/repositories/invitation_repository.dart';
 import '../services/auth_service.dart';
 import 'app_mode_provider.dart';
 
