@@ -1,7 +1,9 @@
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:sage_wallet_reborn/core/constants/app_constants.dart';
 import 'package:sage_wallet_reborn/models/wallet.dart';
 import 'package:sage_wallet_reborn/utils/database_helper.dart';
 import 'package:sage_wallet_reborn/data/repositories/wallet_repository.dart';
-import 'package:sqflite/sqflite.dart';
 import 'package:sage_wallet_reborn/models/user.dart';
 import 'package:sage_wallet_reborn/data/static/default_categories.dart';
 
@@ -81,6 +83,13 @@ class LocalWalletRepositoryImpl implements WalletRepository {
 
   @override
   Future<void> createInitialWallet() async {
+    final prefs = await SharedPreferences.getInstance();
+    final bool alreadyCreated = prefs.getBool(AppConstants.prefsKeyInitialWalletCreated) ?? false;
+
+    if (alreadyCreated) {
+      return;
+    }
+
     final db = await _dbHelper.database;
     await db.transaction((txn) async {
       const userId = '1';
@@ -99,6 +108,8 @@ class LocalWalletRepositoryImpl implements WalletRepository {
             conflictAlgorithm: ConflictAlgorithm.ignore);
       }
     });
+
+    await prefs.setBool(AppConstants.prefsKeyInitialWalletCreated, true);
   }
 
   @override

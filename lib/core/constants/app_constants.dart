@@ -10,5 +10,6 @@ class AppConstants {
   static const String prefsKeyAiCategorization = 'ai_categorization_enabled';
   static const String prefsKeyThemeMode = 'themeMode';
   static const String prefsKeyThemeProfileName = 'theme_profile_name';
+  static const String prefsKeyInitialWalletCreated = 'initial_wallet_created';
   static const String baseCurrencyCode = 'UAH';
 }
