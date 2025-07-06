@@ -63,37 +63,6 @@ import '../../utils/database_helper.dart';
 
 final getIt = GetIt.instance;
 
-Future<void> configureDependencies() async {
-  getIt.registerLazySingleton(() => ApiClient());
-  getIt.registerSingleton<SupabaseClient>(Supabase.instance.client);
-  getIt.registerLazySingleton(() => LocalAuthentication());
-  getIt.registerLazySingleton(() => TokenStorageService());
-  getIt.registerLazySingleton<DatabaseHelper>(() => DatabaseHelper.instance);
-  getIt.registerLazySingleton(() => FlutterLocalNotificationsPlugin());
-  getIt.registerLazySingleton(() => AuthService(getIt(), getIt()));
-  getIt.registerLazySingleton(() => AppModeProvider(getIt()));
-  
-  _registerRepositories();
-
-  getIt.registerLazySingleton(() => NavigationService());
-  getIt.registerLazySingleton(() => OcrService(getIt()));
-  getIt.registerLazySingleton(() => ReceiptParser());
-  getIt.registerLazySingleton(() => ReportGenerationService());
-  getIt.registerLazySingleton(() => ExchangeRateService());
-  getIt.registerLazySingleton(() => BillingService());
-  getIt.registerLazySingleton<ThemeRepository>(() => LocalThemeRepositoryImpl(getIt()));
-  getIt.registerLazySingleton(() => ThemeProvider(getIt()));
-  getIt.registerLazySingleton(() => CurrencyProvider());
-  getIt.registerLazySingleton(() => ProStatusProvider());
-  
-  getIt.registerLazySingleton(() => NotificationService(getIt(), getIt<NotificationRepository>()));
-  getIt.registerLazySingleton(() => AICategorizationService(getIt()));
-  getIt.registerLazySingleton(() => CashflowForecastService(getIt(), getIt(), getIt()));
-  getIt.registerLazySingleton(() => RepeatingTransactionService(getIt(), getIt(), getIt()));
-  getIt.registerLazySingleton(() => SubscriptionService(getIt(), getIt(), getIt(), getIt()));
-  getIt.registerLazySingleton(() => AnalyticsService(getIt(), getIt(), getIt()));
-}
-
 void _registerRepository<T extends Object>({
   required T Function() local,
   required T Function() supabase,
@@ -108,7 +77,17 @@ void _registerRepository<T extends Object>({
   });
 }
 
-void _registerRepositories() {
+Future<void> configureDependencies() async {
+  getIt.registerSingleton<SupabaseClient>(Supabase.instance.client);
+  getIt.registerLazySingleton(() => LocalAuthentication());
+  getIt.registerLazySingleton(() => TokenStorageService());
+  getIt.registerLazySingleton<DatabaseHelper>(() => DatabaseHelper.instance);
+  getIt.registerLazySingleton(() => FlutterLocalNotificationsPlugin());
+  getIt.registerLazySingleton(() => ApiClient());
+
+  getIt.registerLazySingleton(() => AuthService(getIt(), getIt()));
+  getIt.registerLazySingleton(() => AppModeProvider(getIt()));
+  
   _registerRepository<WalletRepository>(
       local: () => LocalWalletRepositoryImpl(getIt()),
       supabase: () => SupabaseWalletRepositoryImpl(getIt()));
@@ -145,4 +124,23 @@ void _registerRepositories() {
   _registerRepository<UserRepository>(
       local: () => LocalUserRepositoryImpl(getIt()),
       supabase: () => SupabaseUserRepositoryImpl(getIt()));
+  
+  getIt.registerLazySingleton<ThemeRepository>(() => LocalThemeRepositoryImpl(getIt()));
+
+  getIt.registerLazySingleton(() => NavigationService());
+  getIt.registerLazySingleton(() => OcrService(getIt()));
+  getIt.registerLazySingleton(() => ReceiptParser());
+  getIt.registerLazySingleton(() => ReportGenerationService());
+  getIt.registerLazySingleton(() => ExchangeRateService());
+  getIt.registerLazySingleton(() => BillingService());
+  getIt.registerLazySingleton(() => ThemeProvider(getIt()));
+  getIt.registerLazySingleton(() => CurrencyProvider());
+  getIt.registerLazySingleton(() => ProStatusProvider());
+  
+  getIt.registerLazySingleton(() => NotificationService(getIt(), getIt()));
+  getIt.registerLazySingleton(() => AICategorizationService(getIt()));
+  getIt.registerLazySingleton(() => CashflowForecastService(getIt(), getIt(), getIt()));
+  getIt.registerLazySingleton(() => RepeatingTransactionService(getIt(), getIt(), getIt()));
+  getIt.registerLazySingleton(() => SubscriptionService(getIt(), getIt(), getIt(), getIt()));
+  getIt.registerLazySingleton(() => AnalyticsService(getIt(), getIt(), getIt()));
 }

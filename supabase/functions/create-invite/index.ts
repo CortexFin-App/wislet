@@ -23,10 +23,7 @@ serve(async (req) => {
 
     const { data: { user } } = await supabaseClient.auth.getUser()
     if (!user) {
-      return new Response(JSON.stringify({ error: 'User not authenticated' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 401,
-      })
+      throw new Error('User not authenticated');
     }
 
     const { data: permission, error: permissionError } = await supabaseClient
@@ -39,10 +36,7 @@ serve(async (req) => {
     if (permissionError) throw permissionError
     
     if (!permission || (permission.role !== 'owner' && permission.role !== 'editor')) {
-      return new Response(JSON.stringify({ error: 'Insufficient permissions' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 403,
-      })
+      throw new Error('Insufficient permissions');
     }
     
     const { data: invite, error: inviteError } = await supabaseClient

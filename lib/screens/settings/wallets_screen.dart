@@ -15,7 +15,8 @@ class WalletsScreen extends StatefulWidget {
 }
 
 class _WalletsScreenState extends State<WalletsScreen> {
-  final InvitationRepository _invitationRepo = getIt<InvitationRepository>();
+  final InvitationRepository _invitationRepo =
+      getIt<InvitationRepository>(instanceName: 'supabase');
 
   @override
   void initState() {
@@ -127,7 +128,8 @@ class _WalletsScreenState extends State<WalletsScreen> {
                                   icon: const Icon(Icons.share_outlined),
                                   tooltip: 'Запросити за посиланням',
                                   onPressed: appModeProvider.isOnline
-                                      ? () => _generateAndShareInvite(context, wallet)
+                                      ? () => _generateAndShareInvite(
+                                          context, wallet)
                                       : null,
                                 );
                               },
@@ -136,13 +138,16 @@ class _WalletsScreenState extends State<WalletsScreen> {
                       onExpansionChanged: (isExpanding) {
                         if (isExpanding &&
                             wallet.id != walletProvider.currentWallet?.id) {
-                          context.read<WalletProvider>().switchWallet(wallet.id!);
+                          context
+                              .read<WalletProvider>()
+                              .switchWallet(wallet.id!);
                         }
                       },
                       children: [
                         const Divider(height: 1),
                         ...wallet.members.map((member) {
-                          bool isMemberOwner = member.user.id == wallet.ownerUserId;
+                          bool isMemberOwner =
+                              member.user.id == wallet.ownerUserId;
                           return ListTile(
                             dense: true,
                             leading: const Icon(Icons.person, size: 20),
@@ -170,10 +175,13 @@ class _WalletsScreenState extends State<WalletsScreen> {
                                         },
                                       ),
                                       IconButton(
-                                        icon: Icon(Icons.person_remove_outlined,
-                                            color: Theme.of(context).colorScheme.error),
-                                        onPressed: () => _removeUser(
-                                            context, wallet.id!, member.user.id),
+                                        icon: Icon(
+                                            Icons.person_remove_outlined,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .error),
+                                        onPressed: () => _removeUser(context,
+                                            wallet.id!, member.user.id),
                                       ),
                                     ],
                                   )
@@ -184,7 +192,9 @@ class _WalletsScreenState extends State<WalletsScreen> {
                                             ? 'Редактор'
                                             : 'Глядач'),
                                     style: TextStyle(
-                                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurfaceVariant,
                                         fontStyle: FontStyle.italic),
                                   ),
                           );
@@ -196,7 +206,8 @@ class _WalletsScreenState extends State<WalletsScreen> {
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
                               TextButton(
-                                onPressed: () => _showContextMenu(context, wallet, wallets.length > 1),
+                                onPressed: () => _showContextMenu(
+                                    context, wallet, wallets.length > 1),
                                 child: const Text('Опції гаманця'),
                               ),
                             ],
@@ -332,7 +343,8 @@ class _WalletsScreenState extends State<WalletsScreen> {
                     dialogNavigator.pop();
                   }
                   if (mounted) {
-                    messenger.showSnackBar(SnackBar(content: Text(e.toString())));
+                    messenger
+                        .showSnackBar(SnackBar(content: Text(e.toString())));
                   }
                 }
               },
