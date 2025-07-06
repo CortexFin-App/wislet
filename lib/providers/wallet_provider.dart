@@ -48,42 +48,55 @@ class WalletProvider with ChangeNotifier {
   }
 
   Future<void> loadWallets() async {
+    print("[PROVIDER_DEBUG] loadWallets START. _isLoading=true");
     _isLoading = true;
     notifyListeners();
 
     try {
       final repo = _appModeProvider.isOnline ? _supabaseWalletRepo : _localWalletRepo;
+      print("[PROVIDER_DEBUG] Mode: ${_appModeProvider.isOnline ? 'ONLINE' : 'OFFLINE'}. Using ${repo.runtimeType}");
+      
+      print("[PROVIDER_DEBUG] Getting wallets from repo...");
       _wallets = await repo.getAllWallets();
+      print("[PROVIDER_DEBUG] Got ${_wallets.length} wallets.");
 
       if (_wallets.isEmpty && !_appModeProvider.isOnline) {
+        print("[PROVIDER_DEBUG] No local wallets found, creating initial one...");
         await _localWalletRepo.createInitialWallet();
         _wallets = await _localWalletRepo.getAllWallets();
+        print("[PROVIDER_DEBUG] Initial wallet created, got ${_wallets.length} wallet(s).");
       }
+      
+      print("[PROVIDER_DEBUG] Selecting initial wallet...");
       await _selectInitialWallet();
-    } catch (e) {
-      debugPrint('Error loading wallets: $e');
+      print("[PROVIDER_DEBUG] Initial wallet selected.");
+
+    } catch (e, stackTrace) {
+      print("[PROVIDER_DEBUG] CATCH_ERROR in loadWallets: $e");
+      print("[PROVIDER_DEBUG] StackTrace: $stackTrace");
       _wallets = [];
       _currentWallet = null;
     } finally {
       _isLoading = false;
+      print("[PROVIDER_DEBUG] FINALLY block. _isLoading set to false. Notifying listeners.");
       if (hasListeners) {
         notifyListeners();
       }
     }
   }
-
+  
   Future<void> _selectInitialWallet() async {
     if (_wallets.isEmpty) {
       _currentWallet = null;
       return;
     }
-
+    
     final prefs = await SharedPreferences.getInstance();
     final lastWalletId = prefs.getInt(AppConstants.prefsKeySelectedWalletId);
 
     Wallet? walletToSelect = _wallets.firstWhereOrNull((w) => w.id == lastWalletId);
     walletToSelect ??= _wallets.firstWhereOrNull((w) => w.isDefault) ?? _wallets.first;
-
+    
     await switchWallet(walletToSelect.id!, shouldNotify: false);
   }
 
@@ -94,7 +107,8 @@ class WalletProvider with ChangeNotifier {
     if (walletObject != null) {
       final currentUserId = _authService.currentUser?.id;
       if (currentUserId != null && _appModeProvider.isOnline) {
-        final myMembership = walletObject.members.firstWhereOrNull((member) => member.user.id == currentUserId);
+        final myMembership = walletObject.members
+            .firstWhereOrNull((member) => member.user.id == currentUserId);
         walletObject.currentUserRole = myMembership?.role;
       } else {
         walletObject.currentUserRole = 'owner';
@@ -103,12 +117,12 @@ class WalletProvider with ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setInt(AppConstants.prefsKeySelectedWalletId, walletId);
     }
-
+    
     if (shouldNotify) {
       notifyListeners();
     }
   }
-  
+
   Future<void> createWallet({required String name, bool isDefault = false}) async {
     final repo = _appModeProvider.isOnline ? _supabaseWalletRepo : _localWalletRepo;
     final userId = _authService.currentUser?.id ?? '1';

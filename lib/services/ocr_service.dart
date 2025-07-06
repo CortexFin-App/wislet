@@ -1,25 +1,28 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:http/http.dart' as http;
-import 'api_client.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class OcrService {
-  final ApiClient _apiClient;
+  final SupabaseClient _supabase;
 
-  OcrService(this._apiClient);
+  OcrService(this._supabase);
 
   Future<String?> processImage(String imagePath) async {
     try {
       final imageBytes = await File(imagePath).readAsBytes();
       final imageBase64 = base64Encode(imageBytes);
 
-      final response = await _apiClient.post(
-        '/ocr',
+      final response = await _supabase.functions.invoke(
+        'ocr',
         body: {'image': imageBase64},
       );
+      
+      if (response.status != 200) {
+        throw Exception(response.data?['error'] ?? 'OCR function failed');
+      }
 
-      if (response != null && response['text'] is String) {
-        return response['text'] as String;
+      if (response.data != null && response.data['text'] is String) {
+        return response.data['text'] as String;
       }
       return null;
     } catch (e) {
