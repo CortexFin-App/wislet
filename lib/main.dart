@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
@@ -24,28 +25,30 @@ Future<void> main() async {
 
   await Supabase.initialize(
     url: 'https://xdofjorgomwdyawmwbcj.supabase.co',
-    anonKey:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkb2Zqb3Jnb213ZHlhd213YmNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkzMzE0MTcsImV4cCI6MjA2NDkwNzQxN30.2i9ru8fXLZEYD_jNHoHd0ZJmN4k9gKcPOChdiuL_AMY',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkb2Zqb3Jnb213ZHlhd213YmNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkzMzE0MTcsImV4cCI6MjA2NDkwNzQxN30.2i9ru8fXLZEYD_jNHoHd0ZJmN4k9gKcPOChdiuL_AMY',
   );
 
   await configureDependencies();
 
+  if (!kIsWeb) {
+    await getIt<NotificationService>().init();
+  }
+  
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => getIt<AuthService>()),
         ChangeNotifierProvider(create: (_) => getIt<ThemeProvider>()),
         ChangeNotifierProvider(create: (_) => getIt<CurrencyProvider>()),
         ChangeNotifierProvider(create: (_) => getIt<ProStatusProvider>()),
-        ChangeNotifierProvider(create: (_) => getIt<AuthService>()),
-        ChangeNotifierProvider(
-          create: (context) => AppModeProvider(context.read<AuthService>()),
-        ),
+        ChangeNotifierProvider(create: (ctx) => AppModeProvider(ctx.read<AuthService>())),
         ChangeNotifierProxyProvider<AppModeProvider, WalletProvider>(
           create: (context) => WalletProvider(
             getIt<WalletRepository>(),

@@ -1,5 +1,3 @@
-// Повністю замініть вміст файлу на цей код
-
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:get_it/get_it.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -66,26 +64,39 @@ import '../../utils/database_helper.dart';
 final getIt = GetIt.instance;
 
 Future<void> configureDependencies() async {
+  // CORE & EXTERNAL
   getIt.registerSingleton<SupabaseClient>(Supabase.instance.client);
   getIt.registerLazySingleton(() => LocalAuthentication());
   getIt.registerLazySingleton(() => TokenStorageService());
   getIt.registerLazySingleton<DatabaseHelper>(() => DatabaseHelper.instance);
   getIt.registerLazySingleton(() => FlutterLocalNotificationsPlugin());
+
+  // SERVICES
+  getIt.registerLazySingleton(() => AuthService(getIt(), getIt()));
+  getIt.registerLazySingleton(() => NavigationService());
   getIt.registerLazySingleton(() => OcrService(getIt()));
   getIt.registerLazySingleton(() => ReceiptParser());
   getIt.registerLazySingleton(() => ReportGenerationService());
   getIt.registerLazySingleton(() => ExchangeRateService());
-  getIt.registerLazySingleton(() => NavigationService());
-  getIt.registerLazySingleton<ThemeRepository>(() => LocalThemeRepositoryImpl(getIt()));
-  getIt.registerLazySingleton(() => NotificationService(getIt(), getIt()));
   getIt.registerLazySingleton(() => BillingService());
+  
+  // PROVIDERS (as services)
+  getIt.registerLazySingleton(() => AppModeProvider(getIt()));
+  getIt.registerLazySingleton<ThemeRepository>(() => LocalThemeRepositoryImpl(getIt()));
+  getIt.registerLazySingleton(() => ThemeProvider(getIt()));
+  getIt.registerLazySingleton(() => CurrencyProvider());
+  getIt.registerLazySingleton(() => ProStatusProvider());
+  
+  // REPOSITORIES
+  _registerRepositories();
+
+  // SERVICES THAT DEPEND ON REPOSITORIES
+  getIt.registerLazySingleton(() => NotificationService(getIt(), getIt()));
   getIt.registerLazySingleton(() => AICategorizationService(getIt()));
   getIt.registerLazySingleton(() => CashflowForecastService(getIt(), getIt(), getIt()));
   getIt.registerLazySingleton(() => RepeatingTransactionService(getIt(), getIt(), getIt()));
   getIt.registerLazySingleton(() => SubscriptionService(getIt(), getIt(), getIt(), getIt()));
   getIt.registerLazySingleton(() => AnalyticsService(getIt(), getIt(), getIt()));
-
-  _registerRepositories();
 }
 
 void _registerRepository<T extends Object>({
