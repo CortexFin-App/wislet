@@ -1,11 +1,12 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:crypto/crypto.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'dart:convert';
 import 'package:sage_wallet_reborn/models/user.dart' as fin_user;
 import '../core/constants/app_constants.dart';
 import 'token_storage_service.dart';
@@ -26,13 +27,12 @@ class AuthService with ChangeNotifier {
 
   void _initialize() {
     _authStateSubscription = _supabase.auth.onAuthStateChange.listen((data) {
-      _onAuthStateChanged(data);
+      _onAuthStateChanged(data.session);
     });
-    _onAuthStateChanged(_supabase.auth.currentAuthState);
+    _onAuthStateChanged(_supabase.auth.currentSession);
   }
 
-  void _onAuthStateChanged(AuthState data) {
-    final session = data.session;
+  void _onAuthStateChanged(Session? session) {
     final user = session?.user;
     if (user != null) {
       currentUser = fin_user.User(

@@ -5,7 +5,6 @@ import '../../providers/wallet_provider.dart';
 
 class AddEditWalletScreen extends StatefulWidget {
   final Wallet? walletToEdit;
-
   const AddEditWalletScreen({super.key, this.walletToEdit});
 
   @override
@@ -16,7 +15,6 @@ class _AddEditWalletScreenState extends State<AddEditWalletScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
   bool _isSaving = false;
-
   bool get _isEditing => widget.walletToEdit != null;
 
   @override
@@ -35,14 +33,11 @@ class _AddEditWalletScreenState extends State<AddEditWalletScreen> {
     if (!_formKey.currentState!.validate() || _isSaving) {
       return;
     }
-
     setState(() {
       _isSaving = true;
     });
-
     final walletProvider = context.read<WalletProvider>();
     final name = _nameController.text.trim();
-
     try {
       if (_isEditing) {
         final updatedWallet = Wallet(
@@ -53,9 +48,8 @@ class _AddEditWalletScreenState extends State<AddEditWalletScreen> {
         );
         await walletProvider.updateWallet(updatedWallet);
       } else {
-        await walletProvider.createWallet(name);
+        await walletProvider.createWallet(name: name);
       }
-
       if (mounted) {
         Navigator.of(context).pop(true);
       }

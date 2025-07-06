@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:app_links/app_links.dart';
@@ -48,8 +47,12 @@ class _AuthWrapperState extends State<AuthWrapper> {
   }
 
   Future<void> _initializeApp() async {
+    final walletProvider = context.read<WalletProvider>();
+    final notificationService = getIt<NotificationService>();
+
     if (_authService.currentUser != null) {
-      if (mounted) setState(() => _status = AuthStatus.authenticated);
+      if (!mounted) return;
+      setState(() => _status = AuthStatus.authenticated);
       await _runStartupChecks();
       return;
     }
@@ -57,20 +60,22 @@ class _AuthWrapperState extends State<AuthWrapper> {
     final prefs = await SharedPreferences.getInstance();
     final bool onboardingCompleted =
         prefs.getBool(AppConstants.prefsKeyOnboardingComplete) ?? false;
-    
+
     if (!onboardingCompleted) {
-      if (mounted) setState(() => _status = AuthStatus.onboarding);
+      if (!mounted) return;
+      setState(() => _status = AuthStatus.onboarding);
       return;
     }
-    
-    if(mounted) {
-      await getIt<NotificationService>().requestPermissions(context);
-      await context.read<WalletProvider>().initialLoad();
+
+    if (mounted) {
+      await notificationService.requestPermissions(context);
+      await walletProvider.loadWallets();
     }
-    
+
     final pinIsSet = await _authService.hasPin();
     if (!pinIsSet) {
-      if (mounted) setState(() => _status = AuthStatus.authenticated);
+      if (!mounted) return;
+      setState(() => _status = AuthStatus.authenticated);
       await _runStartupChecks();
       return;
     }
@@ -100,17 +105,20 @@ class _AuthWrapperState extends State<AuthWrapper> {
         _handleIncomingLink(initialUri);
       }
     } catch (e) {
+      debugPrint("Failed to get initial deeplink: $e");
     }
     _linkSubscription = _appLinks.uriLinkStream.listen((uri) {
       if (mounted) {
         _handleIncomingLink(uri);
       }
-    }, onError: (err) {});
+    }, onError: (err) {
+      debugPrint("Deeplink stream error: $err");
+    });
   }
 
   void _handleIncomingLink(Uri link) {
     if (link.pathSegments.contains('invite')) {
-      final invitationToken = link.queryParameters['code'];
+      final invitationToken = link.queryParameters['token'];
       if (invitationToken != null && invitationToken.isNotEmpty) {
         final navigator = NavigationService.navigatorKey.currentState;
         if (navigator != null && navigator.context.mounted) {
@@ -121,7 +129,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
       }
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     switch (_status) {

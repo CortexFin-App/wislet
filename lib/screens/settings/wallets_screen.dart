@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:sage_wallet_reborn/services/supabase_extensions.dart';
 import '../../providers/wallet_provider.dart';
 import '../../models/wallet.dart';
 import '../../data/repositories/invitation_repository.dart';
 import '../../core/di/injector.dart';
 import '../../data/repositories/wallet_repository.dart';
-import 'add_edit_wallet_screen.dart';
 
 class WalletsScreen extends StatefulWidget {
   const WalletsScreen({super.key});
@@ -36,19 +34,21 @@ class _WalletsScreenState extends State<WalletsScreen> {
 
   Future<void> _changeUserRole(
       int walletId, String memberUserId, String newRole) async {
-    await _walletRepo.changeUserRole(walletId, memberUserId, newRole);
-    _refreshData();
+    await context
+        .read<WalletProvider>()
+        .changeUserRole(walletId, memberUserId, newRole);
   }
 
   Future<void> _removeUser(
       BuildContext context, int walletId, String memberUserId) async {
     final messenger = ScaffoldMessenger.of(context);
-    await _walletRepo.removeUserFromWallet(walletId, memberUserId);
+    await context
+        .read<WalletProvider>()
+        .removeUserFromWallet(walletId, memberUserId);
     if (mounted) {
       messenger.showSnackBar(
           const SnackBar(content: Text('Користувача видалено з гаманця.')));
     }
-    _refreshData();
   }
 
   Future<void> _generateAndShareInvite(
@@ -71,7 +71,7 @@ class _WalletsScreenState extends State<WalletsScreen> {
   Widget build(BuildContext context) {
     final walletProvider = context.watch<WalletProvider>();
     final wallets = walletProvider.wallets;
-    final currentUserId = context.read<WalletProvider>().currentWallet?.ownerUserId;
+    final currentUserId = walletProvider.currentWallet?.ownerUserId;
 
     return Scaffold(
       appBar: AppBar(
@@ -94,7 +94,6 @@ class _WalletsScreenState extends State<WalletsScreen> {
                   final wallet = wallets[index];
                   final isCurrent = wallet.id == walletProvider.currentWallet?.id;
                   final amIOwner = wallet.ownerUserId == currentUserId;
-
                   return Card(
                     elevation: isCurrent ? 4 : 1,
                     shape: RoundedRectangleBorder(
@@ -250,7 +249,7 @@ class _WalletsScreenState extends State<WalletsScreen> {
     final walletProvider = context.read<WalletProvider>();
     final isEditing = walletToEdit != null;
     final nameController = TextEditingController(text: walletToEdit?.name ?? '');
-    
+
     return showDialog<void>(
       context: context,
       builder: (BuildContext dialogContext) {
@@ -281,9 +280,8 @@ class _WalletsScreenState extends State<WalletsScreen> {
                     );
                     await walletProvider.updateWallet(updatedWallet);
                   } else {
-                    await walletProvider.createWallet(name);
+                    await walletProvider.createWallet(name: name);
                   }
-                  await _refreshData();
                   if (navigator.context.mounted) {
                     navigator.pop();
                   }
@@ -300,7 +298,6 @@ class _WalletsScreenState extends State<WalletsScreen> {
       BuildContext context, Wallet wallet) async {
     final walletProvider = context.read<WalletProvider>();
     final messenger = ScaffoldMessenger.of(context);
-
     return showDialog<void>(
       context: context,
       builder: (BuildContext dialogContext) {
