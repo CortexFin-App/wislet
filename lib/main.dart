@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'core/di/injector.dart';
 import 'data/repositories/invitation_repository.dart';
+import 'data/repositories/user_repository.dart';
 import 'data/repositories/wallet_repository.dart';
 import 'providers/app_mode_provider.dart';
 import 'providers/currency_provider.dart';
@@ -47,12 +48,11 @@ class MyApp extends StatelessWidget {
             create: (ctx) => AppModeProvider(ctx.read<AuthService>())),
         ChangeNotifierProvider(
           create: (context) => WalletProvider(
-            getIt<WalletRepository>(instanceName: 'local'),
-            getIt<WalletRepository>(instanceName: 'supabase'),
+            getIt<WalletRepository>(),
+            getIt<UserRepository>(),
             getIt<InvitationRepository>(),
             context.read<AppModeProvider>(),
             context.read<AuthService>(),
-
           ),
         ),
       ],
