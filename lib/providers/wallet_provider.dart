@@ -1,18 +1,16 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/constants/app_constants.dart';
 import '../data/repositories/invitation_repository.dart';
 import '../models/wallet.dart';
 import '../data/repositories/wallet_repository.dart';
-import '../data/repositories/user_repository.dart';
 import '../services/auth_service.dart';
 import 'app_mode_provider.dart';
 
 class WalletProvider with ChangeNotifier {
-  final WalletRepository _walletRepository;
-  final UserRepository _userRepository;
+  final WalletRepository _localWalletRepo;
+  final WalletRepository _supabaseWalletRepo;
   final InvitationRepository _invitationRepository;
   final AppModeProvider _appModeProvider;
   final AuthService _authService;
@@ -25,148 +23,123 @@ class WalletProvider with ChangeNotifier {
   Wallet? get currentWallet => _currentWallet;
   bool get isLoading => _isLoading;
 
-  bool get canEditCurrentWallet {
-    if (_currentWallet == null || !_appModeProvider.isOnline) {
-      return true;
-    }
-    final role = _currentWallet?.currentUserRole;
-    return role == 'owner' || role == 'editor';
-  }
-
   WalletProvider(
-    this._walletRepository,
-    this._userRepository,
+    this._localWalletRepo,
+    this._supabaseWalletRepo,
     this._invitationRepository,
     this._appModeProvider,
     this._authService,
   ) {
-    _appModeProvider.addListener(onAppModeChanged);
+    _appModeProvider.addListener(loadWallets);
+    loadWallets();
   }
 
   @override
   void dispose() {
-    _appModeProvider.removeListener(onAppModeChanged);
+    _appModeProvider.removeListener(loadWallets);
     super.dispose();
   }
 
-  void onAppModeChanged() {
-    loadWallets();
-  }
-
-  Future<void> initialLoad() async {
-    await loadWallets();
+  bool get canEditCurrentWallet {
+    if (_currentWallet == null) return false;
+    if (!_appModeProvider.isOnline) return true;
+    final role = _currentWallet?.currentUserRole;
+    return role == 'owner' || role == 'editor';
   }
 
   Future<void> loadWallets() async {
     _isLoading = true;
     notifyListeners();
-    try {
-      _wallets = await _walletRepository.getAllWallets();
-      if (_wallets.isEmpty && !_appModeProvider.isOnline) {
-        await _walletRepository.createInitialWallet();
-        _wallets = await _walletRepository.getAllWallets();
-      }
-      final prefs = await SharedPreferences.getInstance();
-      final lastWalletId = prefs.getInt(AppConstants.prefsKeySelectedWalletId);
 
-      if (_wallets.isNotEmpty) {
-        int walletToLoadId;
-        if (lastWalletId != null &&
-            _wallets.any((w) => w.id == lastWalletId)) {
-          walletToLoadId = lastWalletId;
-        } else {
-          final defaultWallet = _wallets.firstWhere((w) => w.isDefault,
-              orElse: () => _wallets.first);
-          walletToLoadId = defaultWallet.id!;
-        }
-        await switchWallet(walletToLoadId, shouldNotify: false);
-      } else {
-        _currentWallet = null;
+    try {
+      final repo = _appModeProvider.isOnline ? _supabaseWalletRepo : _localWalletRepo;
+      _wallets = await repo.getAllWallets();
+
+      if (_wallets.isEmpty && !_appModeProvider.isOnline) {
+        await _localWalletRepo.createInitialWallet();
+        _wallets = await _localWalletRepo.getAllWallets();
       }
+      await _selectInitialWallet();
     } catch (e) {
       debugPrint('Error loading wallets: $e');
       _wallets = [];
       _currentWallet = null;
     } finally {
       _isLoading = false;
-      notifyListeners();
+      if (hasListeners) {
+        notifyListeners();
+      }
     }
   }
 
-  Future<void> switchWallet(int walletId, {bool shouldNotify = true}) async {
-    final walletObject = await _walletRepository.getWallet(walletId);
-    if (walletObject == null) return;
-
-    final currentUserId = _authService.currentUser?.id;
-    if (currentUserId != null) {
-      final myMembership = walletObject.members.firstWhereOrNull(
-        (member) => member.user.id == currentUserId,
-      );
-      walletObject.currentUserRole = myMembership?.role;
-    } else {
-      walletObject.currentUserRole = 'owner';
+  Future<void> _selectInitialWallet() async {
+    if (_wallets.isEmpty) {
+      _currentWallet = null;
+      return;
     }
 
-    _currentWallet = walletObject;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(AppConstants.prefsKeySelectedWalletId, walletId);
+    final lastWalletId = prefs.getInt(AppConstants.prefsKeySelectedWalletId);
+
+    Wallet? walletToSelect = _wallets.firstWhereOrNull((w) => w.id == lastWalletId);
+    walletToSelect ??= _wallets.firstWhereOrNull((w) => w.isDefault) ?? _wallets.first;
+
+    await switchWallet(walletToSelect.id!, shouldNotify: false);
+  }
+
+  Future<void> switchWallet(int walletId, {bool shouldNotify = true}) async {
+    final repo = _appModeProvider.isOnline ? _supabaseWalletRepo : _localWalletRepo;
+    final walletObject = await repo.getWallet(walletId);
+
+    if (walletObject != null) {
+      final currentUserId = _authService.currentUser?.id;
+      if (currentUserId != null && _appModeProvider.isOnline) {
+        final myMembership = walletObject.members.firstWhereOrNull((member) => member.user.id == currentUserId);
+        walletObject.currentUserRole = myMembership?.role;
+      } else {
+        walletObject.currentUserRole = 'owner';
+      }
+      _currentWallet = walletObject;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt(AppConstants.prefsKeySelectedWalletId, walletId);
+    }
 
     if (shouldNotify) {
       notifyListeners();
     }
   }
-
-  Future<void> createWallet(String name) async {
-    try {
-      final userId = _authService.currentUser?.id ?? '1';
-      await _walletRepository.createWallet(
-          name: name, ownerUserId: userId, isDefault: _wallets.isEmpty);
-      await loadWallets();
-    } catch (e) {
-      throw Exception('Не вдалося створити гаманець: $e');
-    }
+  
+  Future<void> createWallet({required String name, bool isDefault = false}) async {
+    final repo = _appModeProvider.isOnline ? _supabaseWalletRepo : _localWalletRepo;
+    final userId = _authService.currentUser?.id ?? '1';
+    await repo.createWallet(name: name, ownerUserId: userId, isDefault: isDefault);
+    await loadWallets();
   }
 
   Future<void> updateWallet(Wallet wallet) async {
-    try {
-      await _walletRepository.updateWallet(wallet);
-      await loadWallets();
-    } catch (e) {
-      throw Exception('Не вдалося оновити гаманець: $e');
-    }
+    final repo = _appModeProvider.isOnline ? _supabaseWalletRepo : _localWalletRepo;
+    await repo.updateWallet(wallet);
+    await loadWallets();
   }
 
   Future<void> deleteWallet(int walletId) async {
-    if (_wallets.length <= 1) {
-      throw Exception("Неможливо видалити єдиний гаманець.");
+    final repo = _appModeProvider.isOnline ? _supabaseWalletRepo : _localWalletRepo;
+    if (_wallets.length <= 1 && !_appModeProvider.isOnline) {
+       throw Exception("Неможливо видалити єдиний локальний гаманець.");
     }
-    try {
-      await _walletRepository.deleteWallet(walletId);
-      await loadWallets();
-    } catch (e) {
-      throw Exception('Не вдалося видалити гаманець: $e');
-    }
+    await repo.deleteWallet(walletId);
+    await loadWallets();
   }
 
-  Future<void> addUserToWallet(int walletId, String userId, String role) async {
-    try {
-      await _userRepository.addUserToWallet(walletId, userId, role);
-      notifyListeners();
-    } catch (e) {
-      throw Exception('Не вдалося додати користувача: $e');
-    }
+  Future<void> changeUserRole(int walletId, String userId, String newRole) async {
+     if (!_appModeProvider.isOnline) return;
+     await _supabaseWalletRepo.changeUserRole(walletId, userId, newRole);
+     await loadWallets();
   }
 
-  Future<void> createAndShareInvitation(int walletId, String walletName) async {
-    try {
-      final token = await _invitationRepository.generateInvitation(walletId);
-      final invitationLink = 'https://cortexfinapp.com/invite?token=$token';
-      final message =
-          'Привіт! Приєднуйся до мого гаманця "$walletName" у Sage Wallet. Ось посилання: $invitationLink';
-      await Share.share(message,
-          subject: 'Запрошення до гаманця "$walletName"');
-    } catch (e) {
-      debugPrint('Failed to create and share invitation: $e');
-    }
+  Future<void> removeUserFromWallet(int walletId, String userId) async {
+     if (!_appModeProvider.isOnline) return;
+     await _supabaseWalletRepo.removeUserFromWallet(walletId, userId);
+     await loadWallets();
   }
 }

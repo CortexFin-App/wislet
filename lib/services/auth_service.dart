@@ -1,13 +1,12 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:math';
-import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
-import 'package:sage_wallet_reborn/models/user.dart' as fin_user;
+import 'package:crypto/crypto.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:convert';
+import 'package:sage_wallet_reborn/models/user.dart' as fin_user;
 import '../core/constants/app_constants.dart';
 import 'token_storage_service.dart';
 
@@ -19,28 +18,26 @@ class AuthService with ChangeNotifier {
   final TokenStorageService _tokenStorage;
 
   fin_user.User? currentUser;
+  StreamSubscription<AuthState>? _authStateSubscription;
 
   AuthService(this._localAuth, this._tokenStorage) {
     _initialize();
   }
 
   void _initialize() {
-    _supabase.auth.onAuthStateChange.listen((data) {
-      _updateUser(data.session);
+    _authStateSubscription = _supabase.auth.onAuthStateChange.listen((data) {
+      _onAuthStateChanged(data);
     });
-
-    final initialSession = _supabase.auth.currentSession;
-    if (initialSession != null) {
-      _updateUser(initialSession);
-    }
+    _onAuthStateChanged(_supabase.auth.currentAuthState);
   }
-  
-  void _updateUser(Session? session) {
+
+  void _onAuthStateChanged(AuthState data) {
+    final session = data.session;
     final user = session?.user;
     if (user != null) {
       currentUser = fin_user.User(
         id: user.id,
-        name: user.userMetadata?['user_name'] ?? 'User',
+        name: user.userMetadata?['user_name'] as String? ?? 'User',
       );
     } else {
       currentUser = null;
@@ -49,13 +46,10 @@ class AuthService with ChangeNotifier {
   }
 
   Future<void> login(String email, String password) async {
-    final response = await _supabase.auth.signInWithPassword(
+    await _supabase.auth.signInWithPassword(
       email: email,
       password: password,
     );
-    if (response.user == null) {
-      throw Exception('Login failed');
-    }
   }
 
   Future<RegistrationResult> register(String email, String password) async {
@@ -74,6 +68,12 @@ class AuthService with ChangeNotifier {
 
   Future<void> logout() async {
     await _supabase.auth.signOut();
+  }
+
+  @override
+  void dispose() {
+    _authStateSubscription?.cancel();
+    super.dispose();
   }
 
   Future<bool> canUseBiometrics() async {

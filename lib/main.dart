@@ -6,7 +6,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'core/di/injector.dart';
 import 'data/repositories/invitation_repository.dart';
-import 'data/repositories/user_repository.dart';
 import 'data/repositories/wallet_repository.dart';
 import 'providers/app_mode_provider.dart';
 import 'providers/currency_provider.dart';
@@ -15,25 +14,21 @@ import 'providers/theme_provider.dart';
 import 'providers/wallet_provider.dart';
 import 'screens/auth/auth_wrapper.dart';
 import 'services/auth_service.dart';
-import 'services/billing_service.dart';
 import 'services/navigation_service.dart';
 import 'services/notification_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   tz.initializeTimeZones();
-
   await Supabase.initialize(
     url: 'https://xdofjorgomwdyawmwbcj.supabase.co',
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkb2Zqb3Jnb213ZHlhd213YmNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkzMzE0MTcsImV4cCI6MjA2NDkwNzQxN30.2i9ru8fXLZEYD_jNHoHd0ZJmN4k9gKcPOChdiuL_AMY',
+    anonKey:
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkb2Zqb3Jnb213ZHlhd213YmNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkzMzE0MTcsImV4cCI6MjA2NDkwNzQxN30.2i9ru8fXLZEYD_jNHoHd0ZJmN4k9gKcPOChdiuL_AMY',
   );
-
   await configureDependencies();
-
   if (!kIsWeb) {
     await getIt<NotificationService>().init();
   }
-  
   runApp(const MyApp());
 }
 
@@ -48,19 +43,17 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => getIt<ThemeProvider>()),
         ChangeNotifierProvider(create: (_) => getIt<CurrencyProvider>()),
         ChangeNotifierProvider(create: (_) => getIt<ProStatusProvider>()),
-        ChangeNotifierProvider(create: (ctx) => AppModeProvider(ctx.read<AuthService>())),
-        ChangeNotifierProxyProvider<AppModeProvider, WalletProvider>(
+        ChangeNotifierProvider(
+            create: (ctx) => AppModeProvider(ctx.read<AuthService>())),
+        ChangeNotifierProvider(
           create: (context) => WalletProvider(
-            getIt<WalletRepository>(),
-            getIt<UserRepository>(),
+            getIt<WalletRepository>(instanceName: 'local'),
+            getIt<WalletRepository>(instanceName: 'supabase'),
             getIt<InvitationRepository>(),
             context.read<AppModeProvider>(),
             context.read<AuthService>(),
+
           ),
-          update: (_, appMode, walletProvider) {
-            walletProvider!.onAppModeChanged();
-            return walletProvider;
-          },
         ),
       ],
       child: Consumer<ThemeProvider>(
