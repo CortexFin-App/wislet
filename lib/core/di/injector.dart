@@ -98,7 +98,7 @@ void _registerRepository<T extends Object>({
   required T Function() local,
   required T Function() supabase,
 }) {
-  getIt.registerLazySingleton<T>(() {
+  getIt.registerFactory<T>(() {
     final appMode = getIt<AppModeProvider>().mode;
     if (appMode == AppMode.online) {
       return supabase();
