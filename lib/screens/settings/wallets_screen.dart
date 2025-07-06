@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../providers/wallet_provider.dart';
+import '../../providers/app_mode_provider.dart';
 import '../../models/wallet.dart';
 import '../../data/repositories/invitation_repository.dart';
 import '../../core/di/injector.dart';
-import '../../data/repositories/wallet_repository.dart';
 
 class WalletsScreen extends StatefulWidget {
   const WalletsScreen({super.key});
@@ -16,7 +16,6 @@ class WalletsScreen extends StatefulWidget {
 
 class _WalletsScreenState extends State<WalletsScreen> {
   final InvitationRepository _invitationRepo = getIt<InvitationRepository>();
-  final WalletRepository _walletRepo = getIt<WalletRepository>();
 
   @override
   void initState() {
@@ -122,11 +121,16 @@ class _WalletsScreenState extends State<WalletsScreen> {
                               ?.copyWith(fontWeight: FontWeight.bold)),
                       subtitle: Text('Учасників: ${wallet.members.length}'),
                       trailing: amIOwner
-                          ? IconButton(
-                              icon: const Icon(Icons.share_outlined),
-                              tooltip: 'Запросити за посиланням',
-                              onPressed: () =>
-                                  _generateAndShareInvite(context, wallet),
+                          ? Consumer<AppModeProvider>(
+                              builder: (context, appModeProvider, child) {
+                                return IconButton(
+                                  icon: const Icon(Icons.share_outlined),
+                                  tooltip: 'Запросити за посиланням',
+                                  onPressed: appModeProvider.isOnline
+                                      ? () => _generateAndShareInvite(context, wallet)
+                                      : null,
+                                );
+                              },
                             )
                           : null,
                       onExpansionChanged: (isExpanding) {
