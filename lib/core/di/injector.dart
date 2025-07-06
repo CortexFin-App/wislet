@@ -1,3 +1,5 @@
+// Повністю замініть вміст файлу на цей код
+
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:get_it/get_it.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -45,7 +47,6 @@ import '../../providers/app_mode_provider.dart';
 import '../../providers/currency_provider.dart';
 import '../../providers/pro_status_provider.dart';
 import '../../providers/theme_provider.dart';
-import '../../providers/wallet_provider.dart';
 import '../../services/ai_categorization_service.dart';
 import '../../services/analytics_service.dart';
 import '../../services/auth_service.dart';
@@ -76,7 +77,6 @@ Future<void> configureDependencies() async {
   getIt.registerLazySingleton(() => ExchangeRateService());
   getIt.registerLazySingleton(() => NavigationService());
   getIt.registerLazySingleton<ThemeRepository>(() => LocalThemeRepositoryImpl(getIt()));
-
   getIt.registerLazySingleton(() => NotificationService(getIt(), getIt()));
   getIt.registerLazySingleton(() => BillingService());
   getIt.registerLazySingleton(() => AICategorizationService(getIt()));
@@ -84,72 +84,71 @@ Future<void> configureDependencies() async {
   getIt.registerLazySingleton(() => RepeatingTransactionService(getIt(), getIt(), getIt()));
   getIt.registerLazySingleton(() => SubscriptionService(getIt(), getIt(), getIt(), getIt()));
   getIt.registerLazySingleton(() => AnalyticsService(getIt(), getIt(), getIt()));
-  
+
   _registerRepositories();
 }
 
-void _registerRepositories() {
-  _registerFactory<BudgetRepository>(
-    local: () => LocalBudgetRepositoryImpl(getIt(), getIt(), getIt()),
-    supabase: () => SupabaseBudgetRepositoryImpl(getIt()),
-  );
-  _registerFactory<CategoryRepository>(
-    local: () => LocalCategoryRepositoryImpl(getIt()),
-    supabase: () => SupabaseCategoryRepositoryImpl(getIt()),
-  );
-  _registerFactory<DebtLoanRepository>(
-    local: () => LocalDebtLoanRepositoryImpl(getIt()),
-    supabase: () => SupabaseDebtLoanRepositoryImpl(getIt()),
-  );
-  _registerFactory<GoalRepository>(
-    local: () => LocalGoalRepositoryImpl(getIt(), getIt(), getIt()),
-    supabase: () => SupabaseGoalRepositoryImpl(getIt()),
-  );
-  _registerFactory<InvitationRepository>(
-    local: () => LocalInvitationRepositoryImpl(),
-    supabase: () => SupabaseInvitationRepositoryImpl(getIt()),
-  );
-  _registerFactory<NotificationRepository>(
-    local: () => LocalNotificationRepositoryImpl(getIt()),
-    supabase: () => SupabaseNotificationRepositoryImpl(),
-  );
-  _registerFactory<PlanRepository>(
-    local: () => LocalPlanRepositoryImpl(getIt()),
-    supabase: () => SupabasePlanRepositoryImpl(getIt()),
-  );
-  _registerFactory<RepeatingTransactionRepository>(
-    local: () => LocalRepeatingTransactionRepositoryImpl(getIt()),
-    supabase: () => SupabaseRepeatingTransactionRepositoryImpl(getIt()),
-  );
-  _registerFactory<SubscriptionRepository>(
-    local: () => LocalSubscriptionRepositoryImpl(getIt()),
-    supabase: () => SupabaseSubscriptionRepositoryImpl(getIt()),
-  );
-  _registerFactory<TransactionRepository>(
-    local: () => LocalTransactionRepositoryImpl(getIt(), getIt()),
-    supabase: () => SupabaseTransactionRepositoryImpl(getIt()),
-  );
-  _registerFactory<UserRepository>(
-    local: () => LocalUserRepositoryImpl(getIt()),
-    supabase: () => SupabaseUserRepositoryImpl(getIt()),
-  );
-  _registerFactory<WalletRepository>(
-    local: () => LocalWalletRepositoryImpl(getIt()),
-    supabase: () => SupabaseWalletRepositoryImpl(getIt()),
-  );
-}
-
-void _registerFactory<T extends Object>({
-  required T Function() local,
-  required T Function() supabase,
+void _registerRepository<T extends Object>({
+  required T Function() localImpl,
+  required T Function() supabaseImpl,
 }) {
   getIt.registerFactory<T>(() {
-    final authService = getIt<AuthService>();
-    final isOnline = authService.currentUser != null;
-    if (isOnline) {
-      return supabase();
+    final appMode = getIt<AppModeProvider>().mode;
+    if (appMode == AppMode.online) {
+      return supabaseImpl();
     } else {
-      return local();
+      return localImpl();
     }
   });
+}
+
+void _registerRepositories() {
+  _registerRepository<BudgetRepository>(
+    localImpl: () => LocalBudgetRepositoryImpl(getIt(), getIt(), getIt()),
+    supabaseImpl: () => SupabaseBudgetRepositoryImpl(getIt()),
+  );
+  _registerRepository<CategoryRepository>(
+    localImpl: () => LocalCategoryRepositoryImpl(getIt()),
+    supabaseImpl: () => SupabaseCategoryRepositoryImpl(getIt()),
+  );
+  _registerRepository<DebtLoanRepository>(
+    localImpl: () => LocalDebtLoanRepositoryImpl(getIt()),
+    supabaseImpl: () => SupabaseDebtLoanRepositoryImpl(getIt()),
+  );
+  _registerRepository<GoalRepository>(
+    localImpl: () => LocalGoalRepositoryImpl(getIt(), getIt(), getIt()),
+    supabaseImpl: () => SupabaseGoalRepositoryImpl(getIt()),
+  );
+  _registerRepository<InvitationRepository>(
+    localImpl: () => LocalInvitationRepositoryImpl(),
+    supabaseImpl: () => SupabaseInvitationRepositoryImpl(getIt()),
+  );
+  _registerRepository<NotificationRepository>(
+    localImpl: () => LocalNotificationRepositoryImpl(getIt()),
+    supabaseImpl: () => SupabaseNotificationRepositoryImpl(),
+  );
+  _registerRepository<PlanRepository>(
+    localImpl: () => LocalPlanRepositoryImpl(getIt()),
+    supabaseImpl: () => SupabasePlanRepositoryImpl(getIt()),
+  );
+  _registerRepository<RepeatingTransactionRepository>(
+    localImpl: () => LocalRepeatingTransactionRepositoryImpl(getIt()),
+    supabaseImpl: () => SupabaseRepeatingTransactionRepositoryImpl(getIt()),
+  );
+  _registerRepository<SubscriptionRepository>(
+    localImpl: () => LocalSubscriptionRepositoryImpl(getIt()),
+    supabaseImpl: () => SupabaseSubscriptionRepositoryImpl(getIt()),
+  );
+  _registerRepository<TransactionRepository>(
+    localImpl: () => LocalTransactionRepositoryImpl(getIt(), getIt()),
+    supabaseImpl: () => SupabaseTransactionRepositoryImpl(getIt()),
+  );
+  _registerRepository<UserRepository>(
+    localImpl: () => LocalUserRepositoryImpl(getIt()),
+    supabaseImpl: () => SupabaseUserRepositoryImpl(getIt()),
+  );
+  _registerRepository<WalletRepository>(
+    localImpl: () => LocalWalletRepositoryImpl(getIt()),
+    supabaseImpl: () => SupabaseWalletRepositoryImpl(getIt()),
+  );
 }

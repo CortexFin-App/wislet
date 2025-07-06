@@ -56,7 +56,7 @@ class _WalletsScreenState extends State<WalletsScreen> {
     final messenger = ScaffoldMessenger.of(context);
     try {
       final invitationToken = await _invitationRepo.generateInvitation(wallet.id!);
-      final link = 'https://cortexfinapp.com/invite?code=$invitationToken';
+      final link = 'https://cortexfinapp.com/invite?token=$invitationToken';
       await Share.share(
           'Привіт! Запрошую тебе до свого спільного гаманця "${wallet.name}" в додатку Гаманець Мудреця:\n\n$link');
     } catch (e) {

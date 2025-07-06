@@ -1,7 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../core/di/injector.dart';
 import '../../../models/invitation_model.dart';
-import '../../../services/api_client.dart';
 import '../invitation_repository.dart';
 
 class SupabaseInvitationRepositoryImpl implements InvitationRepository {
@@ -10,26 +8,22 @@ class SupabaseInvitationRepositoryImpl implements InvitationRepository {
 
   @override
   Future<String> generateInvitation(int walletId) async {
-    try {
-      final response = await _client.functions.invoke(
-        'create-invite',
-        body: {'wallet_id': walletId},
-      );
-      if (response.status != 200) {
-        throw ApiException(
-          message: response.data['error'] ?? 'Failed to create invite token',
-          statusCode: response.status!,
-        );
-      }
-      return response.data['invite_token'] as String;
-    } catch (e) {
-      rethrow;
+    final response = await _client.functions.invoke(
+      'create-invite',
+      body: {'wallet_id': walletId},
+    );
+    if (response.status != 200) {
+      throw Exception(response.data['error'] ?? 'Failed to create invite token');
     }
+    return response.data['invite_token'] as String;
   }
 
   @override
   Future<void> acceptInvitation(String token) async {
-    throw UnimplementedError('acceptInvitation has not been implemented yet.');
+    await _client.functions.invoke(
+      'accept-invite',
+      body: {'token': token},
+    );
   }
 
   @override
