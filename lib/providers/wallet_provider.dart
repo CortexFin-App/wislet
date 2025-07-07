@@ -26,14 +26,18 @@ class WalletProvider with ChangeNotifier {
     this._appModeProvider,
     this._authService,
   ) {
-    _appModeProvider.addListener(loadWallets);
+    _appModeProvider.addListener(onAppModeChanged);
     loadWallets();
   }
 
   @override
   void dispose() {
-    _appModeProvider.removeListener(loadWallets);
+    _appModeProvider.removeListener(onAppModeChanged);
     super.dispose();
+  }
+
+  void onAppModeChanged() {
+    loadWallets();
   }
 
   bool get canEditCurrentWallet {
@@ -65,7 +69,7 @@ class WalletProvider with ChangeNotifier {
       }
     }
   }
-
+  
   Future<void> _selectInitialWallet() async {
     if (_wallets.isEmpty) {
       _currentWallet = null;

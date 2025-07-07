@@ -84,10 +84,48 @@ Future<void> configureDependencies() async {
   getIt.registerLazySingleton<DatabaseHelper>(() => DatabaseHelper.instance);
   getIt.registerLazySingleton(() => FlutterLocalNotificationsPlugin());
   getIt.registerLazySingleton(() => ApiClient());
-
   getIt.registerLazySingleton(() => AuthService(getIt(), getIt()));
   getIt.registerLazySingleton(() => AppModeProvider(getIt()));
   
+  _registerRepositories();
+
+  getIt.registerLazySingleton(() => NavigationService());
+  getIt.registerLazySingleton(() => OcrService(getIt()));
+  getIt.registerLazySingleton(() => ReceiptParser());
+  getIt.registerLazySingleton(() => ReportGenerationService());
+  getIt.registerLazySingleton(() => ExchangeRateService());
+  getIt.registerLazySingleton(() => BillingService());
+  getIt.registerLazySingleton<ThemeRepository>(() => LocalThemeRepositoryImpl(getIt()));
+  getIt.registerLazySingleton(() => ThemeProvider(getIt()));
+  getIt.registerLazySingleton(() => CurrencyProvider());
+  getIt.registerLazySingleton(() => ProStatusProvider());
+  
+  getIt.registerLazySingleton(() => NotificationService(getIt(), getIt<NotificationRepository>()));
+  getIt.registerLazySingleton(() => AICategorizationService(getIt()));
+  
+  getIt.registerLazySingleton(() => CashflowForecastService(
+      getIt<TransactionRepository>(),
+      getIt<RepeatingTransactionRepository>(),
+      getIt<SubscriptionRepository>()));
+      
+  getIt.registerLazySingleton(() => RepeatingTransactionService(
+      getIt<RepeatingTransactionRepository>(),
+      getIt<TransactionRepository>(),
+      getIt<WalletRepository>()));
+      
+  getIt.registerLazySingleton(() => SubscriptionService(
+      getIt<SubscriptionRepository>(),
+      getIt<TransactionRepository>(),
+      getIt<WalletRepository>(),
+      getIt<NotificationService>()));
+
+  getIt.registerLazySingleton(() => AnalyticsService(
+      getIt<TransactionRepository>(),
+      getIt<CategoryRepository>(),
+      getIt<NotificationService>()));
+}
+
+void _registerRepositories() {
   _registerRepository<WalletRepository>(
       local: () => LocalWalletRepositoryImpl(getIt()),
       supabase: () => SupabaseWalletRepositoryImpl(getIt()));
@@ -124,23 +162,4 @@ Future<void> configureDependencies() async {
   _registerRepository<UserRepository>(
       local: () => LocalUserRepositoryImpl(getIt()),
       supabase: () => SupabaseUserRepositoryImpl(getIt()));
-  
-  getIt.registerLazySingleton<ThemeRepository>(() => LocalThemeRepositoryImpl(getIt()));
-
-  getIt.registerLazySingleton(() => NavigationService());
-  getIt.registerLazySingleton(() => OcrService(getIt()));
-  getIt.registerLazySingleton(() => ReceiptParser());
-  getIt.registerLazySingleton(() => ReportGenerationService());
-  getIt.registerLazySingleton(() => ExchangeRateService());
-  getIt.registerLazySingleton(() => BillingService());
-  getIt.registerLazySingleton(() => ThemeProvider(getIt()));
-  getIt.registerLazySingleton(() => CurrencyProvider());
-  getIt.registerLazySingleton(() => ProStatusProvider());
-  
-  getIt.registerLazySingleton(() => NotificationService(getIt(), getIt()));
-  getIt.registerLazySingleton(() => AICategorizationService(getIt()));
-  getIt.registerLazySingleton(() => CashflowForecastService(getIt(), getIt(), getIt()));
-  getIt.registerLazySingleton(() => RepeatingTransactionService(getIt(), getIt(), getIt()));
-  getIt.registerLazySingleton(() => SubscriptionService(getIt(), getIt(), getIt(), getIt()));
-  getIt.registerLazySingleton(() => AnalyticsService(getIt(), getIt(), getIt()));
 }

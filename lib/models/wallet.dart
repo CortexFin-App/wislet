@@ -34,15 +34,27 @@ class Wallet {
 
   Map<String, dynamic> toMapForApi() {
     return {
-      'id': id,
       'name': name,
-      'owner_user_id': ownerUserId,
       'is_default': isDefault,
     };
   }
 
   factory Wallet.fromMap(Map<String, dynamic> map) {
-    final List membersList = map['members'] as List? ?? [];
+    List<WalletUser> parsedMembers = [];
+    if (map['wallet_users'] is List) {
+      final List membersData = map['wallet_users'];
+      parsedMembers = membersData.map((m) {
+        final userMap = m['users'];
+        if (userMap is Map<String, dynamic>) {
+           return WalletUser(
+            user: User.fromMap(userMap),
+            role: m['role'] as String? ?? 'viewer',
+          );
+        }
+        return null;
+      }).where((item) => item != null).cast<WalletUser>().toList();
+    }
+    
     return Wallet(
       id: map['id'] as int?,
       name: map['name'] as String,
@@ -50,23 +62,13 @@ class Wallet {
       isDefault: (map['is_default'] is bool)
           ? map['is_default']
           : ((map['isDefault'] as int? ?? 0) == 1),
-      members: membersList.map((m) {
-        final userMap = m['user'] as Map<String, dynamic>?;
-        if (userMap == null) {
-          return WalletUser(user: User(id: '-1', name: 'Unknown'), role: m['role']);
-        }
-        return WalletUser(
-          user: User.fromMap(userMap),
-          role: m['role'],
-        );
-      }).toList(),
+      members: parsedMembers,
     );
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-
     return other is Wallet && other.id == id;
   }
 
