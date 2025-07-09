@@ -1,6 +1,6 @@
-// C:\sage_wallet_reborn\lib\main.dart
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -25,11 +25,11 @@ import 'services/notification_service.dart';
 Future<void> main() async {
   await ErrorMonitoringService.init(() async {
     WidgetsFlutterBinding.ensureInitialized();
+    await dotenv.load(fileName: ".env");
     tz.initializeTimeZones();
     await Supabase.initialize(
-      url: 'https://xdofjorgomwdyawmwbcj.supabase.co',
-      anonKey:
-          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkb2Zqb3Jnb213ZHlhd213YmNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkzMzE0MTcsImV4cCI6MjA2NDkwNzQxN30.2i9ru8fXLZEYD_jNHoHd0ZJmN4k9gKcPOChdiuL_AMY',
+      url: dotenv.env['SUPABASE_URL']!,
+      anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
     );
     await configureDependencies();
     if (!kIsWeb) {
