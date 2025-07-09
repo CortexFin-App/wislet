@@ -5,7 +5,7 @@ import 'package:collection/collection.dart';
 import '../../core/di/injector.dart';
 import '../../data/repositories/category_repository.dart';
 import '../../data/repositories/subscription_repository.dart';
-import '../../models/category.dart' as FinCategory;
+import '../../models/category.dart' as fin_category;
 import '../../models/currency_model.dart';
 import '../../models/subscription_model.dart';
 import '../../providers/currency_provider.dart';
@@ -25,24 +25,24 @@ class _AddEditSubscriptionScreenState extends State<AddEditSubscriptionScreen> {
   final SubscriptionRepository _subscriptionRepository = getIt<SubscriptionRepository>();
   final CategoryRepository _categoryRepository = getIt<CategoryRepository>();
   final NotificationService _notificationService = getIt<NotificationService>();
-  
+
   late TextEditingController _nameController;
   late TextEditingController _amountController;
   late TextEditingController _paymentMethodController;
   late TextEditingController _notesController;
   late TextEditingController _websiteController;
-  
+
   Currency? _selectedCurrency;
   BillingCycle _selectedBillingCycle = BillingCycle.monthly;
-  DateTime _nextPaymentDate = DateTime.now();
-  DateTime _startDate = DateTime.now();
-  FinCategory.Category? _selectedCategory;
+  late DateTime _nextPaymentDate;
+  late DateTime _startDate;
+  fin_category.Category? _selectedCategory;
   bool _isActive = true;
   int _selectedReminderDays = 1;
-  List<FinCategory.Category> _availableCategories = [];
+  List<fin_category.Category> _availableCategories = [];
   bool _isLoadingCategories = true;
   bool _isSaving = false;
-  
+
   bool get _isEditing => widget.subscriptionToEdit != null;
 
   final Map<int, String> _reminderOptions = {
@@ -57,7 +57,7 @@ class _AddEditSubscriptionScreenState extends State<AddEditSubscriptionScreen> {
   void initState() {
     super.initState();
     _loadExpenseCategories();
-    
+
     if (_isEditing) {
       final sub = widget.subscriptionToEdit!;
       _nameController = TextEditingController(text: sub.name);
@@ -88,21 +88,30 @@ class _AddEditSubscriptionScreenState extends State<AddEditSubscriptionScreen> {
     final walletProvider = context.read<WalletProvider>();
     final currentWalletId = walletProvider.currentWallet?.id;
     if (currentWalletId == null) {
-      if (mounted) setState(() => _isLoadingCategories = false);
+      if (mounted) {
+        setState(() => _isLoadingCategories = false);
+      }
       return;
     }
-    final categories = await _categoryRepository.getCategoriesByType(currentWalletId, FinCategory.CategoryType.expense);
+    final categoriesEither = await _categoryRepository.getCategoriesByType(currentWalletId, fin_category.CategoryType.expense);
     if (!mounted) return;
-    
-    setState(() {
-      _availableCategories = categories;
-      if (_isEditing && widget.subscriptionToEdit?.categoryId != null) {
-        _selectedCategory = _availableCategories.firstWhereOrNull(
-              (cat) => cat.id == widget.subscriptionToEdit!.categoryId,
-        );
+
+    categoriesEither.fold(
+      (failure) => setState(() => _isLoadingCategories = false),
+      (categories) {
+        if(mounted) {
+          setState(() {
+            _availableCategories = categories;
+            if (_isEditing && widget.subscriptionToEdit?.categoryId != null) {
+              _selectedCategory = _availableCategories.firstWhereOrNull(
+                    (cat) => cat.id == widget.subscriptionToEdit!.categoryId,
+              );
+            }
+            _isLoadingCategories = false;
+          });
+        }
       }
-      _isLoadingCategories = false;
-    });
+    );
   }
 
   DateTime _calculateNextPaymentDate(DateTime fromDate, BillingCycle cycle) {
@@ -118,7 +127,7 @@ class _AddEditSubscriptionScreenState extends State<AddEditSubscriptionScreen> {
       case BillingCycle.yearly:
         return DateTime(fromDate.year + 1, fromDate.month, fromDate.day);
       case BillingCycle.custom:
-        return fromDate.add(const Duration(days: 30)); 
+        return fromDate.add(const Duration(days: 30));
     }
   }
 
@@ -149,10 +158,12 @@ class _AddEditSubscriptionScreenState extends State<AddEditSubscriptionScreen> {
 
     final amount = double.tryParse(_amountController.text.replaceAll(',', '.'));
     if (amount == null || _selectedCurrency == null) return;
-    
+
     setState(() => _isSaving = true);
     
-    int savedSubscriptionId;
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+
     Subscription subToSave = Subscription(
       id: widget.subscriptionToEdit?.id,
       name: _nameController.text.trim(),
@@ -169,42 +180,42 @@ class _AddEditSubscriptionScreenState extends State<AddEditSubscriptionScreen> {
       reminderDaysBefore: _selectedReminderDays,
     );
 
-    try {
-        if (_isEditing) {
-            await _subscriptionRepository.updateSubscription(subToSave, walletId);
-            savedSubscriptionId = subToSave.id!;
-        } else {
-            savedSubscriptionId = await _subscriptionRepository.createSubscription(subToSave, walletId);
-        }
-        
+    final result = _isEditing
+      ? await _subscriptionRepository.updateSubscription(subToSave, walletId)
+      : await _subscriptionRepository.createSubscription(subToSave, walletId);
+
+    result.fold(
+      (failure) {
+        if(mounted) messenger.showSnackBar(SnackBar(content: Text('Помилка збереження підписки: ${failure.userMessage}')));
+      },
+      (savedSubscriptionId) async {
         final int reminderId = savedSubscriptionId * 20000 + 1;
-        
-        if (_isEditing) {
-            await _notificationService.cancelNotification(reminderId);
+
+        if (_isEditing && widget.subscriptionToEdit?.id != null) {
+          await _notificationService.cancelNotification(reminderId);
         }
 
         if (subToSave.isActive && subToSave.nextPaymentDate.isAfter(DateTime.now())) {
             DateTime reminderDateTime = subToSave.nextPaymentDate.subtract(Duration(days: subToSave.reminderDaysBefore!));
-            
+
             await _notificationService.scheduleNotificationForDueDate(
               id: reminderId,
               title: 'Нагадування про підписку: ${subToSave.name}',
               body: 'Завтра платіж на суму ${subToSave.amount.toStringAsFixed(2)} ${subToSave.currencyCode}',
               dueDateTime: reminderDateTime,
               payload: 'subscription/$savedSubscriptionId',
-              channelId: NotificationService.goalNotificationChannelId, 
+              channelId: NotificationService.goalNotificationChannelId,
             );
         }
         
         if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_isEditing ? 'Підписку оновлено!' : 'Підписку створено!')));
-            Navigator.of(context).pop(true);
+            messenger.showSnackBar(SnackBar(content: Text(_isEditing ? 'Підписку оновлено!' : 'Підписку створено!')));
+            navigator.pop(true);
         }
-    } catch (e) {
-        if(mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Помилка збереження підписки: $e')));
-    } finally {
-        if (mounted) setState(() => _isSaving = false);
-    }
+      }
+    );
+
+    if (mounted) setState(() => _isSaving = false);
   }
 
   @override
@@ -265,20 +276,19 @@ class _AddEditSubscriptionScreenState extends State<AddEditSubscriptionScreen> {
                           if (v == null || v.isEmpty) return 'Введіть суму';
                           if (double.tryParse(v.replaceAll(',', '.')) == null) return 'Невірне число';
                           if (double.parse(v.replaceAll(',', '.')) <= 0) return 'Сума > 0';
-                          return null;
-                      },
+                          return null; },
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     flex: 2,
-                      child: DropdownButtonFormField<Currency>(
+                    child: DropdownButtonFormField<Currency>(
                           value: _selectedCurrency,
                           decoration: const InputDecoration(labelText: 'Валюта'),
                           items: appCurrencies.map((c) => DropdownMenuItem(value: c, child: Text(c.code))).toList(),
                           onChanged: (val) => setState(() => _selectedCurrency = val),
                           validator: (v) => v == null ? 'Оберіть' : null,
-                      ),
+                       ),
                   ),
                 ],
               ),
@@ -292,7 +302,7 @@ class _AddEditSubscriptionScreenState extends State<AddEditSubscriptionScreen> {
                           setState(() {
                               _selectedBillingCycle = val;
                               if(!_isEditing) {
-                                 _nextPaymentDate = _calculateNextPaymentDate(_startDate, val);
+                                  _nextPaymentDate = _calculateNextPaymentDate(_startDate, val);
                               }
                           });
                       }
@@ -315,7 +325,7 @@ class _AddEditSubscriptionScreenState extends State<AddEditSubscriptionScreen> {
               ),
               const SizedBox(height: 16),
               if (_availableCategories.isNotEmpty)
-                  DropdownButtonFormField<FinCategory.Category?>(
+                  DropdownButtonFormField<fin_category.Category?>(
                       value: _selectedCategory,
                       decoration: InputDecoration(
                           labelText: 'Категорія витрат (опціонально)',
@@ -323,7 +333,7 @@ class _AddEditSubscriptionScreenState extends State<AddEditSubscriptionScreen> {
                           suffixIcon: _selectedCategory != null ? IconButton(icon: const Icon(Icons.clear, size: 20), onPressed: () => setState(() => _selectedCategory = null),) : null,
                       ),
                       items: [
-                          const DropdownMenuItem<FinCategory.Category?>(value: null, child: Text('Без категорії')),
+                          const DropdownMenuItem<fin_category.Category?>(value: null, child: Text('Без категорії')),
                           ..._availableCategories.map((c) => DropdownMenuItem(value: c, child: Text(c.name))),
                       ],
                       onChanged: (val) => setState(() => _selectedCategory = val),

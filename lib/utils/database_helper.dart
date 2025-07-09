@@ -1,4 +1,4 @@
-import 'package:sqflite/sqflite.dart' hide Transaction;
+import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
 class DatabaseHelper {
@@ -7,26 +7,35 @@ class DatabaseHelper {
   DatabaseHelper._internal();
 
   static const String _dbName = "finance_app.db";
-  static const int _dbVersion = 16;
+  static const int _dbVersion = 17;
 
   static const String tableWallets = "wallets";
   static const String colWalletId = "id";
   static const String colWalletName = "name";
   static const String colWalletIsDefault = "isDefault";
   static const String colWalletOwnerUserId = "ownerUserId";
+  static const String colWalletUpdatedAt = "updated_at";
+  static const String colWalletIsDeleted = "is_deleted";
+
   static const String tableUsers = "users";
   static const String colUserId = "id";
   static const String colUserName = "name";
+  static const String colUserUpdatedAt = "updated_at";
+
   static const String tableWalletUsers = "wallet_users";
   static const String colWalletUsersWalletId = "walletId";
   static const String colWalletUsersUserId = "userId";
   static const String colWalletUsersRole = "role";
+
   static const String tableCategories = "categories";
   static const String colCategoryId = "id";
   static const String colCategoryName = "name";
   static const String colCategoryType = "type";
   static const String colCategoryBucket = "bucket";
   static const String colCategoryWalletId = "walletId";
+  static const String colCategoryUpdatedAt = "updated_at";
+  static const String colCategoryIsDeleted = "is_deleted";
+
   static const String tableTransactions = "transactions";
   static const String colTransactionId = "id";
   static const String colTransactionType = "type";
@@ -41,6 +50,9 @@ class DatabaseHelper {
   static const String colTransactionSubscriptionId = "subscriptionId";
   static const String colTransactionLinkedTransferId = "linkedTransferId";
   static const String colTransactionWalletId = "walletId";
+  static const String colTransactionUpdatedAt = "updated_at";
+  static const String colTransactionIsDeleted = "is_deleted";
+
   static const String tablePlans = "plans";
   static const String colPlanId = "id";
   static const String colPlanCategoryId = "categoryId";
@@ -51,6 +63,9 @@ class DatabaseHelper {
   static const String colPlanStartDate = "startDate";
   static const String colPlanEndDate = "endDate";
   static const String colPlanWalletId = "walletId";
+  static const String colPlanUpdatedAt = "updated_at";
+  static const String colPlanIsDeleted = "is_deleted";
+
   static const String tableRepeatingTransactions = "repeating_transactions";
   static const String colRtId = "id";
   static const String colRtDescription = "description";
@@ -71,6 +86,9 @@ class DatabaseHelper {
   static const String colRtYearMonth = "yearMonth";
   static const String colRtYearDay = "yearDay";
   static const String colRtWalletId = "walletId";
+  static const String colRtUpdatedAt = "updated_at";
+  static const String colRtIsDeleted = "is_deleted";
+
   static const String tableFinancialGoals = "financial_goals";
   static const String colGoalId = "id";
   static const String colGoalName = "name";
@@ -86,6 +104,9 @@ class DatabaseHelper {
   static const String colGoalNotes = "notes";
   static const String colGoalIsAchieved = "isAchieved";
   static const String colGoalWalletId = "walletId";
+  static const String colGoalUpdatedAt = "updated_at";
+  static const String colGoalIsDeleted = "is_deleted";
+
   static const String tableSubscriptions = "subscriptions";
   static const String colSubId = "id";
   static const String colSubName = "name";
@@ -101,6 +122,9 @@ class DatabaseHelper {
   static const String colSubWebsite = "website";
   static const String colSubReminderDaysBefore = "reminderDaysBefore";
   static const String colSubWalletId = "walletId";
+  static const String colSubUpdatedAt = "updated_at";
+  static const String colSubIsDeleted = "is_deleted";
+
   static const String tableBudgets = "budgets";
   static const String colBudgetId = "id";
   static const String colBudgetName = "name";
@@ -110,6 +134,9 @@ class DatabaseHelper {
   static const String colBudgetPlannedIncome = "plannedIncomeInBaseCurrency";
   static const String colBudgetIsActive = "isActive";
   static const String colBudgetWalletId = "walletId";
+  static const String colBudgetUpdatedAt = "updated_at";
+  static const String colBudgetIsDeleted = "is_deleted";
+
   static const String tableBudgetEnvelopes = "budget_envelopes";
   static const String colEnvelopeId = "id";
   static const String colEnvelopeBudgetId = "budgetId";
@@ -119,6 +146,9 @@ class DatabaseHelper {
   static const String colEnvelopeCurrencyCode = "originalCurrencyCode";
   static const String colEnvelopeAmountInBase = "plannedAmountInBaseCurrency";
   static const String colEnvelopeExchangeRate = "exchangeRateUsed";
+  static const String colEnvelopeUpdatedAt = "updated_at";
+  static const String colEnvelopeIsDeleted = "is_deleted";
+
   static const String tableDebtsLoans = "debts_loans";
   static const String colDebtLoanId = "id";
   static const String colDebtLoanWalletId = "walletId";
@@ -131,6 +161,9 @@ class DatabaseHelper {
   static const String colDebtLoanCreationDate = "creationDate";
   static const String colDebtLoanDueDate = "dueDate";
   static const String colDebtLoanIsSettled = "isSettled";
+  static const String colDebtLoanUpdatedAt = "updated_at";
+  static const String colDebtLoanIsDeleted = "is_deleted";
+
   static const String tableNotificationHistory = "notification_history";
   static const String colNotificationId = "id";
   static const String colNotificationTitle = "title";
@@ -138,11 +171,21 @@ class DatabaseHelper {
   static const String colNotificationPayload = "payload";
   static const String colNotificationTimestamp = "timestamp";
   static const String colNotificationIsRead = "isRead";
+
   static const String tableThemeProfiles = "theme_profiles";
   static const String colProfileName = "name";
   static const String colProfileSeedColor = "seedColor";
   static const String colProfileFontFamily = "fontFamily";
   static const String colProfileBorderRadius = "borderRadius";
+
+  static const String tableSyncQueue = "sync_queue";
+  static const String colSyncId = "id";
+  static const String colSyncEntityType = "entity_type";
+  static const String colSyncEntityId = "entity_id";
+  static const String colSyncActionType = "action_type";
+  static const String colSyncPayload = "payload";
+  static const String colSyncTimestamp = "timestamp";
+  static const String colSyncStatus = "status";
 
   static Database? _database;
 
@@ -171,29 +214,54 @@ class DatabaseHelper {
     await _createWalletsTable(db);
     await _createWalletUsersTable(db);
     await _createCategoriesTable(db);
-    await _createFinancialGoalsTable(db);
-    await _createBudgetsTable(db);
-    await _createBudgetEnvelopesTable(db);
-    await _createNotificationHistoryTable(db);
     await _createTransactionsTable(db);
     await _createPlansTable(db);
     await _createRepeatingTransactionsTable(db);
+    await _createFinancialGoalsTable(db);
     await _createSubscriptionsTable(db);
+    await _createBudgetsTable(db);
+    await _createBudgetEnvelopesTable(db);
     await _createDebtsLoansTable(db);
+    await _createNotificationHistoryTable(db);
     await _createThemeProfilesTable(db);
+    await _createSyncQueueTable(db);
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    if (oldVersion < 16) {
-       await _createThemeProfilesTable(db);
+    var batch = db.batch();
+    if (oldVersion < 17) {
+      batch.execute('ALTER TABLE $tableWallets ADD COLUMN $colWalletUpdatedAt TEXT;');
+      batch.execute('ALTER TABLE $tableWallets ADD COLUMN $colWalletIsDeleted INTEGER NOT NULL DEFAULT 0;');
+      batch.execute('ALTER TABLE $tableCategories ADD COLUMN $colCategoryUpdatedAt TEXT;');
+      batch.execute('ALTER TABLE $tableCategories ADD COLUMN $colCategoryIsDeleted INTEGER NOT NULL DEFAULT 0;');
+      batch.execute('ALTER TABLE $tableTransactions ADD COLUMN $colTransactionUpdatedAt TEXT;');
+      batch.execute('ALTER TABLE $tableTransactions ADD COLUMN $colTransactionIsDeleted INTEGER NOT NULL DEFAULT 0;');
+      
+      await _createSyncQueueTable(db);
     }
+    await batch.commit();
+  }
+
+  Future<void> _createSyncQueueTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS $tableSyncQueue (
+        $colSyncId INTEGER PRIMARY KEY AUTOINCREMENT,
+        $colSyncEntityType TEXT NOT NULL,
+        $colSyncEntityId TEXT NOT NULL,
+        $colSyncActionType TEXT NOT NULL,
+        $colSyncPayload TEXT,
+        $colSyncTimestamp TEXT NOT NULL,
+        $colSyncStatus TEXT NOT NULL
+      )
+    ''');
   }
 
   Future<void> _createUsersTable(Database db) async {
     await db.execute('''
       CREATE TABLE $tableUsers (
-        $colUserId INTEGER PRIMARY KEY AUTOINCREMENT,
-        $colUserName TEXT NOT NULL
+        $colUserId TEXT PRIMARY KEY,
+        $colUserName TEXT NOT NULL,
+        $colUserUpdatedAt TEXT
       )
     ''');
   }
@@ -201,11 +269,12 @@ class DatabaseHelper {
   Future<void> _createWalletsTable(Database db) async {
     await db.execute('''
       CREATE TABLE $tableWallets (
-        $colWalletId INTEGER PRIMARY KEY AUTOINCREMENT,
+        $colWalletId INTEGER PRIMARY KEY,
         $colWalletName TEXT NOT NULL,
         $colWalletIsDefault INTEGER NOT NULL DEFAULT 0,
-        $colWalletOwnerUserId INTEGER NOT NULL,
-        FOREIGN KEY ($colWalletOwnerUserId) REFERENCES $tableUsers ($colUserId) ON DELETE CASCADE
+        $colWalletOwnerUserId TEXT NOT NULL,
+        $colWalletUpdatedAt TEXT,
+        $colWalletIsDeleted INTEGER NOT NULL DEFAULT 0
       )
     ''');
   }
@@ -214,11 +283,9 @@ class DatabaseHelper {
     await db.execute('''
       CREATE TABLE $tableWalletUsers (
         $colWalletUsersWalletId INTEGER NOT NULL,
-        $colWalletUsersUserId INTEGER NOT NULL,
+        $colWalletUsersUserId TEXT NOT NULL,
         $colWalletUsersRole TEXT NOT NULL,
-        PRIMARY KEY ($colWalletUsersWalletId, $colWalletUsersUserId),
-        FOREIGN KEY ($colWalletUsersWalletId) REFERENCES $tableWallets ($colWalletId) ON DELETE CASCADE,
-        FOREIGN KEY ($colWalletUsersUserId) REFERENCES $tableUsers ($colUserId) ON DELETE CASCADE
+        PRIMARY KEY ($colWalletUsersWalletId, $colWalletUsersUserId)
       )
     ''');
   }
@@ -226,11 +293,13 @@ class DatabaseHelper {
   Future<void> _createCategoriesTable(Database db) async {
     await db.execute('''
       CREATE TABLE $tableCategories (
-        $colCategoryId INTEGER PRIMARY KEY AUTOINCREMENT,
+        $colCategoryId INTEGER PRIMARY KEY,
         $colCategoryName TEXT NOT NULL,
         $colCategoryType TEXT NOT NULL,
         $colCategoryBucket TEXT,
-        $colCategoryWalletId INTEGER
+        $colCategoryWalletId INTEGER,
+        $colCategoryUpdatedAt TEXT,
+        $colCategoryIsDeleted INTEGER NOT NULL DEFAULT 0
       )
     ''');
   }
@@ -238,7 +307,7 @@ class DatabaseHelper {
   Future<void> _createTransactionsTable(Database db) async {
     await db.execute('''
       CREATE TABLE $tableTransactions (
-        $colTransactionId INTEGER PRIMARY KEY AUTOINCREMENT,
+        $colTransactionId INTEGER PRIMARY KEY,
         $colTransactionType TEXT NOT NULL,
         $colTransactionOriginalAmount REAL NOT NULL,
         $colTransactionOriginalCurrencyCode TEXT NOT NULL,
@@ -251,13 +320,12 @@ class DatabaseHelper {
         $colTransactionSubscriptionId INTEGER,
         $colTransactionLinkedTransferId INTEGER,
         $colTransactionWalletId INTEGER,
-        FOREIGN KEY ($colTransactionCategoryId) REFERENCES $tableCategories($colCategoryId) ON DELETE RESTRICT,
-        FOREIGN KEY ($colTransactionLinkedGoalId) REFERENCES $tableFinancialGoals($colGoalId) ON DELETE SET NULL,
-        FOREIGN KEY ($colTransactionSubscriptionId) REFERENCES $tableSubscriptions($colSubId) ON DELETE SET NULL
+        $colTransactionUpdatedAt TEXT,
+        $colTransactionIsDeleted INTEGER NOT NULL DEFAULT 0
       )
     ''');
   }
-
+    
   Future<void> _createPlansTable(Database db) async {
     await db.execute('''
       CREATE TABLE $tablePlans (
@@ -270,8 +338,8 @@ class DatabaseHelper {
         $colPlanStartDate TEXT NOT NULL,
         $colPlanEndDate TEXT NOT NULL,
         $colPlanWalletId INTEGER,
-        FOREIGN KEY ($colPlanCategoryId) REFERENCES $tableCategories($colCategoryId) ON DELETE CASCADE,
-        UNIQUE ($colPlanCategoryId, $colPlanStartDate, $colPlanEndDate, $colPlanWalletId)
+        $colPlanUpdatedAt TEXT,
+        $colPlanIsDeleted INTEGER NOT NULL DEFAULT 0
       )
     ''');
   }
@@ -297,7 +365,9 @@ class DatabaseHelper {
         $colRtMonthDay TEXT,
         $colRtYearMonth INTEGER,
         $colRtYearDay INTEGER,
-        $colRtWalletId INTEGER
+        $colRtWalletId INTEGER,
+        $colRtUpdatedAt TEXT,
+        $colRtIsDeleted INTEGER NOT NULL DEFAULT 0
       )
     ''');
   }
@@ -318,7 +388,9 @@ class DatabaseHelper {
         $colGoalIconName TEXT,
         $colGoalNotes TEXT,
         $colGoalIsAchieved INTEGER NOT NULL DEFAULT 0,
-        $colGoalWalletId INTEGER
+        $colGoalWalletId INTEGER,
+        $colGoalUpdatedAt TEXT,
+        $colGoalIsDeleted INTEGER NOT NULL DEFAULT 0
       )
     ''');
   }
@@ -340,7 +412,8 @@ class DatabaseHelper {
         $colSubWebsite TEXT,
         $colSubReminderDaysBefore INTEGER DEFAULT 1,
         $colSubWalletId INTEGER,
-        FOREIGN KEY ($colSubCategoryId) REFERENCES $tableCategories($colCategoryId) ON DELETE SET NULL
+        $colSubUpdatedAt TEXT,
+        $colSubIsDeleted INTEGER NOT NULL DEFAULT 0
       )
     ''');
   }
@@ -355,7 +428,9 @@ class DatabaseHelper {
         $colBudgetStrategyType TEXT NOT NULL,
         $colBudgetPlannedIncome REAL,
         $colBudgetIsActive INTEGER NOT NULL DEFAULT 1,
-        $colBudgetWalletId INTEGER
+        $colBudgetWalletId INTEGER,
+        $colBudgetUpdatedAt TEXT,
+        $colBudgetIsDeleted INTEGER NOT NULL DEFAULT 0
       )
     ''');
   }
@@ -371,8 +446,8 @@ class DatabaseHelper {
         $colEnvelopeCurrencyCode TEXT NOT NULL,
         $colEnvelopeAmountInBase REAL NOT NULL,
         $colEnvelopeExchangeRate REAL,
-        FOREIGN KEY ($colEnvelopeBudgetId) REFERENCES $tableBudgets($colBudgetId) ON DELETE CASCADE,
-        FOREIGN KEY ($colEnvelopeCategoryId) REFERENCES $tableCategories($colCategoryId) ON DELETE CASCADE
+        $colEnvelopeUpdatedAt TEXT,
+        $colEnvelopeIsDeleted INTEGER NOT NULL DEFAULT 0
       )
     ''');
   }
@@ -391,7 +466,8 @@ class DatabaseHelper {
         $colDebtLoanCreationDate TEXT NOT NULL,
         $colDebtLoanDueDate TEXT,
         $colDebtLoanIsSettled INTEGER NOT NULL DEFAULT 0,
-        FOREIGN KEY ($colDebtLoanWalletId) REFERENCES $tableWallets($colWalletId) ON DELETE CASCADE
+        $colDebtLoanUpdatedAt TEXT,
+        $colDebtLoanIsDeleted INTEGER NOT NULL DEFAULT 0
       )
     ''');
   }

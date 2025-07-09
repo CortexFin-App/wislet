@@ -61,16 +61,25 @@ class _SubscriptionsListScreenState extends State<SubscriptionsListScreen> {
       return;
     }
 
-    final categories = await _categoryRepository.getAllCategories(currentWalletId);
-    if (!mounted) return;
-    _categoryNames = {for (var cat in categories) if (cat.id != null) cat.id!: cat.name};
-
-    final subscriptions = await _subscriptionRepository.getAllSubscriptions(currentWalletId);
+    final categoriesEither = await _categoryRepository.getAllCategories(currentWalletId);
     if (!mounted) return;
     
-    setState(() {
-      _subscriptions = subscriptions;
-    });
+    categoriesEither.fold(
+      (l) => _categoryNames = {}, 
+      (categories) => _categoryNames = { for (var cat in categories) if (cat.id != null) cat.id!: cat.name }
+    );
+
+    final subscriptionsEither = await _subscriptionRepository.getAllSubscriptions(currentWalletId);
+    if (!mounted) return;
+    
+    subscriptionsEither.fold(
+      (l) {
+        if(mounted) setState(() => _subscriptions = []);
+      },
+      (subscriptions) {
+        if(mounted) setState(() => _subscriptions = subscriptions);
+      }
+    );
   }
   
   Future<void> _calculateMonthlySummary() async {
@@ -231,7 +240,7 @@ class _SubscriptionsListScreenState extends State<SubscriptionsListScreen> {
             child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
-                    Icon(Icons.subscriptions_outlined, size: 80, color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5)),
+                    Icon(Icons.subscriptions_outlined, size: 80, color: Theme.of(context).colorScheme.onSurfaceVariant.withAlpha(128)),
                     const SizedBox(height: 24),
                     Text('Список підписок порожній', style: Theme.of(context).textTheme.headlineSmall, textAlign: TextAlign.center),
                     const SizedBox(height: 12),
@@ -255,7 +264,7 @@ class _SubscriptionsListScreenState extends State<SubscriptionsListScreen> {
           child: ListTile(
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             leading: CircleAvatar(
-              backgroundColor: sub.isActive ? Theme.of(context).colorScheme.primary.withOpacity(0.1) : Colors.grey.withOpacity(0.1),
+              backgroundColor: sub.isActive ? Theme.of(context).colorScheme.primary.withAlpha(26) : Colors.grey.withAlpha(26),
               child: Icon(Icons.star_purple500_sharp, color: sub.isActive ? Theme.of(context).colorScheme.primary : Colors.grey),
             ),
             title: Text(sub.name, style: Theme.of(context).textTheme.titleMedium?.copyWith(

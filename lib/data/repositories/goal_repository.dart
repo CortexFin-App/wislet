@@ -1,10 +1,12 @@
+import 'package:fpdart/fpdart.dart';
+import '../../core/error/failures.dart';
 import '../../models/financial_goal.dart';
 
 abstract class GoalRepository {
-  Future<int> createFinancialGoal(FinancialGoal goal, int walletId);
-  Future<FinancialGoal?> getFinancialGoal(int id);
-  Future<List<FinancialGoal>> getAllFinancialGoals(int walletId);
-  Future<int> updateFinancialGoal(FinancialGoal goal);
-  Future<int> deleteFinancialGoal(int id);
-  Future<void> updateFinancialGoalProgress(int goalId);
+  Future<Either<AppFailure, int>> createFinancialGoal(FinancialGoal goal, int walletId);
+  Future<Either<AppFailure, FinancialGoal?>> getFinancialGoal(int id);
+  Future<Either<AppFailure, List<FinancialGoal>>> getAllFinancialGoals(int walletId);
+  Future<Either<AppFailure, int>> updateFinancialGoal(FinancialGoal goal);
+  Future<Either<AppFailure, int>> deleteFinancialGoal(int id);
+  Future<Either<AppFailure, void>> updateFinancialGoalProgress(int goalId);
 }

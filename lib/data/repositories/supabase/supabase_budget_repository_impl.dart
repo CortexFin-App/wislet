@@ -1,6 +1,9 @@
+import 'package:fpdart/fpdart.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/error/failures.dart';
 import '../../../models/budget_models.dart';
 import '../../../models/transaction.dart' as fin_transaction;
+import '../../../services/error_monitoring_service.dart';
 import '../budget_repository.dart';
 
 class SupabaseBudgetRepositoryImpl implements BudgetRepository {
@@ -8,43 +11,62 @@ class SupabaseBudgetRepositoryImpl implements BudgetRepository {
   SupabaseBudgetRepositoryImpl(this._client);
 
   @override
-  Future<List<Budget>> getAllBudgets(int walletId) async {
-    final response =
-        await _client.from('budgets').select().eq('wallet_id', walletId);
-    return (response as List).map((data) => Budget.fromMap(data)).toList();
+  Future<Either<AppFailure, List<Budget>>> getAllBudgets(int walletId) async {
+    try {
+      final response = await _client.from('budgets').select().eq('wallet_id', walletId);
+      return Right((response as List).map((data) => Budget.fromMap(data)).toList());
+    } catch (e, s) {
+      ErrorMonitoringService.capture(e, stackTrace: s);
+      return Left(NetworkFailure(details: e.toString()));
+    }
   }
 
   @override
-  Future<int> createBudget(Budget budget, int walletId) async {
-    final map = budget.toMap();
-    map['wallet_id'] = walletId;
-    map['user_id'] = _client.auth.currentUser!.id;
-    final response =
-        await _client.from('budgets').insert(map).select().single();
-    return response['id'] as int;
+  Future<Either<AppFailure, int>> createBudget(Budget budget, int walletId) async {
+    try {
+      final map = budget.toMap();
+      map['wallet_id'] = walletId;
+      map['user_id'] = _client.auth.currentUser!.id;
+      final response = await _client.from('budgets').insert(map).select().single();
+      return Right(response['id'] as int);
+    } catch (e, s) {
+      ErrorMonitoringService.capture(e, stackTrace: s);
+      return Left(NetworkFailure(details: e.toString()));
+    }
   }
 
   @override
-  Future<int> updateBudget(Budget budget) async {
-    final response = await _client
-        .from('budgets')
-        .update(budget.toMap())
-        .eq('id', budget.id!)
-        .select()
-        .single();
-    return response['id'] as int;
+  Future<Either<AppFailure, int>> updateBudget(Budget budget) async {
+    try {
+      final response = await _client
+          .from('budgets')
+          .update(budget.toMap())
+          .eq('id', budget.id!)
+          .select()
+          .single();
+      return Right(response['id'] as int);
+    } catch (e, s) {
+      ErrorMonitoringService.capture(e, stackTrace: s);
+      return Left(NetworkFailure(details: e.toString()));
+    }
   }
 
   @override
-  Future<int> deleteBudget(int budgetId) async {
-    await _client.from('budgets').delete().eq('id', budgetId);
-    return budgetId;
+  Future<Either<AppFailure, int>> deleteBudget(int budgetId) async {
+    try {
+      await _client.from('budgets').delete().eq('id', budgetId);
+      return Right(budgetId);
+    } catch (e, s) {
+      ErrorMonitoringService.capture(e, stackTrace: s);
+      return Left(NetworkFailure(details: e.toString()));
+    }
   }
 
   @override
-  Future<Budget?> getActiveBudgetForDate(int walletId, DateTime date) async {
-    final dateString = date.toIso8601String();
-    final response = await _client
+  Future<Either<AppFailure, Budget?>> getActiveBudgetForDate(int walletId, DateTime date) async {
+    try {
+      final dateString = date.toIso8601String();
+      final response = await _client
         .from('budgets')
         .select()
         .eq('wallet_id', walletId)
@@ -53,63 +75,91 @@ class SupabaseBudgetRepositoryImpl implements BudgetRepository {
         .gte('end_date', dateString)
         .limit(1)
         .maybeSingle();
-    if (response == null) return null;
-    return Budget.fromMap(response);
+      if (response == null) return const Right(null);
+      return Right(Budget.fromMap(response));
+    } catch (e, s) {
+      ErrorMonitoringService.capture(e, stackTrace: s);
+      return Left(NetworkFailure(details: e.toString()));
+    }
   }
 
   @override
-  Future<int> createBudgetEnvelope(BudgetEnvelope envelope) async {
-    final response = await _client
-        .from('budget_envelopes')
-        .insert(envelope.toMap())
-        .select()
-        .single();
-    return response['id'] as int;
+  Future<Either<AppFailure, int>> createBudgetEnvelope(BudgetEnvelope envelope) async {
+    try {
+      final response = await _client
+          .from('budget_envelopes')
+          .insert(envelope.toMap())
+          .select()
+          .single();
+      return Right(response['id'] as int);
+    } catch (e, s) {
+      ErrorMonitoringService.capture(e, stackTrace: s);
+      return Left(NetworkFailure(details: e.toString()));
+    }
   }
 
   @override
-  Future<int> updateBudgetEnvelope(BudgetEnvelope envelope) async {
-    final response = await _client
-        .from('budget_envelopes')
-        .update(envelope.toMap())
-        .eq('id', envelope.id!)
-        .select()
-        .single();
-    return response['id'] as int;
+  Future<Either<AppFailure, int>> updateBudgetEnvelope(BudgetEnvelope envelope) async {
+    try {
+      final response = await _client
+          .from('budget_envelopes')
+          .update(envelope.toMap())
+          .eq('id', envelope.id!)
+          .select()
+          .single();
+      return Right(response['id'] as int);
+    } catch (e, s) {
+      ErrorMonitoringService.capture(e, stackTrace: s);
+      return Left(NetworkFailure(details: e.toString()));
+    }
   }
 
   @override
-  Future<int> deleteBudgetEnvelope(int id) async {
-    await _client.from('budget_envelopes').delete().eq('id', id);
-    return id;
+  Future<Either<AppFailure, int>> deleteBudgetEnvelope(int id) async {
+    try {
+      await _client.from('budget_envelopes').delete().eq('id', id);
+      return Right(id);
+    } catch (e, s) {
+      ErrorMonitoringService.capture(e, stackTrace: s);
+      return Left(NetworkFailure(details: e.toString()));
+    }
   }
 
   @override
-  Future<List<BudgetEnvelope>> getEnvelopesForBudget(int budgetId) async {
-    final response =
-        await _client.from('budget_envelopes').select().eq('budget_id', budgetId);
-    return (response as List)
-        .map((data) => BudgetEnvelope.fromMap(data))
-        .toList();
+  Future<Either<AppFailure, List<BudgetEnvelope>>> getEnvelopesForBudget(int budgetId) async {
+    try {
+      final response = await _client.from('budget_envelopes').select().eq('budget_id', budgetId);
+      return Right((response as List)
+          .map((data) => BudgetEnvelope.fromMap(data))
+          .toList());
+    } catch (e, s) {
+      ErrorMonitoringService.capture(e, stackTrace: s);
+      return Left(NetworkFailure(details: e.toString()));
+    }
   }
 
   @override
-  Future<BudgetEnvelope?> getEnvelopeForCategory(
+  Future<Either<AppFailure, BudgetEnvelope?>> getEnvelopeForCategory(
       int budgetId, int categoryId) async {
-    final response = await _client
-        .from('budget_envelopes')
-        .select()
-        .eq('budget_id', budgetId)
-        .eq('category_id', categoryId)
-        .limit(1)
-        .maybeSingle();
-    if (response == null) return null;
-    return BudgetEnvelope.fromMap(response);
+    try {
+      final response = await _client
+          .from('budget_envelopes')
+          .select()
+          .eq('budget_id', budgetId)
+          .eq('category_id', categoryId)
+          .limit(1)
+          .maybeSingle();
+      if (response == null) return const Right(null);
+      return Right(BudgetEnvelope.fromMap(response));
+    } catch (e, s) {
+      ErrorMonitoringService.capture(e, stackTrace: s);
+      return Left(NetworkFailure(details: e.toString()));
+    }
   }
 
   @override
-  Future<void> checkAndNotifyEnvelopeLimits(
+  Future<Either<AppFailure, void>> checkAndNotifyEnvelopeLimits(
       fin_transaction.Transaction transaction, int walletId) async {
-    return;
+    return const Right(null);
   }
 }

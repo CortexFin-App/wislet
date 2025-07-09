@@ -108,7 +108,7 @@ class _AcceptInvitationScreenState extends State<AcceptInvitationScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
+        color: Theme.of(context).colorScheme.primaryContainer.withAlpha(77),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(

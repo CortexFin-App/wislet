@@ -1,9 +1,11 @@
+import 'package:fpdart/fpdart.dart';
+import '../../core/error/failures.dart';
 import '../../models/subscription_model.dart';
 
 abstract class SubscriptionRepository {
-  Future<int> createSubscription(Subscription sub, int walletId);
-  Future<Subscription?> getSubscription(int id);
-  Future<List<Subscription>> getAllSubscriptions(int walletId);
-  Future<int> updateSubscription(Subscription sub, int walletId);
-  Future<int> deleteSubscription(int id);
+  Future<Either<AppFailure, int>> createSubscription(Subscription sub, int walletId);
+  Future<Either<AppFailure, Subscription?>> getSubscription(int id);
+  Future<Either<AppFailure, List<Subscription>>> getAllSubscriptions(int walletId);
+  Future<Either<AppFailure, int>> updateSubscription(Subscription sub, int walletId);
+  Future<Either<AppFailure, int>> deleteSubscription(int id);
 }

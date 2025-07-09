@@ -52,23 +52,38 @@ class _AddEditEnvelopeScreenState extends State<AddEditEnvelopeScreen> {
 
   Future<void> _loadCategories() async {
     final walletId = context.read<WalletProvider>().currentWallet!.id!;
-    final categories = await _categoryRepository.getCategoriesByType(walletId, CategoryType.expense);
-    final assignedCategories = (await _budgetRepository.getEnvelopesForBudget(widget.budgetId)).map((e) => e.categoryId).toSet();
-    
-    if (mounted) {
-      setState(() {
-        _availableCategories = categories.where((cat) {
-          if (_isEditing && cat.id == widget.envelopeToEdit!.categoryId) {
-            return true;
+    final categoriesEither = await _categoryRepository.getCategoriesByType(walletId, CategoryType.expense);
+    final assignedEnvelopesEither = await _budgetRepository.getEnvelopesForBudget(widget.budgetId);
+
+    assignedEnvelopesEither.fold(
+      (failure) {
+        if (mounted) setState(() => _isLoadingCategories = false);
+      },
+      (assignedEnvelopes) {
+        categoriesEither.fold(
+          (failure) {
+             if (mounted) setState(() => _isLoadingCategories = false);
+          },
+          (categories) {
+            if (mounted) {
+              final assignedCategoryIds = assignedEnvelopes.map((e) => e.categoryId).toSet();
+              setState(() {
+                _availableCategories = categories.where((cat) {
+                  if (_isEditing && cat.id == widget.envelopeToEdit!.categoryId) {
+                    return true;
+                  }
+                  return !assignedCategoryIds.contains(cat.id);
+                }).toList();
+                if (_isEditing) {
+                  _selectedCategory = _availableCategories.firstWhereOrNull((cat) => cat.id == widget.envelopeToEdit!.categoryId);
+                }
+                _isLoadingCategories = false;
+              });
+            }
           }
-          return !assignedCategories.contains(cat.id);
-        }).toList();
-        if (_isEditing) {
-          _selectedCategory = _availableCategories.firstWhereOrNull((cat) => cat.id == widget.envelopeToEdit!.categoryId);
-        }
-        _isLoadingCategories = false;
-      });
-    }
+        );
+      }
+    );
   }
 
   Future<void> _saveEnvelope() async {
@@ -79,9 +94,9 @@ class _AddEditEnvelopeScreenState extends State<AddEditEnvelopeScreen> {
     }
 
     setState(() => _isSaving = true);
-    
+
     final amount = double.parse(_amountController.text.replaceAll(',', '.'));
-    
+
     final envelope = BudgetEnvelope(
       id: widget.envelopeToEdit?.id,
       budgetId: widget.budgetId,
@@ -92,7 +107,7 @@ class _AddEditEnvelopeScreenState extends State<AddEditEnvelopeScreen> {
       plannedAmountInBaseCurrency: amount,
       exchangeRateUsed: 1.0,
     );
-    
+
     try {
       if (_isEditing) {
         await _budgetRepository.updateBudgetEnvelope(envelope);
@@ -119,7 +134,7 @@ class _AddEditEnvelopeScreenState extends State<AddEditEnvelopeScreen> {
     _amountController.dispose();
     super.dispose();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

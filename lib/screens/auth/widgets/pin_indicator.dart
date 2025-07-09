@@ -24,9 +24,9 @@ class PinIndicator extends StatelessWidget {
             shape: BoxShape.circle,
             color: index < pinLength
                 ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).colorScheme.surfaceVariant,
+                : Theme.of(context).colorScheme.surfaceContainerHighest,
             border: Border.all(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+              color: Theme.of(context).colorScheme.primary.withAlpha(128),
             ),
           ),
         );

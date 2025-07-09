@@ -26,7 +26,6 @@ class OcrService {
       }
       return null;
     } catch (e) {
-      print("OCR Service Error: $e");
       return null;
     }
   }

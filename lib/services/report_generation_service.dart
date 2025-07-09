@@ -5,7 +5,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:csv/csv.dart';
 import '../models/transaction_view_data.dart';
-import '../models/transaction.dart' as FinTransaction;
+import '../models/transaction.dart' as fin_transaction;
 
 class ReportGenerationService {
   Future<Uint8List> generateCsvBytes(List<TransactionViewData> transactions) async {
@@ -20,7 +20,7 @@ class ReportGenerationService {
         tx.description ?? '',
         tx.originalAmount,
         tx.originalCurrencyCode,
-        tx.type == FinTransaction.TransactionType.income ? 'Дохід' : 'Витрата'
+        tx.type == fin_transaction.TransactionType.income ? 'Дохід' : 'Витрата'
       ]);
     }
     String csv = const ListToCsvConverter().convert(rows);
@@ -38,7 +38,7 @@ class ReportGenerationService {
     final headers = ['Дата', 'Категорія', 'Опис', 'Сума'];
 
     final data = transactions.map((tx) {
-      final amountPrefix = tx.type == FinTransaction.TransactionType.income ? '+' : '-';
+      final amountPrefix = tx.type == fin_transaction.TransactionType.income ? '+' : '-';
       final formattedAmount = NumberFormat.currency(symbol: tx.originalCurrencyCode, decimalDigits: 2, locale: 'uk_UA').format(tx.originalAmount);
       return [
         DateFormat('dd.MM.yy').format(tx.date),
@@ -64,7 +64,7 @@ class ReportGenerationService {
                 ],
               ),
             ),
-            pw.Table.fromTextArray(
+            pw.TableHelper.fromTextArray(
               headers: headers,
               data: data,
               headerStyle: pw.TextStyle(font: boldTtf, fontSize: 10, color: PdfColors.white),

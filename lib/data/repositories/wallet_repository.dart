@@ -1,13 +1,15 @@
+import 'package:fpdart/fpdart.dart';
+import '../../core/error/failures.dart';
 import '../../models/wallet.dart';
 
 abstract class WalletRepository {
-  Future<List<Wallet>> getAllWallets();
-  Future<Wallet?> getWallet(int id);
-  Future<int> createWallet(
+  Future<Either<AppFailure, List<Wallet>>> getAllWallets();
+  Future<Either<AppFailure, Wallet?>> getWallet(int id);
+  Future<Either<AppFailure, int>> createWallet(
       {required String name, required String ownerUserId, bool isDefault = false});
-  Future<void> createInitialWallet();
-  Future<int> updateWallet(Wallet wallet);
-  Future<int> deleteWallet(int walletId);
-  Future<void> changeUserRole(int walletId, String userId, String newRole);
-  Future<void> removeUserFromWallet(int walletId, String userId);
+  Future<Either<AppFailure, void>> createInitialWallet();
+  Future<Either<AppFailure, int>> updateWallet(Wallet wallet);
+  Future<Either<AppFailure, int>> deleteWallet(int walletId);
+  Future<Either<AppFailure, void>> changeUserRole(int walletId, String userId, String newRole);
+  Future<Either<AppFailure, void>> removeUserFromWallet(int walletId, String userId);
 }

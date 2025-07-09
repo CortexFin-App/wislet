@@ -49,21 +49,39 @@ class _RepeatingTransactionsListScreenState
     }
     if (!_isLoading) setState(() => _isLoading = true);
     
-    final categories = await _categoryRepository.getAllCategories(currentWalletId);
+    final categoriesEither = await _categoryRepository.getAllCategories(currentWalletId);
     if (!mounted) return;
-    final Map<int, String> categoryMap = {
-      for (var cat in categories)
-        if (cat.id != null) cat.id!: cat.name
-    };
 
-    final templates = await _repeatingTransactionRepository.getAllRepeatingTransactions(currentWalletId);
+    final categoryMap = categoriesEither.fold(
+      (failure) => <int, String>{},
+      (categories) => {
+        for (var cat in categories)
+          if (cat.id != null) cat.id!: cat.name
+      },
+    );
+    _categoryNames = categoryMap;
+
+    final templatesEither = await _repeatingTransactionRepository.getAllRepeatingTransactions(currentWalletId);
     if (!mounted) return;
     
-    setState(() {
-      _categoryNames = categoryMap;
-      _repeatingTransactions = templates;
-      _isLoading = false;
-    });
+    templatesEither.fold(
+      (failure) {
+        if(mounted){
+          setState(() {
+            _repeatingTransactions = [];
+            _isLoading = false;
+          });
+        }
+      },
+      (templates) {
+        if(mounted){
+          setState(() {
+            _repeatingTransactions = templates;
+            _isLoading = false;
+          });
+        }
+      },
+    );
   }
 
   String _getFrequencyDetails(RepeatingTransaction template) {

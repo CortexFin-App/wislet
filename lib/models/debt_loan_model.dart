@@ -12,6 +12,8 @@ class DebtLoan {
   final DateTime creationDate;
   final DateTime? dueDate;
   bool isSettled;
+  final DateTime? updatedAt;
+  final bool isDeleted;
 
   DebtLoan({
     this.id,
@@ -25,6 +27,8 @@ class DebtLoan {
     required this.creationDate,
     this.dueDate,
     this.isSettled = false,
+    this.updatedAt,
+    this.isDeleted = false,
   });
 
   Map<String, dynamic> toMap() {
@@ -40,6 +44,8 @@ class DebtLoan {
       'creationDate': creationDate.toIso8601String(),
       'dueDate': dueDate?.toIso8601String(),
       'isSettled': isSettled ? 1 : 0,
+      'updated_at': updatedAt?.toIso8601String() ?? DateTime.now().toIso8601String(),
+      'is_deleted': isDeleted ? 1 : 0,
     };
   }
 
@@ -56,6 +62,8 @@ class DebtLoan {
       creationDate: DateTime.parse(map['creationDate'] as String),
       dueDate: map['dueDate'] != null ? DateTime.parse(map['dueDate'] as String) : null,
       isSettled: (map['isSettled'] as int? ?? 0) == 1,
+      updatedAt: map['updated_at'] != null ? DateTime.parse(map['updated_at'] as String) : null,
+      isDeleted: (map['is_deleted'] is bool) ? map['is_deleted'] : ((map['is_deleted'] as int? ?? 0) == 1),
     );
   }
 }

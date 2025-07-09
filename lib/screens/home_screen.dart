@@ -6,7 +6,7 @@ import 'package:shimmer/shimmer.dart';
 import '../core/di/injector.dart';
 import '../providers/currency_provider.dart';
 import '../providers/wallet_provider.dart';
-import '../models/transaction.dart' as FinTransaction;
+import '../models/transaction.dart' as fin_transaction;
 import '../models/currency_model.dart';
 import '../models/transaction_view_data.dart';
 import 'transactions/add_edit_transaction_screen.dart';
@@ -140,75 +140,62 @@ class HomeScreenState extends State<HomeScreen> {
       });
       return;
     }
-    try {
-      final now = DateTime.now();
-      final startDateCurrentMonth = DateTime(now.year, now.month, 1);
-      final endDateCurrentMonth =
-          DateTime(now.year, now.month + 1, 0, 23, 59, 59);
-      final balanceFuture =
-          _transactionRepository.getOverallBalance(currentWalletId);
-      final incomeFuture = _transactionRepository.getTotalAmount(
-          walletId: currentWalletId,
-          startDate: startDateCurrentMonth,
-          endDate: endDateCurrentMonth,
-          transactionType: FinTransaction.TransactionType.income);
-      final expensesFuture = _transactionRepository.getTotalAmount(
-          walletId: currentWalletId,
-          startDate: startDateCurrentMonth,
-          endDate: endDateCurrentMonth,
-          transactionType: FinTransaction.TransactionType.expense);
-      final recentTransactionsFuture = _transactionRepository
-          .getTransactionsWithDetails(walletId: currentWalletId, limit: 5);
-      final expensesGroupedFuture = _transactionRepository
-          .getExpensesGroupedByCategory(
-              currentWalletId, startDateCurrentMonth, endDateCurrentMonth);
-      final results = await Future.wait([
-        balanceFuture,
-        incomeFuture,
-        expensesFuture,
-        recentTransactionsFuture,
-        expensesGroupedFuture
-      ]);
-      if (!mounted) return;
-      _overallBalanceUAH = results[0] as double;
-      _currentMonthIncomeUAH = results[1] as double;
-      _currentMonthExpensesUAH = results[2] as double;
-      _recentTransactions = results[3] as List<TransactionViewData>;
 
-      final expensesGrouped = results[4] as List<Map<String, dynamic>>;
-      if (!mounted) return;
+    final now = DateTime.now();
+    final startDateCurrentMonth = DateTime(now.year, now.month, 1);
+    final endDateCurrentMonth = DateTime(now.year, now.month + 1, 0, 23, 59, 59);
 
-      final colorScheme = Theme.of(context).colorScheme;
-      if (!mounted) return;
-      final List<Color> dynamicPieChartColors = [
-        colorScheme.primary,
-        colorScheme.secondary,
-        colorScheme.tertiary,
-        colorScheme.primaryContainer.withOpacity(0.7),
-        colorScheme.secondaryContainer.withOpacity(0.7),
-        colorScheme.tertiaryContainer.withOpacity(0.7),
-        Colors.pink.shade300,
-        Colors.orange.shade300,
-        Colors.teal.shade300,
-        Colors.lime.shade400,
-      ];
-
-      _pieChartRawData = [];
-      for (int i = 0; i < expensesGrouped.length; i++) {
-        final item = expensesGrouped[i];
-        _pieChartRawData.add(CategoryExpenseData(
-          categoryName: item['categoryName'] as String,
-          totalAmountInBaseCurrency: item['totalAmount'] as double,
-          color: dynamicPieChartColors[i % dynamicPieChartColors.length],
-        ));
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Помилка завантаження даних дашборду: $e')),
-        );
-      }
-    }
+    final balanceEither = await _transactionRepository.getOverallBalance(currentWalletId);
+    final incomeEither = await _transactionRepository.getTotalAmount(
+        walletId: currentWalletId,
+        startDate: startDateCurrentMonth,
+        endDate: endDateCurrentMonth,
+        transactionType: fin_transaction.TransactionType.income);
+    final expensesEither = await _transactionRepository.getTotalAmount(
+        walletId: currentWalletId,
+        startDate: startDateCurrentMonth,
+        endDate: endDateCurrentMonth,
+        transactionType: fin_transaction.TransactionType.expense);
+    final recentTransactionsEither = await _transactionRepository
+        .getTransactionsWithDetails(walletId: currentWalletId, limit: 5);
+    final expensesGroupedEither = await _transactionRepository
+        .getExpensesGroupedByCategory(
+            currentWalletId, startDateCurrentMonth, endDateCurrentMonth);
+    
+    if (!mounted) return;
+    
+    setState(() {
+        _overallBalanceUAH = balanceEither.getOrElse((l) => 0.0);
+        _currentMonthIncomeUAH = incomeEither.getOrElse((l) => 0.0);
+        _currentMonthExpensesUAH = expensesEither.getOrElse((l) => 0.0);
+        _recentTransactions = recentTransactionsEither.getOrElse((l) => []);
+        
+        final expensesGrouped = expensesGroupedEither.getOrElse((l) => []);
+        
+        final colorScheme = Theme.of(context).colorScheme;
+        final List<Color> dynamicPieChartColors = [
+            colorScheme.primary,
+            colorScheme.secondary,
+            colorScheme.tertiary,
+            colorScheme.primaryContainer.withAlpha(179),
+            colorScheme.secondaryContainer.withAlpha(179),
+            colorScheme.tertiaryContainer.withAlpha(179),
+            Colors.pink.shade300,
+            Colors.orange.shade300,
+            Colors.teal.shade300,
+            Colors.lime.shade400,
+        ];
+        
+        _pieChartRawData = [];
+        for (int i = 0; i < expensesGrouped.length; i++) {
+            final item = expensesGrouped[i];
+            _pieChartRawData.add(CategoryExpenseData(
+            categoryName: item['categoryName'] as String,
+            totalAmountInBaseCurrency: item['totalAmount'] as double,
+            color: dynamicPieChartColors[i % dynamicPieChartColors.length],
+            ));
+        }
+    });
   }
 
   String _formatAmountForDisplay(
@@ -262,7 +249,7 @@ class HomeScreenState extends State<HomeScreen> {
               Icon(
                 icon,
                 size: 50,
-                color: colorScheme.onSurfaceVariant.withOpacity(0.4),
+                color: colorScheme.onSurfaceVariant.withAlpha(102),
               ),
               const SizedBox(height: 16),
               Text(
@@ -554,7 +541,7 @@ class HomeScreenState extends State<HomeScreen> {
   Widget _buildBalanceCard(BuildContext context, TextTheme textTheme,
       ColorScheme colorScheme, double balanceUAH) {
     final balanceColor =
-        balanceUAH >= 0 ? colorScheme.tertiary.withOpacity(0.9) : colorScheme.error;
+        balanceUAH >= 0 ? colorScheme.tertiary.withAlpha(230) : colorScheme.error;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -592,7 +579,7 @@ class HomeScreenState extends State<HomeScreen> {
       double netIncomeUAH) {
     final now = DateTime.now();
     final monthName = DateFormat.MMMM('uk_UA').format(now);
-    final incomeColor = colorScheme.tertiary.withOpacity(0.9);
+    final incomeColor = colorScheme.tertiary.withAlpha(230);
     final expenseColor = colorScheme.error;
     return Card(
       child: Padding(
@@ -660,7 +647,7 @@ class HomeScreenState extends State<HomeScreen> {
                           fontWeight: FontWeight.bold,
                           color: netIncomeUAH >= 0
                               ? colorScheme.primary
-                              : expenseColor.withOpacity(0.9)),
+                              : expenseColor.withAlpha(230)),
                       overflow: TextOverflow.ellipsis,
                     );
                   }),
@@ -818,9 +805,9 @@ class HomeScreenState extends State<HomeScreen> {
       itemCount: _recentTransactions.length > 5 ? 5 : _recentTransactions.length,
       itemBuilder: (context, index) {
         final transaction = _recentTransactions[index];
-        final isIncome = transaction.type == FinTransaction.TransactionType.income;
+        final isIncome = transaction.type == fin_transaction.TransactionType.income;
         final amountColor =
-            isIncome ? colorScheme.tertiary.withOpacity(0.9) : colorScheme.error;
+            isIncome ? colorScheme.tertiary.withAlpha(230) : colorScheme.error;
         final amountPrefix = isIncome ? '+' : '-';
         final currency = appCurrencies.firstWhere(
             (c) => c.code == transaction.originalCurrencyCode,
@@ -838,7 +825,7 @@ class HomeScreenState extends State<HomeScreen> {
           margin: const EdgeInsets.symmetric(vertical: 4.0),
           child: ListTile(
             leading: CircleAvatar(
-              backgroundColor: amountColor.withOpacity(0.1),
+              backgroundColor: amountColor.withAlpha(26),
               child: Icon(
                 isIncome
                     ? Icons.arrow_downward_rounded

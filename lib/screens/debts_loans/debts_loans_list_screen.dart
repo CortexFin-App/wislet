@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:fpdart/fpdart.dart' hide State;
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../core/di/injector.dart';
+import '../../core/error/failures.dart';
 import '../../models/debt_loan_model.dart';
 import '../../models/currency_model.dart';
 import '../../providers/wallet_provider.dart';
 import '../../data/repositories/debt_loan_repository.dart';
 import 'add_edit_debt_loan_screen.dart';
-import '../../utils/fade_page_route.dart';
 
 class DebtsLoansListScreen extends StatefulWidget {
   const DebtsLoansListScreen({super.key});
@@ -18,7 +19,7 @@ class DebtsLoansListScreen extends StatefulWidget {
 
 class _DebtsLoansListScreenState extends State<DebtsLoansListScreen> with SingleTickerProviderStateMixin {
   final DebtLoanRepository _repository = getIt<DebtLoanRepository>();
-  Future<List<DebtLoan>>? _debtsFuture;
+  Future<Either<AppFailure, List<DebtLoan>>>? _debtsFuture;
   late TabController _tabController;
 
   @override
@@ -77,29 +78,33 @@ class _DebtsLoansListScreenState extends State<DebtsLoansListScreen> with Single
       ),
       body: RefreshIndicator(
         onRefresh: _loadDebts,
-        child: FutureBuilder<List<DebtLoan>>(
+        child: FutureBuilder<Either<AppFailure, List<DebtLoan>>>(
           future: _debtsFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
             }
-            if (snapshot.hasError) {
-              return Center(child: Text('Помилка завантаження: ${snapshot.error}'));
-            }
-            if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            if (!snapshot.hasData) {
               return _buildEmptyState();
             }
 
-            final allItems = snapshot.data!;
-            final debts = allItems.where((i) => i.type == DebtLoanType.debt).toList();
-            final loans = allItems.where((i) => i.type == DebtLoanType.loan).toList();
-            
-            return TabBarView(
-              controller: _tabController,
-              children: [
-                _buildList(debts),
-                _buildList(loans),
-              ],
+            return snapshot.data!.fold(
+              (failure) => Center(child: Text('Помилка завантаження: ${failure.userMessage}')),
+              (allItems) {
+                if (allItems.isEmpty) {
+                  return _buildEmptyState();
+                }
+                final debts = allItems.where((i) => i.type == DebtLoanType.debt).toList();
+                final loans = allItems.where((i) => i.type == DebtLoanType.loan).toList();
+
+                return TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildList(debts),
+                    _buildList(loans),
+                  ],
+                );
+              }
             );
           },
         ),
@@ -144,7 +149,7 @@ class _DebtsLoansListScreenState extends State<DebtsLoansListScreen> with Single
         final color = isDebt ? Colors.red.shade700 : Colors.green.shade700;
         final currency = appCurrencies.firstWhere((c) => c.code == item.currencyCode, orElse: () => Currency(code: item.currencyCode, name: '', symbol: item.currencyCode, locale: 'uk_UA'));
         return Card(
-          color: item.isSettled ? Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.5) : null,
+          color: item.isSettled ? Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha(128) : null,
           child: ListTile(
             leading: Icon(
               isDebt ? Icons.arrow_circle_up_rounded : Icons.arrow_circle_down_rounded,

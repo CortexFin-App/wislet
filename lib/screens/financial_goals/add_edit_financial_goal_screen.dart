@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:fpdart/fpdart.dart' hide State;
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../core/di/injector.dart';
+import '../../core/error/failures.dart';
 import '../../models/financial_goal.dart';
 import '../../models/currency_model.dart';
 import '../../providers/currency_provider.dart';
@@ -20,8 +22,7 @@ class AddEditFinancialGoalScreen extends StatefulWidget {
       _AddEditFinancialGoalScreenState();
 }
 
-class _AddEditFinancialGoalScreenState
-    extends State<AddEditFinancialGoalScreen> {
+class _AddEditFinancialGoalScreenState extends State<AddEditFinancialGoalScreen> {
   final _formKey = GlobalKey<FormState>();
   final GoalRepository _goalRepository = getIt<GoalRepository>();
   final ExchangeRateService _exchangeRateService = getIt<ExchangeRateService>();
@@ -32,7 +33,7 @@ class _AddEditFinancialGoalScreenState
   late TextEditingController _notesController;
 
   DateTime? _targetDate;
-  DateTime _creationDate = DateTime.now();
+  late DateTime _creationDate;
   Currency? _selectedGoalCurrency;
   final List<Currency> _availableCurrencies = appCurrencies;
   final String _baseCurrencyCode = 'UAH';
@@ -51,29 +52,23 @@ class _AddEditFinancialGoalScreenState
   @override
   void initState() {
     super.initState();
+    _creationDate = widget.goalToEdit?.creationDate ?? DateTime.now();
     _nameController = TextEditingController(text: widget.goalToEdit?.name);
     _notesController = TextEditingController(text: widget.goalToEdit?.notes);
-    _creationDate = widget.goalToEdit?.creationDate ?? DateTime.now();
     _targetDate = widget.goalToEdit?.targetDate;
 
     if (_isEditing) {
       final goal = widget.goalToEdit!;
       _targetAmountController = TextEditingController(
-          text: goal.originalTargetAmount
-              .toStringAsFixed(goal.currencyCode == 'UAH' ? 2 : 2)
-              .replaceAll('.', ','));
+          text: goal.originalTargetAmount.toStringAsFixed(2).replaceAll('.', ','));
       _currentAmountController = TextEditingController(
-          text: goal.originalCurrentAmount
-              .toStringAsFixed(goal.currencyCode == 'UAH' ? 2 : 2)
-              .replaceAll('.', ','));
+          text: goal.originalCurrentAmount.toStringAsFixed(2).replaceAll('.', ','));
       _selectedGoalCurrency = _availableCurrencies.firstWhere(
         (c) => c.code == goal.currencyCode,
-        orElse: () => _availableCurrencies
-            .firstWhere((curr) => curr.code == _baseCurrencyCode),
+        orElse: () => _availableCurrencies.firstWhere((curr) => curr.code == _baseCurrencyCode),
       );
 
-      if (goal.exchangeRateUsed != null &&
-          goal.currencyCode != _baseCurrencyCode) {
+      if (goal.exchangeRateUsed != null && goal.currencyCode != _baseCurrencyCode) {
         _currentRateInfo = ConversionRateInfo(
             rate: goal.exchangeRateUsed!,
             effectiveRateDate: goal.creationDate,
@@ -87,12 +82,10 @@ class _AddEditFinancialGoalScreenState
     } else {
       _targetAmountController = TextEditingController();
       _currentAmountController = TextEditingController(text: '0');
-      final globalDisplayCurrency =
-          Provider.of<CurrencyProvider>(context, listen: false).selectedCurrency;
+      final globalDisplayCurrency = Provider.of<CurrencyProvider>(context, listen: false).selectedCurrency;
       _selectedGoalCurrency = _availableCurrencies.firstWhere(
         (c) => c.code == globalDisplayCurrency.code,
-        orElse: () => _availableCurrencies
-            .firstWhere((curr) => curr.code == _baseCurrencyCode),
+        orElse: () => _availableCurrencies.firstWhere((curr) => curr.code == _baseCurrencyCode),
       );
 
       if (_selectedGoalCurrency!.code != _baseCurrencyCode) {
@@ -114,15 +107,13 @@ class _AddEditFinancialGoalScreenState
     super.dispose();
   }
 
-  Future<void> _fetchAndSetExchangeRate(
-      {Currency? currency, bool calledFromManualCancel = false}) async {
+  Future<void> _fetchAndSetExchangeRate({Currency? currency, bool calledFromManualCancel = false}) async {
     final targetCurrency = currency ?? _selectedGoalCurrency;
     final DateTime rateDateForGoal = DateTime.now();
     if (targetCurrency == null || targetCurrency.code == _baseCurrencyCode) {
       if (mounted) {
         setState(() {
-          _currentRateInfo = ConversionRateInfo(
-              rate: 1.0, effectiveRateDate: rateDateForGoal, isRateStale: false);
+          _currentRateInfo = ConversionRateInfo(rate: 1.0, effectiveRateDate: rateDateForGoal, isRateStale: false);
           _rateFetchingError = null;
           _isFetchingRate = false;
           if (!calledFromManualCancel) {
@@ -134,20 +125,20 @@ class _AddEditFinancialGoalScreenState
       return;
     }
 
-    if (!mounted) return;
-    setState(() {
-      _isFetchingRate = true;
-      _rateFetchingError = null;
-      _currentRateInfo = null;
-      if (!calledFromManualCancel) {
-        _isManuallyEnteringRate = false;
-        _manualRateSetByButton = false;
-      }
-    });
+    if (mounted) {
+        setState(() {
+        _isFetchingRate = true;
+        _rateFetchingError = null;
+        _currentRateInfo = null;
+        if (!calledFromManualCancel) {
+            _isManuallyEnteringRate = false;
+            _manualRateSetByButton = false;
+        }
+        });
+    }
 
     try {
-      final ConversionRateInfo rateInfo =
-          await _exchangeRateService.getConversionRate(
+      final ConversionRateInfo rateInfo = await _exchangeRateService.getConversionRate(
         targetCurrency.code,
         _baseCurrencyCode,
         date: rateDateForGoal,
@@ -175,8 +166,7 @@ class _AddEditFinancialGoalScreenState
   }
 
   void _applyManualRate() {
-    final double? manualRate =
-        double.tryParse(_manualRateController.text.replaceAll(',', '.'));
+    final double? manualRate = double.tryParse(_manualRateController.text.replaceAll(',', '.'));
     if (manualRate != null && manualRate > 0) {
       if (mounted) {
         setState(() {
@@ -193,9 +183,8 @@ class _AddEditFinancialGoalScreenState
   }
 
   Future<void> _pickTargetDate() async {
-    DateTime initialDatePickerDate =
-        _targetDate ?? DateTime.now().add(const Duration(days: 30));
-    if (initialDatePickerDate.isBefore(DateTime.now()) && _targetDate == null) {
+    DateTime initialDatePickerDate = _targetDate ?? DateTime.now().add(const Duration(days: 30));
+    if (_targetDate == null && initialDatePickerDate.isBefore(DateTime.now())) {
       initialDatePickerDate = DateTime.now().add(const Duration(days: 30));
     }
     final DateTime? picked = await showDatePicker(
@@ -212,7 +201,9 @@ class _AddEditFinancialGoalScreenState
   }
 
   Future<void> _saveGoal() async {
-    if (!_formKey.currentState!.validate() || _isSaving) return;
+    if (!_formKey.currentState!.validate() || _isSaving) {
+      return;
+    }
 
     final walletId = context.read<WalletProvider>().currentWallet?.id;
     if (walletId == null) {
@@ -222,38 +213,32 @@ class _AddEditFinancialGoalScreenState
     }
 
     final name = _nameController.text.trim();
-    final originalTargetAmount =
-        double.tryParse(_targetAmountController.text.replaceAll(',', '.')) ?? 0.0;
-    final originalCurrentAmount =
-        double.tryParse(_currentAmountController.text.replaceAll(',', '.')) ?? 0.0;
+    final originalTargetAmount = double.tryParse(_targetAmountController.text.replaceAll(',', '.')) ?? 0.0;
+    final originalCurrentAmount = double.tryParse(_currentAmountController.text.replaceAll(',', '.')) ?? 0.0;
     final notes = _notesController.text.trim();
-    if (_selectedGoalCurrency == null ||
-        originalTargetAmount <= 0 ||
-        originalCurrentAmount < 0) return;
+    if (_selectedGoalCurrency == null || originalTargetAmount <= 0 || originalCurrentAmount < 0) {
+      return;
+    }
 
     double? finalExchangeRate;
     if (_selectedGoalCurrency!.code == _baseCurrencyCode) {
       finalExchangeRate = 1.0;
     } else if (_manualRateSetByButton && _currentRateInfo != null) {
       finalExchangeRate = _currentRateInfo!.rate;
-    } else if (_currentRateInfo != null &&
-        !_currentRateInfo!.isRateStale &&
-        _rateFetchingError == null) {
+    } else if (_currentRateInfo != null && !_currentRateInfo!.isRateStale && _rateFetchingError == null) {
       finalExchangeRate = _currentRateInfo!.rate;
     }
 
     if (finalExchangeRate == null || finalExchangeRate <= 0) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('Не вдалося визначити курс для ${_selectedGoalCurrency!.code}.')),
+          SnackBar(content: Text('Не вдалося визначити курс для ${_selectedGoalCurrency!.code}.')),
         );
       }
       return;
     }
 
-    if (!mounted) return;
-    setState(() => _isSaving = true);
+    if (mounted) setState(() => _isSaving = true);
 
     double targetAmountInBase = originalTargetAmount * finalExchangeRate;
     double currentAmountInBase = originalCurrentAmount * finalExchangeRate;
@@ -273,52 +258,51 @@ class _AddEditFinancialGoalScreenState
       notes: notes.isNotEmpty ? notes : null,
       isAchieved: calculatedIsAchieved,
     );
-    int savedGoalId;
-    try {
-      if (_isEditing) {
-        await _goalRepository.updateFinancialGoal(goalToSave);
-        savedGoalId = goalToSave.id!;
-      } else {
-        savedGoalId =
-            await _goalRepository.createFinancialGoal(goalToSave, walletId);
-      }
 
-      final int targetDateReminderId = savedGoalId * 10000 + 1;
-      if (_isEditing && widget.goalToEdit?.id != null) {
-        await _notificationService
-            .cancelNotification(widget.goalToEdit!.id! * 10000 + 1);
-      }
-
-      if (goalToSave.targetDate != null && !goalToSave.isAchieved) {
-        String reminderTitle = "Нагадування: Ціль \"${goalToSave.name}\"";
-        String reminderBody =
-            "Наближається цільова дата (${DateFormat('dd.MM.yyyy').format(goalToSave.targetDate!)}) для вашої фінансової цілі.";
-
-        await _notificationService.scheduleNotificationForDueDate(
-          id: targetDateReminderId,
-          title: reminderTitle,
-          body: reminderBody,
-          dueDateTime: goalToSave.targetDate!,
-          payload: 'goal/$savedGoalId',
-          channelId: NotificationService.goalNotificationChannelId,
-        );
-      } else {
-        await _notificationService.cancelNotification(targetDateReminderId);
-      }
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(_isEditing ? 'Ціль оновлено!' : 'Ціль створено!')));
-        Navigator.of(context).pop(true);
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Помилка збереження цілі: $e')));
-      }
-    } finally {
-      if (mounted) setState(() => _isSaving = false);
+    final Either<AppFailure, int> result;
+    if (_isEditing) {
+      result = await _goalRepository.updateFinancialGoal(goalToSave);
+    } else {
+      result = await _goalRepository.createFinancialGoal(goalToSave, walletId);
     }
+
+    result.fold(
+      (failure) {
+        if(mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Помилка збереження цілі: ${failure.userMessage}')));
+        }
+      },
+      (savedGoalId) async {
+        final int targetDateReminderId = savedGoalId * 10000 + 1;
+        if (_isEditing && widget.goalToEdit?.id != null) {
+          await _notificationService.cancelNotification(widget.goalToEdit!.id! * 10000 + 1);
+        }
+
+        if (goalToSave.targetDate != null && !goalToSave.isAchieved) {
+          String reminderTitle = "Нагадування: Ціль \"${goalToSave.name}\"";
+          String reminderBody = "Наближається цільова дата (${DateFormat('dd.MM.yyyy').format(goalToSave.targetDate!)}) для вашої фінансової цілі.";
+
+          await _notificationService.scheduleNotificationForDueDate(
+            id: targetDateReminderId,
+            title: reminderTitle,
+            body: reminderBody,
+            dueDateTime: goalToSave.targetDate!,
+            payload: 'goal/$savedGoalId',
+            channelId: NotificationService.goalNotificationChannelId,
+          );
+        } else {
+          await _notificationService.cancelNotification(targetDateReminderId);
+        }
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(_isEditing ? 'Ціль оновлено!' : 'Ціль створено!')));
+          Navigator.of(context).pop(true);
+        }
+      }
+    );
+
+    if (mounted) setState(() => _isSaving = false);
   }
 
   @override
@@ -397,12 +381,12 @@ class _AddEditFinancialGoalScreenState
             const SizedBox(height: 8),
             if (_isFetchingRate)
               const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8.0),
-                  child: Center(
-                      child: SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2)))),
+                padding: EdgeInsets.symmetric(vertical: 8.0),
+                child: Center(
+                    child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2)))),
             if (!_isFetchingRate &&
                 _rateFetchingError != null &&
                 !_isManuallyEnteringRate &&
@@ -419,11 +403,12 @@ class _AddEditFinancialGoalScreenState
                     TextButton(
                         child: const Text('Ввести курс вручну?'),
                         onPressed: () {
-                          if (mounted)
+                          if (mounted) {
                             setState(() {
                               _isManuallyEnteringRate = true;
                               _rateFetchingError = null;
                             });
+                          }
                         })
                   ],
                 ),
@@ -459,12 +444,13 @@ class _AddEditFinancialGoalScreenState
                         icon: const Icon(Icons.cancel_outlined),
                         tooltip: 'Скасувати ручне введення',
                         onPressed: () {
-                          if (mounted)
+                          if (mounted) {
                             setState(() {
                               _isManuallyEnteringRate = false;
                               _manualRateSetByButton = false;
                               _manualRateController.clear();
                             });
+                          }
                           _fetchAndSetExchangeRate(calledFromManualCancel: true);
                         })
                   ],
@@ -546,7 +532,9 @@ class _AddEditFinancialGoalScreenState
                 child: TextButton(
                   child: const Text('Очистити дату'),
                   onPressed: () {
-                    if (mounted) setState(() => _targetDate = null);
+                    if (mounted) {
+                      setState(() => _targetDate = null);
+                    }
                   },
                 ),
               ),

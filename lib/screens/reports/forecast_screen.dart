@@ -147,7 +147,7 @@ class _ForecastScreenState extends State<ForecastScreen> {
                           dotData: const FlDotData(show: false),
                           belowBarData: BarAreaData(
                             show: true,
-                            color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                            color: Theme.of(context).colorScheme.primary.withAlpha(51),
                           ),
                         ),
                       ],

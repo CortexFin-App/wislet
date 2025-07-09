@@ -206,7 +206,7 @@ class _AppNavigationShellState extends State<AppNavigationShell> {
             },
           ),
         ];
-        break;
+      break;
       default:
         break;
     }
@@ -273,10 +273,8 @@ class _AppNavigationShellState extends State<AppNavigationShell> {
           heroTag: 'add_budget_fab',
           onPressed: canEdit ? () async {
             final result = await Navigator.push(context, FadePageRoute(builder: (context) => const AddEditBudgetScreen()));
-            if (result == true && mounted) {
-              if (_budgetsListKey.currentState != null && _budgetsListKey.currentState!.mounted) {
-                _budgetsListKey.currentState!.refreshData();
-              }
+            if (result == true && _budgetsListKey.currentState != null && _budgetsListKey.currentState!.mounted) {
+              _budgetsListKey.currentState!.refreshData();
             }
           } : null,
           backgroundColor: canEdit ? null : Theme.of(context).disabledColor,
@@ -289,10 +287,8 @@ class _AppNavigationShellState extends State<AppNavigationShell> {
           heroTag: 'add_goal_fab',
           onPressed: canEdit ? () async {
             final result = await Navigator.push(context, MaterialPageRoute(builder: (context) => const AddEditFinancialGoalScreen()));
-            if (result == true && mounted) {
-              if (_goalsListKey.currentState != null && _goalsListKey.currentState!.mounted) {
-                _goalsListKey.currentState!.refreshData();
-              }
+            if (result == true && _goalsListKey.currentState != null && _goalsListKey.currentState!.mounted) {
+              _goalsListKey.currentState!.refreshData();
             }
           } : null,
           backgroundColor: canEdit ? null : Theme.of(context).disabledColor,

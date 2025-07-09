@@ -6,6 +6,7 @@ import '../../providers/app_mode_provider.dart';
 import '../../models/wallet.dart';
 import '../../data/repositories/invitation_repository.dart';
 import '../../core/di/injector.dart';
+import '../../services/auth_service.dart';
 
 class WalletsScreen extends StatefulWidget {
   const WalletsScreen({super.key});
@@ -15,8 +16,7 @@ class WalletsScreen extends StatefulWidget {
 }
 
 class _WalletsScreenState extends State<WalletsScreen> {
-  final InvitationRepository _invitationRepo =
-      getIt<InvitationRepository>(instanceName: 'supabase');
+  final InvitationRepository _invitationRepo = getIt<InvitationRepository>(instanceName: 'supabase');
 
   @override
   void initState() {
@@ -32,38 +32,27 @@ class _WalletsScreenState extends State<WalletsScreen> {
     }
   }
 
-  Future<void> _changeUserRole(
-      int walletId, String memberUserId, String newRole) async {
-    await context
-        .read<WalletProvider>()
-        .changeUserRole(walletId, memberUserId, newRole);
+  Future<void> _changeUserRole(int walletId, String memberUserId, String newRole) async {
+    await context.read<WalletProvider>().changeUserRole(walletId, memberUserId, newRole);
   }
 
-  Future<void> _removeUser(
-      BuildContext context, int walletId, String memberUserId) async {
+  Future<void> _removeUser(BuildContext context, int walletId, String memberUserId) async {
     final messenger = ScaffoldMessenger.of(context);
-    await context
-        .read<WalletProvider>()
-        .removeUserFromWallet(walletId, memberUserId);
+    await context.read<WalletProvider>().removeUserFromWallet(walletId, memberUserId);
     if (mounted) {
-      messenger.showSnackBar(
-          const SnackBar(content: Text('Користувача видалено з гаманця.')));
+      messenger.showSnackBar(const SnackBar(content: Text('Користувача видалено з гаманця.')));
     }
   }
 
-  Future<void> _generateAndShareInvite(
-      BuildContext context, Wallet wallet) async {
+  Future<void> _generateAndShareInvite(BuildContext context, Wallet wallet) async {
+    if (wallet.id == null) return;
     final messenger = ScaffoldMessenger.of(context);
     try {
       final invitationToken = await _invitationRepo.generateInvitation(wallet.id!);
       final link = 'https://cortexfinapp.com/invite?token=$invitationToken';
-      await Share.share(
-          'Привіт! Запрошую тебе до свого спільного гаманця "${wallet.name}" в додатку Гаманець Мудреця:\n\n$link');
+      await Share.share('Привіт! Запрошую тебе до свого спільного гаманця "${wallet.name}" в додатку Гаманець Мудреця:\n\n$link');
     } catch (e) {
-      if (mounted) {
-        messenger.showSnackBar(
-            SnackBar(content: Text('Помилка створення запрошення: $e')));
-      }
+        messenger.showSnackBar(SnackBar(content: Text('Помилка створення запрошення: $e')));
     }
   }
 
@@ -71,7 +60,8 @@ class _WalletsScreenState extends State<WalletsScreen> {
   Widget build(BuildContext context) {
     final walletProvider = context.watch<WalletProvider>();
     final wallets = walletProvider.wallets;
-    final currentUserId = walletProvider.currentWallet?.ownerUserId;
+    final authService = context.watch<AuthService>();
+    final currentUserId = authService.currentUser?.id;
 
     return Scaffold(
       appBar: AppBar(
@@ -136,7 +126,7 @@ class _WalletsScreenState extends State<WalletsScreen> {
                             )
                           : null,
                       onExpansionChanged: (isExpanding) {
-                        if (isExpanding &&
+                        if (isExpanding && wallet.id != null &&
                             wallet.id != walletProvider.currentWallet?.id) {
                           context
                               .read<WalletProvider>()
@@ -146,13 +136,12 @@ class _WalletsScreenState extends State<WalletsScreen> {
                       children: [
                         const Divider(height: 1),
                         ...wallet.members.map((member) {
-                          bool isMemberOwner =
-                              member.user.id == wallet.ownerUserId;
+                          bool isMemberOwner = member.user.id == wallet.ownerUserId;
                           return ListTile(
                             dense: true,
                             leading: const Icon(Icons.person, size: 20),
                             title: Text(member.user.name),
-                            trailing: amIOwner && !isMemberOwner
+                            trailing: amIOwner && !isMemberOwner && wallet.id != null
                                 ? Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
@@ -177,9 +166,7 @@ class _WalletsScreenState extends State<WalletsScreen> {
                                       IconButton(
                                         icon: Icon(
                                             Icons.person_remove_outlined,
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .error),
+                                            color: Theme.of(context).colorScheme.error),
                                         onPressed: () => _removeUser(context,
                                             wallet.id!, member.user.id),
                                       ),
@@ -192,9 +179,7 @@ class _WalletsScreenState extends State<WalletsScreen> {
                                             ? 'Редактор'
                                             : 'Глядач'),
                                     style: TextStyle(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSurfaceVariant,
+                                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                                         fontStyle: FontStyle.italic),
                                   ),
                           );
@@ -241,7 +226,7 @@ class _WalletsScreenState extends State<WalletsScreen> {
                 _showAddEditWalletDialog(context, walletToEdit: wallet);
               },
             ),
-            if (canDelete)
+            if (canDelete && wallet.id != null)
               ListTile(
                 leading: Icon(Icons.delete_outline,
                     color: Theme.of(context).colorScheme.error),
@@ -311,6 +296,7 @@ class _WalletsScreenState extends State<WalletsScreen> {
 
   Future<void> _confirmDeleteWallet(
       BuildContext context, Wallet wallet) async {
+    if (wallet.id == null) return;
     final walletProvider = context.read<WalletProvider>();
     final messenger = ScaffoldMessenger.of(context);
     return showDialog<void>(
@@ -333,19 +319,17 @@ class _WalletsScreenState extends State<WalletsScreen> {
               child: const Text('Видалити'),
               onPressed: () async {
                 final dialogNavigator = Navigator.of(dialogContext);
-                try {
-                  await walletProvider.deleteWallet(wallet.id!);
-                  if (dialogNavigator.context.mounted) {
-                    dialogNavigator.pop();
-                  }
-                } catch (e) {
-                  if (dialogNavigator.context.mounted) {
-                    dialogNavigator.pop();
-                  }
-                  if (mounted) {
-                    messenger
-                        .showSnackBar(SnackBar(content: Text(e.toString())));
-                  }
+                final result = await walletProvider.deleteWallet(wallet.id!);
+                result.fold(
+                  (failure) {
+                       if (mounted) {
+                         messenger.showSnackBar(SnackBar(content: Text(failure.userMessage)));
+                      }
+                  },
+                  (_) {}
+                );
+                if (dialogNavigator.context.mounted) {
+                  dialogNavigator.pop();
                 }
               },
             ),

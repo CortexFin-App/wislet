@@ -13,6 +13,8 @@ class Budget {
   final BudgetStrategyType strategyType;
   final double? plannedIncomeInBaseCurrency;
   final bool isActive;
+  final DateTime? updatedAt;
+  final bool isDeleted;
 
   Budget({
     this.id,
@@ -22,6 +24,8 @@ class Budget {
     required this.strategyType,
     this.plannedIncomeInBaseCurrency,
     this.isActive = true,
+    this.updatedAt,
+    this.isDeleted = false,
   });
 
   Map<String, dynamic> toMap() {
@@ -33,6 +37,8 @@ class Budget {
       'strategyType': strategyType.toString(),
       'plannedIncomeInBaseCurrency': plannedIncomeInBaseCurrency,
       'isActive': isActive ? 1 : 0,
+      'updated_at': updatedAt?.toIso8601String() ?? DateTime.now().toIso8601String(),
+      'is_deleted': isDeleted ? 1 : 0,
     };
   }
 
@@ -45,6 +51,8 @@ class Budget {
       strategyType: BudgetStrategyType.values.firstWhere((e) => e.toString() == map['strategyType']),
       plannedIncomeInBaseCurrency: (map['plannedIncomeInBaseCurrency'] as num?)?.toDouble(),
       isActive: map['isActive'] == 1,
+      updatedAt: map['updated_at'] != null ? DateTime.parse(map['updated_at'] as String) : null,
+      isDeleted: (map['is_deleted'] is bool) ? map['is_deleted'] : ((map['is_deleted'] as int? ?? 0) == 1),
     );
   }
 }
@@ -58,6 +66,8 @@ class BudgetEnvelope {
   final String originalCurrencyCode;
   final double plannedAmountInBaseCurrency;
   final double? exchangeRateUsed;
+  final DateTime? updatedAt;
+  final bool isDeleted;
 
   BudgetEnvelope({
     this.id,
@@ -68,6 +78,8 @@ class BudgetEnvelope {
     required this.originalCurrencyCode,
     required this.plannedAmountInBaseCurrency,
     this.exchangeRateUsed,
+    this.updatedAt,
+    this.isDeleted = false,
   });
 
   Map<String, dynamic> toMap() {
@@ -80,6 +92,8 @@ class BudgetEnvelope {
       'originalCurrencyCode': originalCurrencyCode,
       'plannedAmountInBaseCurrency': plannedAmountInBaseCurrency,
       'exchangeRateUsed': exchangeRateUsed,
+      'updated_at': updatedAt?.toIso8601String() ?? DateTime.now().toIso8601String(),
+      'is_deleted': isDeleted ? 1 : 0,
     };
   }
 
@@ -93,6 +107,8 @@ class BudgetEnvelope {
       originalCurrencyCode: map['originalCurrencyCode'],
       plannedAmountInBaseCurrency: (map['plannedAmountInBaseCurrency'] as num).toDouble(),
       exchangeRateUsed: (map['exchangeRateUsed'] as num?)?.toDouble(),
+      updatedAt: map['updated_at'] != null ? DateTime.parse(map['updated_at'] as String) : null,
+      isDeleted: (map['is_deleted'] is bool) ? map['is_deleted'] : ((map['is_deleted'] as int? ?? 0) == 1),
     );
   }
 }

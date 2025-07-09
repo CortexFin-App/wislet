@@ -12,6 +12,8 @@ class FinancialGoal {
   final String? iconName;
   final String? notes;
   final bool isAchieved;
+  final DateTime? updatedAt;
+  final bool isDeleted;
 
   FinancialGoal({
     this.id,
@@ -27,6 +29,8 @@ class FinancialGoal {
     this.iconName,
     this.notes,
     this.isAchieved = false,
+    this.updatedAt,
+    this.isDeleted = false,
   });
 
   Map<String, dynamic> toMap() {
@@ -44,6 +48,8 @@ class FinancialGoal {
       'iconName': iconName,
       'notes': notes,
       'isAchieved': isAchieved ? 1 : 0,
+      'updated_at': updatedAt?.toIso8601String() ?? DateTime.now().toIso8601String(),
+      'is_deleted': isDeleted ? 1 : 0,
     };
   }
 
@@ -62,6 +68,8 @@ class FinancialGoal {
       iconName: map['iconName'],
       notes: map['notes'],
       isAchieved: (map['isAchieved'] as int) == 1,
+      updatedAt: map['updated_at'] != null ? DateTime.parse(map['updated_at'] as String) : null,
+      isDeleted: (map['is_deleted'] is bool) ? map['is_deleted'] : ((map['is_deleted'] as int? ?? 0) == 1),
     );
   }
 }

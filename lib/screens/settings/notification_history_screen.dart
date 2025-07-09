@@ -33,18 +33,18 @@ class _NotificationHistoryScreenState extends State<NotificationHistoryScreen> {
 
   void _handleNotificationTap(String? payload, int id) async {
     await _notificationRepository.markNotificationAsRead(id);
-     _loadHistory();
+    _loadHistory();
     if (payload != null && payload.isNotEmpty) {
+      final context = NavigationService.navigatorKey.currentContext;
+      if (context == null || !context.mounted) return;
+
       final uri = Uri.parse(payload);
       final path = uri.pathSegments;
       if (path.isEmpty) return;
       if (path[0] == 'goal' && path.length > 1) {
         final goalId = int.tryParse(path[1]);
         if (goalId != null) {
-          final context = NavigationService.navigatorKey.currentContext;
-          if (context != null) {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => FinancialGoalsListScreen(goalIdToHighlight: goalId)));
-          }
+          Navigator.push(context, MaterialPageRoute(builder: (context) => FinancialGoalsListScreen(goalIdToHighlight: goalId)));
         }
       }
     }
@@ -68,7 +68,7 @@ class _NotificationHistoryScreenState extends State<NotificationHistoryScreen> {
                 ),
               ],
             ));
-    
+
     if (confirm == true) {
       await _notificationRepository.clearNotificationHistory();
       _loadHistory();
@@ -104,7 +104,7 @@ class _NotificationHistoryScreenState extends State<NotificationHistoryScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.notifications_off_outlined, size: 80, color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5)),
+                    Icon(Icons.notifications_off_outlined, size: 80, color: Theme.of(context).colorScheme.onSurfaceVariant.withAlpha(128)),
                     const SizedBox(height: 16),
                     Text('Історія сповіщень порожня', style: Theme.of(context).textTheme.headlineSmall),
                   ],
@@ -112,7 +112,7 @@ class _NotificationHistoryScreenState extends State<NotificationHistoryScreen> {
               ),
             );
           }
-          
+
           final notifications = snapshot.data!;
           return ListView.separated(
             padding: const EdgeInsets.all(8.0),

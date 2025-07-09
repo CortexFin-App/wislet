@@ -5,7 +5,7 @@ import '../core/di/injector.dart';
 import '../data/repositories/plan_repository.dart';
 import '../data/repositories/transaction_repository.dart';
 import '../models/plan_view_data.dart';
-import '../models/transaction.dart' as FinTransaction;
+import '../models/transaction.dart' as fin_transaction;
 import '../providers/currency_provider.dart';
 import '../providers/wallet_provider.dart';
 import '../utils/fade_page_route.dart';
@@ -45,25 +45,34 @@ class _PlanningScreenState extends State<PlanningScreen> {
   }
 
   Future<List<Map<String, dynamic>>> _fetchPlansAndActuals(int walletId) async {
-    final plansForMonth = await _planRepository.getPlansWithCategoryDetails(walletId);
-    final List<Map<String, dynamic>> result = [];
-    for (var planData in plansForMonth) {
-      if ((planData.startDate.month == _selectedMonth.month && planData.startDate.year == _selectedMonth.year) ||
-          (planData.endDate.month == _selectedMonth.month && planData.endDate.year == _selectedMonth.year)) {
-        double actualAmount = await _transactionRepository.getTotalAmount(
-          walletId: walletId,
-          startDate: planData.startDate,
-          endDate: planData.endDate,
-          transactionType: FinTransaction.TransactionType.expense,
-          categoryId: planData.categoryId,
-        );
-        result.add({
-          'plan': planData,
-          'actual': actualAmount,
-        });
+    final plansEither = await _planRepository.getPlansWithCategoryDetails(walletId);
+    return plansEither.fold(
+      (failure) => throw failure,
+      (plansForMonth) async {
+        final List<Map<String, dynamic>> result = [];
+        for (var planData in plansForMonth) {
+          if ((planData.startDate.month == _selectedMonth.month && planData.startDate.year == _selectedMonth.year) ||
+              (planData.endDate.month == _selectedMonth.month && planData.endDate.year == _selectedMonth.year)) {
+            
+            final actualAmountEither = await _transactionRepository.getTotalAmount(
+              walletId: walletId,
+              startDate: planData.startDate,
+              endDate: planData.endDate,
+              transactionType: fin_transaction.TransactionType.expense,
+              categoryId: planData.categoryId,
+            );
+            
+            final actualAmount = actualAmountEither.getOrElse((l) => 0.0);
+
+            result.add({
+              'plan': planData,
+              'actual': actualAmount,
+            });
+          }
+        }
+        return result;
       }
-    }
-    return result;
+    );
   }
   
   void _changeMonth(int monthIncrement) {
@@ -202,7 +211,7 @@ class _PlanningScreenState extends State<PlanningScreen> {
               const SizedBox(height: 8),
               LinearProgressIndicator(
                 value: progress,
-                backgroundColor: progressColor.withOpacity(0.2),
+                backgroundColor: progressColor.withAlpha(51),
                 valueColor: AlwaysStoppedAnimation<Color>(progressColor),
                 minHeight: 10,
                 borderRadius: BorderRadius.circular(5),

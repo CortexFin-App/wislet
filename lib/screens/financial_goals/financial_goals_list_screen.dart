@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:fpdart/fpdart.dart' hide State;
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../core/di/injector.dart';
+import '../../core/error/failures.dart';
 import '../../models/financial_goal.dart';
 import '../../models/currency_model.dart';
 import '../../providers/wallet_provider.dart';
@@ -22,7 +24,7 @@ class FinancialGoalsListScreen extends StatefulWidget {
 class FinancialGoalsListScreenState extends State<FinancialGoalsListScreen> {
   final GoalRepository _goalRepository = getIt<GoalRepository>();
   final NotificationService _notificationService = getIt<NotificationService>();
-  Future<List<FinancialGoal>>? _goalsFuture;
+  Future<Either<AppFailure, List<FinancialGoal>>>? _goalsFuture;
   bool _isLoading = true;
   int? _highlightedGoalId;
 
@@ -56,28 +58,25 @@ class FinancialGoalsListScreenState extends State<FinancialGoalsListScreen> {
     if (!_isLoading) {
       setState(() { _isLoading = true;});
     }
-    
+
     setState(() {
       _goalsFuture = _goalRepository.getAllFinancialGoals(currentWalletId);
     });
-    
-    try {
-        await _goalsFuture; 
-    } catch(e) {
-      debugPrint("Error awaiting _goalsFuture in _loadGoals: $e");
-    }
-    if (mounted) {
-        setState(() {
-            _isLoading = false;
-        });
-    }
+
+    _goalsFuture!.then((_) {
+        if (mounted) {
+            setState(() {
+                _isLoading = false;
+            });
+        }
+    });
   }
 
   Future<void> refreshData() async {
     if (!mounted) return;
     setState(() {
-      _isLoading = true; 
-      _highlightedGoalId = null; 
+      _isLoading = true;
+      _highlightedGoalId = null;
     });
     await _loadGoals();
   }
@@ -85,7 +84,7 @@ class FinancialGoalsListScreenState extends State<FinancialGoalsListScreen> {
   void _navigateToAddGoal() async {
     if(mounted) setState(() => _highlightedGoalId = null);
     final result = await Navigator.push(
-      context, 
+      context,
       FadePageRoute(builder: (context) => const AddEditFinancialGoalScreen())
     );
     if (result == true && mounted) {
@@ -96,16 +95,15 @@ class FinancialGoalsListScreenState extends State<FinancialGoalsListScreen> {
   void _navigateToEditGoal(FinancialGoal goal) async {
     if(mounted) setState(() => _highlightedGoalId = null);
     final result = await Navigator.push(
-      context, 
+      context,
       FadePageRoute(builder: (context) => AddEditFinancialGoalScreen(goalToEdit: goal))
     );
     if (result == true && mounted) {
       refreshData();
     }
   }
-  
+
   Future<void> _deleteGoal(FinancialGoal goalToDelete) async {
-    final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
     bool? confirmDelete = await showDialog<bool>(
         context: context,
@@ -131,7 +129,7 @@ class FinancialGoalsListScreenState extends State<FinancialGoalsListScreen> {
       if (goalToDelete.id == null) return;
       final int goalId = goalToDelete.id!;
       await _goalRepository.deleteFinancialGoal(goalId);
-      
+
       final int targetDateReminderId = goalId * 10000 + 1;
       await _notificationService.cancelNotification(targetDateReminderId);
 
@@ -168,7 +166,7 @@ class FinancialGoalsListScreenState extends State<FinancialGoalsListScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Icon(Icons.flag_outlined, size: 80, color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5)),
+            Icon(Icons.flag_outlined, size: 80, color: Theme.of(context).colorScheme.onSurfaceVariant.withAlpha(128)),
             const SizedBox(height: 24),
             Text(
               'Фінансових цілей ще немає',
@@ -195,13 +193,13 @@ class FinancialGoalsListScreenState extends State<FinancialGoalsListScreen> {
 
   Widget _buildSkeletonGoalListItem() {
     final Color itemColor = Theme.of(context).cardColor;
-    
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
       child: Container(
         padding: const EdgeInsets.all(16.0),
         decoration: BoxDecoration(
-          color: itemColor, 
+          color: itemColor,
           borderRadius: BorderRadius.circular(12.0),
         ),
         child: Column(
@@ -215,9 +213,9 @@ class FinancialGoalsListScreenState extends State<FinancialGoalsListScreen> {
               ],
             ),
             const SizedBox(height: 12),
-              Container(width: MediaQuery.of(context).size.width * 0.7, height: 12, color: itemColor, margin: const EdgeInsets.only(bottom: 8)),
-              Container(width: double.infinity, height: 8, color: itemColor, margin: const EdgeInsets.only(bottom: 8)),
-              Container(width: MediaQuery.of(context).size.width * 0.4, height: 12, color: itemColor),
+            Container(width: MediaQuery.of(context).size.width * 0.7, height: 12, color: itemColor, margin: const EdgeInsets.only(bottom: 8)),
+            Container(width: double.infinity, height: 8, color: itemColor, margin: const EdgeInsets.only(bottom: 8)),
+            Container(width: MediaQuery.of(context).size.width * 0.4, height: 12, color: itemColor),
           ],
         ),
       ),
@@ -227,13 +225,13 @@ class FinancialGoalsListScreenState extends State<FinancialGoalsListScreen> {
   Widget _buildShimmerLoadingList() {
     final Color baseShimmerColor = Theme.of(context).brightness == Brightness.light ? Colors.grey[300]! : Colors.grey[700]!;
     final Color highlightShimmerColor = Theme.of(context).brightness == Brightness.light ? Colors.grey[100]! : Colors.grey[500]!;
-    
+
     return Shimmer.fromColors(
       baseColor: baseShimmerColor,
       highlightColor: highlightShimmerColor,
       child: ListView.builder(
         padding: const EdgeInsets.all(8.0),
-        itemCount: 5, 
+        itemCount: 5,
         itemBuilder: (context, index) => _buildSkeletonGoalListItem(),
       ),
     );
@@ -244,111 +242,117 @@ class FinancialGoalsListScreenState extends State<FinancialGoalsListScreen> {
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: refreshData,
-        child: FutureBuilder<List<FinancialGoal>>(
+        child: FutureBuilder<Either<AppFailure, List<FinancialGoal>>>(
           future: _goalsFuture,
           builder: (context, snapshot) {
             if (_isLoading || snapshot.connectionState == ConnectionState.waiting || _goalsFuture == null) {
               return _buildShimmerLoadingList();
-            } else if (snapshot.hasError) {
-              return Center(child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text('Помилка завантаження цілей: ${snapshot.error}'),
-              ));
-            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return _buildEmptyState(context);
-            } else {
-              final goals = snapshot.data!;
-              return SafeArea(
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(8.0),
-                  itemCount: goals.length,
-                  itemBuilder: (context, index) {
-                    final goal = goals[index];
-                    double progress = 0.0;
-                    if (goal.originalTargetAmount > 0) {
-                      progress = (goal.originalCurrentAmount / goal.originalTargetAmount).clamp(0.0, 1.0);
-                    }
-                    
-                    final goalCurrencyDetails = appCurrencies.firstWhere(
-                        (c) => c.code == goal.currencyCode, 
-                        orElse: () => Currency(code: goal.currencyCode, symbol: goal.currencyCode, name: '', locale: 'uk_UA')
-                    );
-                    final NumberFormat currencyFormatter = NumberFormat.currency(
-                      locale: goalCurrencyDetails.locale,
-                      symbol: goalCurrencyDetails.symbol,
-                      decimalDigits: 2
-                    );
-                    
-                    String progressText = "${currencyFormatter.format(goal.originalCurrentAmount)} / ${currencyFormatter.format(goal.originalTargetAmount)}";
-                    if (goal.isAchieved) {
-                      progressText = "Досягнуто! ${currencyFormatter.format(goal.originalTargetAmount)}";
-                    }
-                    
-                    final bool isHighlighted = goal.id == _highlightedGoalId;
-                    final String daysRemainingText = _getDaysRemainingText(goal.targetDate, goal.isAchieved);
-                    final Color progressColor = goal.isAchieved ? Colors.green.shade600 : Theme.of(context).colorScheme.primary;
-                    final IconData leadingIconData = goal.isAchieved ? Icons.check_circle_outline_rounded : (goal.iconName != null ? Icons.star_outline_rounded : Icons.flag_outlined);
-                    final Color leadingIconColor = goal.isAchieved ? Colors.green.shade700 : Theme.of(context).colorScheme.secondary;
-
-                    return Card(
-                      elevation: isHighlighted ? 4.0 : 1.0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.0),
-                          side: isHighlighted ? BorderSide(color: Theme.of(context).colorScheme.primary, width: 1.5) : BorderSide.none,
-                        ),
-                      margin: const EdgeInsets.symmetric(vertical: 6.0),
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 16.0),
-                        leading: CircleAvatar(
-                          radius: 24,
-                          backgroundColor: leadingIconColor.withOpacity(0.15),
-                          child: Icon(leadingIconData, size: 26, color: leadingIconColor),
-                        ),
-                        title: Text(goal.name, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
-                        subtitle: Padding(
-                          padding: const EdgeInsets.only(top: 6.0),
-                          child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(progressText, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
-                            const SizedBox(height: 6),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: LinearProgressIndicator(
-                                    value: progress,
-                                    backgroundColor: progressColor.withOpacity(0.2),
-                                    valueColor: AlwaysStoppedAnimation<Color>(progressColor),
-                                    minHeight: 8,
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Text("${(progress * 100).toStringAsFixed(0)}%", style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold, color: progressColor)),
-                              ],
-                            ),
-                            if (daysRemainingText.isNotEmpty) ...[
-                              const SizedBox(height: 4),
-                              Text(daysRemainingText, style: goal.isAchieved ? Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.green.shade800) : Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.8))),
-                            ]
-                          ],
-                        ),
-                        ),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete_outline_rounded, size: 24),
-                          color: Theme.of(context).colorScheme.error.withOpacity(0.8),
-                          tooltip: 'Видалити ціль',
-                          onPressed: () => _deleteGoal(goal),
-                        ),
-                        onTap: () => _navigateToEditGoal(goal),
-                        isThreeLine: true, 
-                      ),
-                    );
-                  },
-                ),
-              );
             }
+            if (!snapshot.hasData) {
+              return _buildEmptyState(context);
+            }
+
+            return snapshot.data!.fold(
+              (failure) => Center(child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text('Помилка завантаження цілей: ${failure.userMessage}'),
+              )),
+              (goals) {
+                if (goals.isEmpty) {
+                  return _buildEmptyState(context);
+                }
+                return SafeArea(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 80.0),
+                    itemCount: goals.length,
+                    itemBuilder: (context, index) {
+                      final goal = goals[index];
+                      double progress = 0.0;
+                      if (goal.originalTargetAmount > 0) {
+                        progress = (goal.originalCurrentAmount / goal.originalTargetAmount).clamp(0.0, 1.0);
+                      }
+
+                      final goalCurrencyDetails = appCurrencies.firstWhere(
+                          (c) => c.code == goal.currencyCode,
+                          orElse: () => Currency(code: goal.currencyCode, symbol: goal.currencyCode, name: '', locale: 'uk_UA')
+                      );
+                      final NumberFormat currencyFormatter = NumberFormat.currency(
+                        locale: goalCurrencyDetails.locale,
+                        symbol: goalCurrencyDetails.symbol,
+                        decimalDigits: 2
+                      );
+
+                      String progressText = "${currencyFormatter.format(goal.originalCurrentAmount)} / ${currencyFormatter.format(goal.originalTargetAmount)}";
+                      if (goal.isAchieved) {
+                        progressText = "Досягнуто! ${currencyFormatter.format(goal.originalTargetAmount)}";
+                      }
+
+                      final bool isHighlighted = goal.id == _highlightedGoalId;
+                      final String daysRemainingText = _getDaysRemainingText(goal.targetDate, goal.isAchieved);
+                      final Color progressColor = goal.isAchieved ? Colors.green.shade600 : Theme.of(context).colorScheme.primary;
+                      final IconData leadingIconData = goal.isAchieved ? Icons.check_circle_outline_rounded : (goal.iconName != null ? Icons.star_outline_rounded : Icons.flag_outlined);
+                      final Color leadingIconColor = goal.isAchieved ? Colors.green.shade700 : Theme.of(context).colorScheme.secondary;
+
+                      return Card(
+                        elevation: isHighlighted ? 4.0 : 1.0,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12.0),
+                            side: isHighlighted ? BorderSide(color: Theme.of(context).colorScheme.primary, width: 1.5) : BorderSide.none,
+                        ),
+                        margin: const EdgeInsets.symmetric(vertical: 6.0),
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 16.0),
+                          leading: CircleAvatar(
+                            radius: 24,
+                            backgroundColor: leadingIconColor.withAlpha(38),
+                            child: Icon(leadingIconData, size: 26, color: leadingIconColor),
+                          ),
+                          title: Text(goal.name, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+                          subtitle: Padding(
+                            padding: const EdgeInsets.only(top: 6.0),
+                            child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(progressText, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: LinearProgressIndicator(
+                                      value: progress,
+                                      backgroundColor: progressColor.withAlpha(51),
+                                      valueColor: AlwaysStoppedAnimation<Color>(progressColor),
+                                      minHeight: 8,
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text("${(progress * 100).toStringAsFixed(0)}%", style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold, color: progressColor)),
+                                ],
+                              ),
+                              if (daysRemainingText.isNotEmpty) ...[
+                                const SizedBox(height: 4),
+                                Text(daysRemainingText, style: goal.isAchieved ? Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.green.shade800) : Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant.withAlpha(204))),
+                              ]
+                            ],
+                          ),
+                          ),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.delete_outline_rounded, size: 24),
+                            color: Theme.of(context).colorScheme.error.withAlpha(204),
+                            tooltip: 'Видалити ціль',
+                            onPressed: () => _deleteGoal(goal),
+                          ),
+                          onTap: () => _navigateToEditGoal(goal),
+                          isThreeLine: true,
+                        ),
+                      );
+                    },
+                  ),
+                );
+              }
+            );
           },
         ),
       ),

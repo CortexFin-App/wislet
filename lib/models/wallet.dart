@@ -13,6 +13,8 @@ class Wallet {
   final bool isDefault;
   String? currentUserRole;
   List<WalletUser> members;
+  final DateTime? updatedAt;
+  final bool isDeleted;
 
   Wallet({
     this.id,
@@ -21,6 +23,8 @@ class Wallet {
     this.isDefault = false,
     this.currentUserRole,
     this.members = const [],
+    this.updatedAt,
+    this.isDeleted = false,
   });
 
   Map<String, dynamic> toMapForDb() {
@@ -29,13 +33,19 @@ class Wallet {
       'name': name,
       'ownerUserId': ownerUserId,
       'isDefault': isDefault ? 1 : 0,
+      'updated_at': updatedAt?.toIso8601String() ?? DateTime.now().toIso8601String(),
+      'is_deleted': isDeleted ? 1 : 0,
     };
   }
 
   Map<String, dynamic> toMapForApi() {
     return {
+      'id': id,
       'name': name,
       'is_default': isDefault,
+      'owner_user_id': ownerUserId,
+      'updated_at': updatedAt?.toIso8601String() ?? DateTime.now().toIso8601String(),
+      'is_deleted': isDeleted,
     };
   }
 
@@ -63,6 +73,8 @@ class Wallet {
           ? map['is_default']
           : ((map['isDefault'] as int? ?? 0) == 1),
       members: parsedMembers,
+      updatedAt: map['updated_at'] != null ? DateTime.parse(map['updated_at'] as String) : null,
+      isDeleted: (map['is_deleted'] is bool) ? map['is_deleted'] : ((map['is_deleted'] as int? ?? 0) == 1),
     );
   }
 

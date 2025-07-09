@@ -97,7 +97,7 @@ class ScannerOverlayPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final backgroundPath = Path()..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
     final cutoutPath = Path()..addRRect(RRect.fromRectAndRadius(scanWindow, const Radius.circular(12)));
-    final backgroundPaint = Paint()..color = Colors.black.withOpacity(0.5);
+    final backgroundPaint = Paint()..color = Colors.black.withAlpha(128);
 
     final backgroundPathWithoutCutout = Path.combine(
       PathOperation.difference,

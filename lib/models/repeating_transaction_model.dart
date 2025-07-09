@@ -21,6 +21,8 @@ class RepeatingTransaction {
   final String? monthDay;
   final int? yearMonth;
   final int? yearDay;
+  final DateTime? updatedAt;
+  final bool isDeleted;
 
   RepeatingTransaction({
     this.id,
@@ -41,6 +43,8 @@ class RepeatingTransaction {
     this.monthDay,
     this.yearMonth,
     this.yearDay,
+    this.updatedAt,
+    this.isDeleted = false,
   });
 
   Map<String, dynamic> toMap() {
@@ -63,6 +67,8 @@ class RepeatingTransaction {
       'monthDay': monthDay,
       'yearMonth': yearMonth,
       'yearDay': yearDay,
+      'updated_at': updatedAt?.toIso8601String() ?? DateTime.now().toIso8601String(),
+      'is_deleted': isDeleted ? 1 : 0,
     };
   }
 
@@ -86,6 +92,8 @@ class RepeatingTransaction {
       monthDay: map['monthDay'],
       yearMonth: map['yearMonth'],
       yearDay: map['yearDay'],
+      updatedAt: map['updated_at'] != null ? DateTime.parse(map['updated_at'] as String) : null,
+      isDeleted: (map['is_deleted'] is bool) ? map['is_deleted'] : ((map['is_deleted'] as int? ?? 0) == 1),
     );
   }
 

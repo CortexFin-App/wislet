@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:fpdart/fpdart.dart' hide State;
 import 'package:provider/provider.dart';
 import '../core/di/injector.dart';
+import '../core/error/failures.dart';
 import '../data/repositories/category_repository.dart';
 import '../models/category.dart';
 import '../providers/wallet_provider.dart';
@@ -15,7 +17,7 @@ class CategoriesScreen extends StatefulWidget {
 class _CategoriesScreenState extends State<CategoriesScreen> with SingleTickerProviderStateMixin {
   final CategoryRepository _categoryRepository = getIt<CategoryRepository>();
   late TabController _tabController;
-  Future<List<Category>>? _categoriesFuture;
+  Future<Either<AppFailure, List<Category>>>? _categoriesFuture;
 
   @override
   void initState() {
@@ -51,12 +53,12 @@ class _CategoriesScreenState extends State<CategoriesScreen> with SingleTickerPr
   Future<void> _showAddEditCategoryDialog({Category? category}) async {
     final formKey = GlobalKey<FormState>();
     final nameController = TextEditingController(text: category?.name ?? '');
-    CategoryType selectedType = category?.type ?? CategoryType.expense;
+    CategoryType selectedType = category?.type ?? (_tabController.index == 0 ? CategoryType.expense : CategoryType.income);
     Bucket? selectedBucket = category?.bucket;
 
     await showDialog(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
@@ -120,13 +122,15 @@ class _CategoriesScreenState extends State<CategoriesScreen> with SingleTickerPr
                         type: selectedType,
                         bucket: selectedBucket,
                       );
+                      
+                      final navigator = Navigator.of(context);
                       if (category == null) {
                         await _categoryRepository.createCategory(newCategory, walletId);
                       } else {
                         await _categoryRepository.updateCategory(newCategory);
                       }
                       _loadCategories();
-                      if(mounted) Navigator.of(context).pop();
+                      if(navigator.canPop()) navigator.pop();
                     }
                   },
                   child: const Text('Зберегти'),
@@ -152,28 +156,30 @@ class _CategoriesScreenState extends State<CategoriesScreen> with SingleTickerPr
           ],
         ),
       ),
-      body: FutureBuilder<List<Category>>(
+      body: FutureBuilder<Either<AppFailure, List<Category>>>(
         future: _categoriesFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
-          if (snapshot.hasError) {
-            return Center(child: Text('Помилка: ${snapshot.error}'));
+          if (!snapshot.hasData) {
+            return const Center(child: Text('Завантаження...'));
           }
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('Категорій ще немає.'));
-          }
-          final allCategories = snapshot.data!;
-          final expenseCategories = allCategories.where((c) => c.type == CategoryType.expense).toList();
-          final incomeCategories = allCategories.where((c) => c.type == CategoryType.income).toList();
 
-          return TabBarView(
-            controller: _tabController,
-            children: [
-              _buildCategoryList(expenseCategories),
-              _buildCategoryList(incomeCategories),
-            ],
+          return snapshot.data!.fold(
+            (failure) => Center(child: Text('Помилка: ${failure.userMessage}')),
+            (allCategories) {
+              final expenseCategories = allCategories.where((c) => c.type == CategoryType.expense).toList();
+              final incomeCategories = allCategories.where((c) => c.type == CategoryType.income).toList();
+
+              return TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildCategoryList(expenseCategories),
+                  _buildCategoryList(incomeCategories),
+                ],
+              );
+            }
           );
         },
       ),

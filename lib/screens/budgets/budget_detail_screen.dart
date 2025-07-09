@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:fpdart/fpdart.dart' hide State;
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../core/di/injector.dart';
+import '../../core/error/failures.dart';
 import '../../data/repositories/budget_repository.dart';
 import '../../data/repositories/transaction_repository.dart';
 import '../../models/budget_models.dart';
-import '../../models/transaction.dart' as FinTransactionModel;
+import '../../models/transaction.dart' as fin_transaction;
 import '../../models/transaction_view_data.dart';
 import '../../providers/currency_provider.dart';
 import '../../providers/wallet_provider.dart';
@@ -43,30 +45,43 @@ class _BudgetDetailScreenState extends State<BudgetDetailScreen> with SingleTick
 
   Future<Map<String, dynamic>> _fetchDetails() async {
     final walletId = Provider.of<WalletProvider>(context, listen: false).currentWallet!.id!;
-    final envelopes = await _budgetRepository.getEnvelopesForBudget(widget.budget.id!);
-    double totalPlannedInBase = 0;
-    double totalActualInBase = 0;
-    Map<int, double> envelopeActuals = {};
 
-    for (var envelope in envelopes) {
-      totalPlannedInBase += envelope.plannedAmountInBaseCurrency;
-      double actualSpent = await _transactionRepository.getTotalAmount(
-        walletId: walletId,
-        startDate: widget.budget.startDate,
-        endDate: widget.budget.endDate,
-        transactionType: FinTransactionModel.TransactionType.expense,
-        categoryId: envelope.categoryId,
-      );
-      totalActualInBase += actualSpent;
-      envelopeActuals[envelope.id!] = actualSpent;
-    }
+    final envelopesEither = await _budgetRepository.getEnvelopesForBudget(widget.budget.id!);
 
-    return {
-      'envelopes': envelopes,
-      'totalPlannedInBase': totalPlannedInBase,
-      'totalActualInBase': totalActualInBase,
-      'envelopeActuals': envelopeActuals,
-    };
+    return envelopesEither.fold(
+      (failure) => throw failure,
+      (envelopes) async {
+        double totalPlannedInBase = 0;
+        double totalActualInBase = 0;
+        Map<int, double> envelopeActuals = {};
+
+        for (var envelope in envelopes) {
+          totalPlannedInBase += envelope.plannedAmountInBaseCurrency;
+          final actualSpentEither = await _transactionRepository.getTotalAmount(
+            walletId: walletId,
+            startDate: widget.budget.startDate,
+            endDate: widget.budget.endDate,
+            transactionType: fin_transaction.TransactionType.expense,
+            categoryId: envelope.categoryId,
+          );
+
+          actualSpentEither.fold(
+            (l) => totalActualInBase += 0,
+            (actualSpent) {
+              totalActualInBase += actualSpent;
+              envelopeActuals[envelope.id!] = actualSpent;
+            }
+          );
+        }
+
+        return {
+          'envelopes': envelopes,
+          'totalPlannedInBase': totalPlannedInBase,
+          'totalActualInBase': totalActualInBase,
+          'envelopeActuals': envelopeActuals,
+        };
+      }
+    );
   }
 
   @override
@@ -135,7 +150,7 @@ class _BudgetDetailScreenState extends State<BudgetDetailScreen> with SingleTick
         child: Text('Додайте конверти для цього бюджету.'),
       );
     }
-    
+
     return ListView.builder(
       padding: const EdgeInsets.all(8),
       itemCount: envelopes.length,
@@ -146,7 +161,7 @@ class _BudgetDetailScreenState extends State<BudgetDetailScreen> with SingleTick
         final double difference = plannedAmount - actualSpent;
         double progress = 0.0;
         if(plannedAmount > 0) {
-          progress = (actualSpent / plannedAmount).clamp(0.0, 1.0);
+           progress = (actualSpent / plannedAmount).clamp(0.0, 1.0);
         }
 
         Color progressColor = Colors.green.shade600;
@@ -195,7 +210,7 @@ class _BudgetDetailScreenState extends State<BudgetDetailScreen> with SingleTick
                 const SizedBox(height: 8),
                 LinearProgressIndicator(
                   value: progress,
-                  backgroundColor: progressColor.withOpacity(0.2),
+                  backgroundColor: progressColor.withAlpha(51),
                   valueColor: AlwaysStoppedAnimation<Color>(progressColor),
                   minHeight: 10,
                   borderRadius: BorderRadius.circular(5),
@@ -209,12 +224,12 @@ class _BudgetDetailScreenState extends State<BudgetDetailScreen> with SingleTick
   }
 
   Widget _buildTransactionsTab(BuildContext context) {
-    return FutureBuilder<List<TransactionViewData>>(
+    return FutureBuilder<Either<AppFailure, List<TransactionViewData>>>(
       future: _transactionRepository.getTransactionsWithDetails(
         walletId: Provider.of<WalletProvider>(context, listen: false).currentWallet!.id!,
         startDate: widget.budget.startDate,
         endDate: widget.budget.endDate,
-        filterTransactionType: FinTransactionModel.TransactionType.expense,
+        filterTransactionType: fin_transaction.TransactionType.expense,
       ),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -223,23 +238,31 @@ class _BudgetDetailScreenState extends State<BudgetDetailScreen> with SingleTick
         if (snapshot.hasError) {
           return Center(child: Text("Помилка завантаження транзакцій: ${snapshot.error}"));
         }
-        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+        if (!snapshot.hasData) {
           return const Center(child: Text('Немає транзакцій за цей період.'));
         }
-        final transactions = snapshot.data!;
-        return ListView.builder(
-          itemCount: transactions.length,
-          itemBuilder: (context, index) {
-            final tx = transactions[index];
-            return ListTile(
-              title: Text(tx.categoryName),
-              subtitle: Text(tx.description ?? ''),
-              trailing: Text(
-                '- ${NumberFormat.currency(symbol: tx.originalCurrencyCode).format(tx.originalAmount)}',
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
+
+        return snapshot.data!.fold(
+          (failure) => Center(child: Text("Помилка: ${failure.userMessage}")),
+          (transactions) {
+            if (transactions.isEmpty) {
+              return const Center(child: Text('Немає транзакцій за цей період.'));
+            }
+            return ListView.builder(
+              itemCount: transactions.length,
+              itemBuilder: (context, index) {
+                final tx = transactions[index];
+                return ListTile(
+                  title: Text(tx.categoryName),
+                  subtitle: Text(tx.description ?? ''),
+                  trailing: Text(
+                    '- ${NumberFormat.currency(symbol: tx.originalCurrencyCode).format(tx.originalAmount)}',
+                    style: TextStyle(color: Theme.of(context).colorScheme.error),
+                  ),
+                );
+              },
             );
-          },
+          }
         );
       },
     );

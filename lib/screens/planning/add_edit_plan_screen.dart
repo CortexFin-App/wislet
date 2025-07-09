@@ -24,23 +24,23 @@ class _AddEditPlanScreenState extends State<AddEditPlanScreen> {
   final PlanRepository _planRepository = getIt<PlanRepository>();
   final CategoryRepository _categoryRepository = getIt<CategoryRepository>();
   final ExchangeRateService _exchangeRateService = getIt<ExchangeRateService>();
-  
+
   final TextEditingController _amountController = TextEditingController();
   Category? _selectedCategory;
-  DateTime _startDate = DateTime.now();
-  DateTime _endDate = DateTime(DateTime.now().year, DateTime.now().month + 1, 0);
+  late DateTime _startDate;
+  late DateTime _endDate;
   Currency? _selectedPlanCurrency;
   final List<Currency> _availableCurrencies = appCurrencies;
   List<Category> _availableCategories = [];
   bool _isLoadingCategories = false;
   bool _isSaving = false;
-  
+
   bool get _isEditing => widget.planToEdit != null;
   final String _baseCurrencyCode = 'UAH';
   bool _isFetchingRate = false;
   String? _rateFetchingError;
   ConversionRateInfo? _currentRateInfo;
-  
+
   bool _isManuallyEnteringRate = false;
   final TextEditingController _manualRateController = TextEditingController();
   bool _manualRateSetByButton = false;
@@ -48,11 +48,11 @@ class _AddEditPlanScreenState extends State<AddEditPlanScreen> {
   @override
   void initState() {
     super.initState();
-    
+
     if (_availableCurrencies.isNotEmpty) {
         _selectedPlanCurrency = _availableCurrencies.firstWhere((c) => c.code == _baseCurrencyCode, orElse: () => _availableCurrencies.first);
     }
-    
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadCategories();
     });
@@ -63,8 +63,8 @@ class _AddEditPlanScreenState extends State<AddEditPlanScreen> {
       _startDate = plan.startDate;
       _endDate = plan.endDate;
       _selectedPlanCurrency = _availableCurrencies.firstWhere(
-          (c) => c.code == plan.originalCurrencyCode, 
-          orElse: () => _availableCurrencies.firstWhere((curr) => curr.code == _baseCurrencyCode)
+          (c) => c.code == plan.originalCurrencyCode,
+           orElse: () => _availableCurrencies.firstWhere((curr) => curr.code == _baseCurrencyCode)
       );
       if (plan.exchangeRateUsed != null && plan.originalCurrencyCode != _baseCurrencyCode) {
           _currentRateInfo = ConversionRateInfo(
@@ -73,16 +73,18 @@ class _AddEditPlanScreenState extends State<AddEditPlanScreen> {
             isRateStale: true
         );
       } else if (_selectedPlanCurrency!.code != _baseCurrencyCode) {
-        _fetchAndSetExchangeRate(currency: _selectedPlanCurrency);
+         _fetchAndSetExchangeRate(currency: _selectedPlanCurrency);
       } else {
         _currentRateInfo = ConversionRateInfo(rate: 1.0, effectiveRateDate: _startDate, isRateStale: false);
       }
     } else {
+      final now = DateTime.now();
       if (widget.initialDate != null) {
         _startDate = DateTime(widget.initialDate!.year, widget.initialDate!.month, 1);
         _endDate = DateTime(widget.initialDate!.year, widget.initialDate!.month + 1, 0);
       } else {
-        _endDate = DateTime(_startDate.year, _startDate.month + 1, 0);
+        _startDate = DateTime(now.year, now.month, 1);
+        _endDate = DateTime(now.year, now.month + 1, 0);
       }
 
       if (_selectedPlanCurrency!.code != _baseCurrencyCode) {
@@ -96,7 +98,6 @@ class _AddEditPlanScreenState extends State<AddEditPlanScreen> {
   Future<void> _fetchAndSetExchangeRate({Currency? currency, bool calledFromManualCancel = false}) async {
     final targetCurrency = currency ?? _selectedPlanCurrency;
     final DateTime rateDateForPlan = DateTime.now();
-
     if (targetCurrency == null || targetCurrency.code == _baseCurrencyCode) {
       if (mounted) {
         setState(() {
@@ -110,16 +111,17 @@ class _AddEditPlanScreenState extends State<AddEditPlanScreen> {
       return;
     }
 
-    if (!mounted) return;
-    setState(() {
-      _isFetchingRate = true;
-      _rateFetchingError = null;
-      _currentRateInfo = null;
-      if (!calledFromManualCancel) {
-        _isManuallyEnteringRate = false;
-        _manualRateSetByButton = false;
-      }
-    });
+    if (mounted) {
+      setState(() {
+        _isFetchingRate = true;
+        _rateFetchingError = null;
+        _currentRateInfo = null;
+        if (!calledFromManualCancel) {
+          _isManuallyEnteringRate = false;
+          _manualRateSetByButton = false;
+        }
+      });
+    }
 
     try {
       final ConversionRateInfo rateInfo = await _exchangeRateService.getConversionRate(
@@ -148,20 +150,20 @@ class _AddEditPlanScreenState extends State<AddEditPlanScreen> {
       }
     }
   }
-  
+
   void _applyManualRate() {
     final double? manualRate = double.tryParse(_manualRateController.text.replaceAll(',', '.'));
     if (manualRate != null && manualRate > 0) {
       if(mounted) {
         setState(() {
           _currentRateInfo = ConversionRateInfo(
-            rate: manualRate, 
+            rate: manualRate,
             effectiveRateDate: DateTime.now(),
-            isRateStale: true 
+            isRateStale: true
           );
           _manualRateSetByButton = true;
           _isManuallyEnteringRate = false;
-          _rateFetchingError = null; 
+          _rateFetchingError = null;
         });
       }
     }
@@ -172,18 +174,28 @@ class _AddEditPlanScreenState extends State<AddEditPlanScreen> {
     final walletProvider = context.read<WalletProvider>();
     final currentWalletId = walletProvider.currentWallet?.id;
     if(currentWalletId == null) return;
-    
+
     setState(() => _isLoadingCategories = true);
-    final categories = await _categoryRepository.getCategoriesByType(currentWalletId, CategoryType.expense);
+    final categoriesEither = await _categoryRepository.getCategoriesByType(currentWalletId, CategoryType.expense);
     if (!mounted) return;
 
-    setState(() {
-      _availableCategories = categories;
-      if (_isEditing && categories.any((Category cat) => cat.id == widget.planToEdit!.categoryId)) {
-        _selectedCategory = categories.firstWhere((Category cat) => cat.id == widget.planToEdit!.categoryId);
+    categoriesEither.fold(
+      (failure) {
+        setState(() {
+          _availableCategories = [];
+          _isLoadingCategories = false;
+        });
+      },
+      (categories) {
+        setState(() {
+          _availableCategories = categories;
+          if (_isEditing && categories.any((Category cat) => cat.id == widget.planToEdit!.categoryId)) {
+            _selectedCategory = categories.firstWhere((Category cat) => cat.id == widget.planToEdit!.categoryId);
+          }
+          _isLoadingCategories = false;
+        });
       }
-      _isLoadingCategories = false;
-    });
+    );
   }
 
   Future<void> _pickDate(BuildContext context, {required bool isStartDate}) async {
@@ -212,7 +224,7 @@ class _AddEditPlanScreenState extends State<AddEditPlanScreen> {
     if (!_formKey.currentState!.validate() || _isSaving) {
       return;
     }
-    
+
     final walletProvider = context.read<WalletProvider>();
     final currentWalletId = walletProvider.currentWallet?.id;
     if (currentWalletId == null && !_isEditing) return;
@@ -223,7 +235,7 @@ class _AddEditPlanScreenState extends State<AddEditPlanScreen> {
     if (originalAmount <=0) {
       return;
     }
-    
+
     double? finalExchangeRate;
     if (_selectedPlanCurrency!.code == _baseCurrencyCode) {
       finalExchangeRate = 1.0;
@@ -232,7 +244,7 @@ class _AddEditPlanScreenState extends State<AddEditPlanScreen> {
     } else if (_currentRateInfo != null && !_currentRateInfo!.isRateStale && _rateFetchingError == null) {
         finalExchangeRate = _currentRateInfo!.rate;
     }
-    
+
     if (finalExchangeRate == null || finalExchangeRate <= 0) {
         if(mounted){
             ScaffoldMessenger.of(context).showSnackBar(
@@ -246,48 +258,46 @@ class _AddEditPlanScreenState extends State<AddEditPlanScreen> {
     setState(() => _isSaving = true);
 
     double amountInBase = originalAmount * finalExchangeRate;
-    try {
-      Plan planToSave;
-      if (_isEditing) {
-        planToSave = Plan(
-          id: widget.planToEdit!.id,
-          categoryId: _selectedCategory!.id!,
-          originalPlannedAmount: originalAmount,
-          originalCurrencyCode: _selectedPlanCurrency!.code,
-          plannedAmountInBaseCurrency: amountInBase,
-          exchangeRateUsed: finalExchangeRate,
-          startDate: _startDate,
-          endDate: _endDate,
-        );
-        await _planRepository.updatePlan(planToSave);
-      } else {
-        planToSave = Plan(
-          categoryId: _selectedCategory!.id!,
-          originalPlannedAmount: originalAmount,
-          originalCurrencyCode: _selectedPlanCurrency!.code,
-          plannedAmountInBaseCurrency: amountInBase,
-          exchangeRateUsed: finalExchangeRate,
-          startDate: _startDate,
-          endDate: _endDate,
-        );
-        await _planRepository.createPlan(planToSave, currentWalletId!);
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    
+    final result = _isEditing
+    ? await _planRepository.updatePlan(Plan(
+        id: widget.planToEdit!.id,
+        categoryId: _selectedCategory!.id!,
+        originalPlannedAmount: originalAmount,
+        originalCurrencyCode: _selectedPlanCurrency!.code,
+        plannedAmountInBaseCurrency: amountInBase,
+        exchangeRateUsed: finalExchangeRate,
+        startDate: _startDate,
+        endDate: _endDate,
+      ))
+    : await _planRepository.createPlan(Plan(
+        categoryId: _selectedCategory!.id!,
+        originalPlannedAmount: originalAmount,
+        originalCurrencyCode: _selectedPlanCurrency!.code,
+        plannedAmountInBaseCurrency: amountInBase,
+        exchangeRateUsed: finalExchangeRate,
+        startDate: _startDate,
+        endDate: _endDate,
+      ), currentWalletId!);
+
+    result.fold(
+      (failure) {
+        if (mounted) {
+            messenger.showSnackBar(SnackBar(content: Text('Помилка збереження плану: ${failure.userMessage}')));
+        }
+      },
+      (_) {
+        if (mounted) {
+            messenger.showSnackBar(SnackBar(content: Text(_isEditing ? 'План оновлено!' : 'План створено!')));
+            navigator.pop(true);
+        }
       }
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_isEditing ? 'План оновлено!' : 'План створено!')),
-        );
-        Navigator.of(context).pop(true);
-      }
-    } catch (e) {
-      if(mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Помилка збереження плану: ${e.toString()}')),
-        );
-      }
-    } finally {
-      if(mounted){
-        setState(() => _isSaving = false);
-      }
+    );
+    
+    if (mounted) {
+      setState(() => _isSaving = false);
     }
   }
 
@@ -300,11 +310,11 @@ class _AddEditPlanScreenState extends State<AddEditPlanScreen> {
 
   @override
   Widget build(BuildContext context) {
-      bool canSave = !_isSaving && 
-                          (_selectedPlanCurrency?.code == _baseCurrencyCode || 
+      bool canSave = !_isSaving &&
+                    (_selectedPlanCurrency?.code == _baseCurrencyCode ||
                           (_manualRateSetByButton && _currentRateInfo != null && _currentRateInfo!.rate > 0) ||
                           (_currentRateInfo != null && !_currentRateInfo!.isRateStale && _rateFetchingError == null && !_isFetchingRate && _currentRateInfo!.rate > 0)
-                          );
+                    );
     return Scaffold(
       appBar: AppBar(
         title: Text(_isEditing ? 'Редагувати План' : 'Створити План'),
@@ -402,7 +412,7 @@ class _AddEditPlanScreenState extends State<AddEditPlanScreen> {
                           _fetchAndSetExchangeRate(currency: newValue);
                         }
                       },
-                      validator: (value) => value == null ? 'Оберіть валюту' : null,
+                      validator: (value) => value == null ? 'Оберіть' : null,
                     ),
                   ),
                 ],
@@ -432,7 +442,7 @@ class _AddEditPlanScreenState extends State<AddEditPlanScreen> {
                               _rateFetchingError = null;
                             });
                           }
-                        },
+                      },
                       )
                     ],
                   ),
@@ -475,17 +485,17 @@ class _AddEditPlanScreenState extends State<AddEditPlanScreen> {
                               _manualRateController.clear();
                             });
                           }
-                            _fetchAndSetExchangeRate(calledFromManualCancel: true);
+                          _fetchAndSetExchangeRate(calledFromManualCancel: true);
                         },
                       )
                     ],
                   ),
                 ),
               if (!_isFetchingRate && _rateFetchingError == null && _currentRateInfo != null && _selectedPlanCurrency?.code != _baseCurrencyCode)
-                  Padding(
+                Padding(
                   padding: const EdgeInsets.only(top: 4.0, bottom: 8.0),
                   child: Text(
-                    _manualRateSetByButton 
+                    _manualRateSetByButton
                     ? "Встановлено вручну: 1 ${_selectedPlanCurrency!.code} = ${(_currentRateInfo!.rate).toStringAsFixed(4)} $_baseCurrencyCode"
                     : "1 ${_selectedPlanCurrency!.code} ≈ ${(_currentRateInfo!.rate).toStringAsFixed(4)} $_baseCurrencyCode на ${DateFormat('dd.MM.yy').format(_currentRateInfo!.effectiveRateDate)}${_currentRateInfo!.isRateStale ? ' (застарілий)' : ''}",
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(color: _manualRateSetByButton ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant),
@@ -523,7 +533,7 @@ class _AddEditPlanScreenState extends State<AddEditPlanScreen> {
                   ),
                 ),
               const SizedBox(height: 30),
-              _isSaving 
+              _isSaving
               ? const Center(child: CircularProgressIndicator())
               : ElevatedButton.icon(
                   icon: const Icon(Icons.save_outlined),

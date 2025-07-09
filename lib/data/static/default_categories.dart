@@ -1,5 +1,3 @@
-import 'package:sage_wallet_reborn/models/category.dart';
-
 const List<Map<String, dynamic>> defaultCategories = [
   {'name': 'Продукти', 'type': 'CategoryType.expense'},
   {'name': 'Транспорт', 'type': 'CategoryType.expense'},

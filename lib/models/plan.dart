@@ -7,6 +7,8 @@ class Plan {
   final double? exchangeRateUsed;
   final DateTime startDate;
   final DateTime endDate;
+  final DateTime? updatedAt;
+  final bool isDeleted;
 
   Plan({
     this.id,
@@ -17,6 +19,8 @@ class Plan {
     this.exchangeRateUsed,
     required this.startDate,
     required this.endDate,
+    this.updatedAt,
+    this.isDeleted = false,
   });
 
   Map<String, dynamic> toMap() {
@@ -29,6 +33,8 @@ class Plan {
       'exchangeRateUsed': exchangeRateUsed,
       'startDate': startDate.toIso8601String(),
       'endDate': endDate.toIso8601String(),
+      'updated_at': updatedAt?.toIso8601String() ?? DateTime.now().toIso8601String(),
+      'is_deleted': isDeleted ? 1 : 0,
     };
   }
 
@@ -42,6 +48,8 @@ class Plan {
       exchangeRateUsed: (map['exchangeRateUsed'] as num?)?.toDouble(),
       startDate: DateTime.parse(map['startDate'] as String),
       endDate: DateTime.parse(map['endDate'] as String),
+      updatedAt: map['updated_at'] != null ? DateTime.parse(map['updated_at'] as String) : null,
+      isDeleted: (map['is_deleted'] is bool) ? map['is_deleted'] : ((map['is_deleted'] as int? ?? 0) == 1),
     );
   }
 }

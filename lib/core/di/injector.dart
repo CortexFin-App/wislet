@@ -2,6 +2,7 @@ import 'package:get_it/get_it.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../services/sync_service.dart';
 import '../../services/api_client.dart';
 import '../../data/repositories/budget_repository.dart';
 import '../../data/repositories/category_repository.dart';
@@ -63,20 +64,6 @@ import '../../utils/database_helper.dart';
 
 final getIt = GetIt.instance;
 
-void _registerRepository<T extends Object>({
-  required T Function() local,
-  required T Function() supabase,
-}) {
-  getIt.registerFactory<T>(() {
-    final appMode = getIt<AppModeProvider>().mode;
-    if (appMode == AppMode.online) {
-      return supabase();
-    } else {
-      return local();
-    }
-  });
-}
-
 Future<void> configureDependencies() async {
   getIt.registerSingleton<SupabaseClient>(Supabase.instance.client);
   getIt.registerLazySingleton(() => LocalAuthentication());
@@ -86,8 +73,34 @@ Future<void> configureDependencies() async {
   getIt.registerLazySingleton(() => ApiClient());
   getIt.registerLazySingleton(() => AuthService(getIt(), getIt()));
   getIt.registerLazySingleton(() => AppModeProvider(getIt()));
+
+  getIt.registerLazySingleton<WalletRepository>(() => LocalWalletRepositoryImpl(getIt()), instanceName: 'local');
+  getIt.registerLazySingleton<TransactionRepository>(() => LocalTransactionRepositoryImpl(getIt(), getIt()), instanceName: 'local');
+  getIt.registerLazySingleton<CategoryRepository>(() => LocalCategoryRepositoryImpl(getIt()), instanceName: 'local');
+  getIt.registerLazySingleton<BudgetRepository>(() => LocalBudgetRepositoryImpl(getIt(), getIt(instanceName: 'local'), getIt()), instanceName: 'local');
+  getIt.registerLazySingleton<DebtLoanRepository>(() => LocalDebtLoanRepositoryImpl(getIt()), instanceName: 'local');
+  getIt.registerLazySingleton<GoalRepository>(() => LocalGoalRepositoryImpl(getIt(), getIt(instanceName: 'local'), getIt()), instanceName: 'local');
+  getIt.registerLazySingleton<InvitationRepository>(() => LocalInvitationRepositoryImpl(), instanceName: 'local');
+  getIt.registerLazySingleton<NotificationRepository>(() => LocalNotificationRepositoryImpl(getIt()), instanceName: 'local');
+  getIt.registerLazySingleton<PlanRepository>(() => LocalPlanRepositoryImpl(getIt()), instanceName: 'local');
+  getIt.registerLazySingleton<RepeatingTransactionRepository>(() => LocalRepeatingTransactionRepositoryImpl(getIt()), instanceName: 'local');
+  getIt.registerLazySingleton<SubscriptionRepository>(() => LocalSubscriptionRepositoryImpl(getIt()), instanceName: 'local');
+  getIt.registerLazySingleton<UserRepository>(() => LocalUserRepositoryImpl(getIt()), instanceName: 'local');
+
+  getIt.registerLazySingleton<WalletRepository>(() => SupabaseWalletRepositoryImpl(getIt()), instanceName: 'supabase');
+  getIt.registerLazySingleton<TransactionRepository>(() => SupabaseTransactionRepositoryImpl(getIt()), instanceName: 'supabase');
+  getIt.registerLazySingleton<CategoryRepository>(() => SupabaseCategoryRepositoryImpl(getIt()), instanceName: 'supabase');
+  getIt.registerLazySingleton<BudgetRepository>(() => SupabaseBudgetRepositoryImpl(getIt()), instanceName: 'supabase');
+  getIt.registerLazySingleton<DebtLoanRepository>(() => SupabaseDebtLoanRepositoryImpl(getIt()), instanceName: 'supabase');
+  getIt.registerLazySingleton<GoalRepository>(() => SupabaseGoalRepositoryImpl(getIt()), instanceName: 'supabase');
+  getIt.registerLazySingleton<InvitationRepository>(() => SupabaseInvitationRepositoryImpl(getIt()), instanceName: 'supabase');
+  getIt.registerLazySingleton<NotificationRepository>(() => SupabaseNotificationRepositoryImpl(), instanceName: 'supabase');
+  getIt.registerLazySingleton<PlanRepository>(() => SupabasePlanRepositoryImpl(getIt()), instanceName: 'supabase');
+  getIt.registerLazySingleton<RepeatingTransactionRepository>(() => SupabaseRepeatingTransactionRepositoryImpl(getIt()), instanceName: 'supabase');
+  getIt.registerLazySingleton<SubscriptionRepository>(() => SupabaseSubscriptionRepositoryImpl(getIt()), instanceName: 'supabase');
+  getIt.registerLazySingleton<UserRepository>(() => SupabaseUserRepositoryImpl(getIt()), instanceName: 'supabase');
   
-  _registerRepositories();
+  getIt.registerLazySingleton<ThemeRepository>(() => LocalThemeRepositoryImpl(getIt()));
 
   getIt.registerLazySingleton(() => NavigationService());
   getIt.registerLazySingleton(() => OcrService(getIt()));
@@ -95,71 +108,27 @@ Future<void> configureDependencies() async {
   getIt.registerLazySingleton(() => ReportGenerationService());
   getIt.registerLazySingleton(() => ExchangeRateService());
   getIt.registerLazySingleton(() => BillingService());
-  getIt.registerLazySingleton<ThemeRepository>(() => LocalThemeRepositoryImpl(getIt()));
   getIt.registerLazySingleton(() => ThemeProvider(getIt()));
   getIt.registerLazySingleton(() => CurrencyProvider());
   getIt.registerLazySingleton(() => ProStatusProvider());
   
-  getIt.registerLazySingleton(() => NotificationService(getIt(), getIt<NotificationRepository>()));
-  getIt.registerLazySingleton(() => AICategorizationService(getIt()));
+  getIt.registerLazySingleton(() => NotificationService(getIt<FlutterLocalNotificationsPlugin>(), getIt<NotificationRepository>(instanceName: 'local')));
+  getIt.registerLazySingleton(() => AICategorizationService(getIt<CategoryRepository>(instanceName: 'local')));
+  getIt.registerLazySingleton(() => CashflowForecastService(getIt(instanceName: 'local'), getIt(instanceName: 'local'), getIt(instanceName: 'local')));
+  getIt.registerLazySingleton(() => RepeatingTransactionService(getIt(instanceName: 'local'), getIt(instanceName: 'local'), getIt(instanceName: 'local')));
+  getIt.registerLazySingleton(() => SubscriptionService(getIt(instanceName: 'local'), getIt(instanceName: 'local'), getIt(instanceName: 'local'), getIt()));
+  getIt.registerLazySingleton(() => AnalyticsService(getIt(instanceName: 'local'), getIt(instanceName: 'local'), getIt()));
   
-  getIt.registerLazySingleton(() => CashflowForecastService(
-      getIt<TransactionRepository>(),
-      getIt<RepeatingTransactionRepository>(),
-      getIt<SubscriptionRepository>()));
-      
-  getIt.registerLazySingleton(() => RepeatingTransactionService(
-      getIt<RepeatingTransactionRepository>(),
-      getIt<TransactionRepository>(),
-      getIt<WalletRepository>()));
-      
-  getIt.registerLazySingleton(() => SubscriptionService(
-      getIt<SubscriptionRepository>(),
-      getIt<TransactionRepository>(),
-      getIt<WalletRepository>(),
-      getIt<NotificationService>()));
-
-  getIt.registerLazySingleton(() => AnalyticsService(
-      getIt<TransactionRepository>(),
-      getIt<CategoryRepository>(),
-      getIt<NotificationService>()));
-}
-
-void _registerRepositories() {
-  _registerRepository<WalletRepository>(
-      local: () => LocalWalletRepositoryImpl(getIt()),
-      supabase: () => SupabaseWalletRepositoryImpl(getIt()));
-  _registerRepository<TransactionRepository>(
-      local: () => LocalTransactionRepositoryImpl(getIt(), getIt()),
-      supabase: () => SupabaseTransactionRepositoryImpl(getIt()));
-  _registerRepository<CategoryRepository>(
-      local: () => LocalCategoryRepositoryImpl(getIt()),
-      supabase: () => SupabaseCategoryRepositoryImpl(getIt()));
-  _registerRepository<BudgetRepository>(
-      local: () => LocalBudgetRepositoryImpl(getIt(), getIt(), getIt()),
-      supabase: () => SupabaseBudgetRepositoryImpl(getIt()));
-  _registerRepository<DebtLoanRepository>(
-      local: () => LocalDebtLoanRepositoryImpl(getIt()),
-      supabase: () => SupabaseDebtLoanRepositoryImpl(getIt()));
-  _registerRepository<GoalRepository>(
-      local: () => LocalGoalRepositoryImpl(getIt(), getIt(), getIt()),
-      supabase: () => SupabaseGoalRepositoryImpl(getIt()));
-  _registerRepository<InvitationRepository>(
-      local: () => LocalInvitationRepositoryImpl(),
-      supabase: () => SupabaseInvitationRepositoryImpl(getIt()));
-  _registerRepository<NotificationRepository>(
-      local: () => LocalNotificationRepositoryImpl(getIt()),
-      supabase: () => SupabaseNotificationRepositoryImpl());
-  _registerRepository<PlanRepository>(
-      local: () => LocalPlanRepositoryImpl(getIt()),
-      supabase: () => SupabasePlanRepositoryImpl(getIt()));
-  _registerRepository<RepeatingTransactionRepository>(
-      local: () => LocalRepeatingTransactionRepositoryImpl(getIt()),
-      supabase: () => SupabaseRepeatingTransactionRepositoryImpl(getIt()));
-  _registerRepository<SubscriptionRepository>(
-      local: () => LocalSubscriptionRepositoryImpl(getIt()),
-      supabase: () => SupabaseSubscriptionRepositoryImpl(getIt()));
-  _registerRepository<UserRepository>(
-      local: () => LocalUserRepositoryImpl(getIt()),
-      supabase: () => SupabaseUserRepositoryImpl(getIt()));
+  getIt.registerLazySingleton(() => SyncService(
+    getIt<DatabaseHelper>(),
+    getIt<TransactionRepository>(instanceName: 'supabase'),
+    getIt<CategoryRepository>(instanceName: 'supabase'),
+    getIt<WalletRepository>(instanceName: 'supabase'),
+    getIt<GoalRepository>(instanceName: 'supabase'),
+    getIt<BudgetRepository>(instanceName: 'supabase'),
+    getIt<PlanRepository>(instanceName: 'supabase'),
+    getIt<SubscriptionRepository>(instanceName: 'supabase'),
+    getIt<DebtLoanRepository>(instanceName: 'supabase'),
+    getIt<RepeatingTransactionRepository>(instanceName: 'supabase'),
+  ));
 }

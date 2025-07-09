@@ -1,9 +1,11 @@
-import '../../models/transaction.dart' as FinTransaction;
+import 'package:fpdart/fpdart.dart';
+import '../../core/error/failures.dart';
+import '../../models/transaction.dart' as fin_transaction;
 import '../../models/transaction_view_data.dart';
 import '../../models/wallet.dart';
 
 abstract class TransactionRepository {
-  Future<void> createTransfer({
+  Future<Either<AppFailure, void>> createTransfer({
     required Wallet fromWallet,
     required Wallet toWallet,
     required double amount,
@@ -12,28 +14,29 @@ abstract class TransactionRepository {
     String? description,
   });
 
-  Future<FinTransaction.Transaction?> getTransaction(int transactionId);
-  Future<List<FinTransaction.Transaction>> getTransactionsForGoal(int goalId);
-  Future<int> createTransaction(FinTransaction.Transaction transaction, int walletId);
-  Future<int> updateTransaction(FinTransaction.Transaction transaction, int walletId);
-  Future<int> deleteTransaction(int transactionId);
-  Future<List<TransactionViewData>> getTransactionsWithDetails({
+  Future<Either<AppFailure, fin_transaction.Transaction?>> getTransaction(int transactionId);
+  Future<Either<AppFailure, List<fin_transaction.Transaction>>> getTransactionsForGoal(int goalId);
+  Future<Either<AppFailure, List<fin_transaction.Transaction>>> getTransactionsSince(int walletId, String? lastSyncTimestamp);
+  Future<Either<AppFailure, int>> createTransaction(fin_transaction.Transaction transaction, int walletId);
+  Future<Either<AppFailure, int>> updateTransaction(fin_transaction.Transaction transaction, int walletId);
+  Future<Either<AppFailure, int>> deleteTransaction(int transactionId);
+  Future<Either<AppFailure, List<TransactionViewData>>> getTransactionsWithDetails({
     required int walletId,
     String? orderBy,
     DateTime? startDate,
     DateTime? endDate,
-    FinTransaction.TransactionType? filterTransactionType,
+    fin_transaction.TransactionType? filterTransactionType,
     int? filterCategoryId,
     int? limit,
     String? searchQuery,
   });
-  Future<double> getOverallBalance(int walletId);
-  Future<double> getTotalAmount({
+  Future<Either<AppFailure, double>> getOverallBalance(int walletId);
+  Future<Either<AppFailure, double>> getTotalAmount({
     required int walletId,
     required DateTime startDate,
     required DateTime endDate,
-    required FinTransaction.TransactionType transactionType,
+    required fin_transaction.TransactionType transactionType,
     int? categoryId,
   });
-  Future<List<Map<String, dynamic>>> getExpensesGroupedByCategory(int walletId, DateTime startDate, DateTime endDate);
+  Future<Either<AppFailure, List<Map<String, dynamic>>>> getExpensesGroupedByCategory(int walletId, DateTime startDate, DateTime endDate);
 }

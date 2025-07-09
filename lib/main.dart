@@ -1,3 +1,4 @@
+// C:\sage_wallet_reborn\lib\main.dart
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -5,6 +6,11 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'core/di/injector.dart';
+import 'data/repositories/budget_repository.dart';
+import 'data/repositories/goal_repository.dart';
+import 'data/repositories/invitation_repository.dart';
+import 'data/repositories/transaction_repository.dart';
+import 'data/repositories/wallet_repository.dart';
 import 'providers/app_mode_provider.dart';
 import 'providers/currency_provider.dart';
 import 'providers/pro_status_provider.dart';
@@ -12,22 +18,25 @@ import 'providers/theme_provider.dart';
 import 'providers/wallet_provider.dart';
 import 'screens/auth/auth_wrapper.dart';
 import 'services/auth_service.dart';
+import 'services/error_monitoring_service.dart';
 import 'services/navigation_service.dart';
 import 'services/notification_service.dart';
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  tz.initializeTimeZones();
-  await Supabase.initialize(
-    url: 'https://xdofjorgomwdyawmwbcj.supabase.co',
-    anonKey:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkb2Zqb3Jnb213ZHlhd213YmNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkzMzE0MTcsImV4cCI6MjA2NDkwNzQxN30.2i9ru8fXLZEYD_jNHoHd0ZJmN4k9gKcPOChdiuL_AMY',
-  );
-  await configureDependencies();
-  if (!kIsWeb) {
-    await getIt<NotificationService>().init();
-  }
-  runApp(const MyApp());
+  await ErrorMonitoringService.init(() async {
+    WidgetsFlutterBinding.ensureInitialized();
+    tz.initializeTimeZones();
+    await Supabase.initialize(
+      url: 'https://xdofjorgomwdyawmwbcj.supabase.co',
+      anonKey:
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkb2Zqb3Jnb213ZHlhd213YmNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkzMzE0MTcsImV4cCI6MjA2NDkwNzQxN30.2i9ru8fXLZEYD_jNHoHd0ZJmN4k9gKcPOChdiuL_AMY',
+    );
+    await configureDependencies();
+    if (!kIsWeb) {
+      await getIt<NotificationService>().init();
+    }
+    runApp(const MyApp());
+  });
 }
 
 class MyApp extends StatelessWidget {
@@ -45,8 +54,17 @@ class MyApp extends StatelessWidget {
             create: (ctx) => AppModeProvider(ctx.read<AuthService>())),
         ChangeNotifierProvider(
           create: (context) => WalletProvider(
-            context.read<AppModeProvider>(),
-            context.read<AuthService>(),
+            appModeProvider: context.read<AppModeProvider>(),
+            authService: context.read<AuthService>(),
+            localWalletRepo: getIt<WalletRepository>(instanceName: 'local'),
+            localTransactionRepo: getIt<TransactionRepository>(instanceName: 'local'),
+            localBudgetRepo: getIt<BudgetRepository>(instanceName: 'local'),
+            localGoalRepo: getIt<GoalRepository>(instanceName: 'local'),
+            supabaseWalletRepo: getIt<WalletRepository>(instanceName: 'supabase'),
+            supabaseTransactionRepo: getIt<TransactionRepository>(instanceName: 'supabase'),
+            supabaseBudgetRepo: getIt<BudgetRepository>(instanceName: 'supabase'),
+            supabaseGoalRepo: getIt<GoalRepository>(instanceName: 'supabase'),
+            supabaseInvitationRepo: getIt<InvitationRepository>(instanceName: 'supabase'),
           ),
         ),
       ],

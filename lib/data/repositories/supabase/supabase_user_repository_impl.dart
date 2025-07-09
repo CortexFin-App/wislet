@@ -1,5 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../models/user.dart' as FinUser;
+import '../../../models/user.dart' as fin_user;
 import '../user_repository.dart';
 
 class SupabaseUserRepositoryImpl implements UserRepository {
@@ -7,22 +7,22 @@ class SupabaseUserRepositoryImpl implements UserRepository {
   SupabaseUserRepositoryImpl(this._client);
 
   @override
-  Future<List<FinUser.User>> getUsersForWallet(int walletId) async {
+  Future<List<fin_user.User>> getUsersForWallet(int walletId) async {
     final response = await _client
         .from('wallet_users')
         .select('users!inner(*)')
         .eq('wallet_id', walletId);
 
     return (response as List)
-        .map((data) => FinUser.User.fromMap(data['users']))
+        .map((data) => fin_user.User.fromMap(data['users']))
         .toList();
   }
 
   @override
-  Future<FinUser.User?> getUser(String id) async {
+  Future<fin_user.User?> getUser(String id) async {
     final response = await _client.from('users').select().eq('id', id).maybeSingle();
     if (response == null) return null;
-    return FinUser.User.fromMap(response);
+    return fin_user.User.fromMap(response);
   }
 
   @override
@@ -31,7 +31,7 @@ class SupabaseUserRepositoryImpl implements UserRepository {
   }
 
   @override
-  Future<List<FinUser.User>> getAllUsers() {
+  Future<List<fin_user.User>> getAllUsers() {
     throw UnimplementedError('getAllUsers is not a client feature.');
   }
 

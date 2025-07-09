@@ -1,11 +1,10 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sage_wallet_reborn/data/repositories/category_repository.dart';
 import 'package:sage_wallet_reborn/models/category.dart' as fin_category;
 import 'package:sage_wallet_reborn/services/api_client.dart';
 import 'package:sage_wallet_reborn/core/di/injector.dart';
-import 'package:http/http.dart' as http;
 
 class AICategorizationService {
   final CategoryRepository _categoryRepository;
@@ -26,8 +25,8 @@ class AICategorizationService {
     _generalKeywordCategoryMap = _baseGeneralMap;
 
     try {
-      final supabaseUrl = 'https://xdofjorgomwdyawmwbcj.supabase.co';
-      final supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkb2Zqb3Jnb213ZHlhd213YmNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkzMzE0MTcsImV4cCI6MjA2NDkwNzQxN30.2i9ru8fXLZEYD_jNHoHd0ZJmN4k9gKcPOChdiuL_AMY';
+      const supabaseUrl = 'https://xdofjorgomwdyawmwbcj.supabase.co';
+      const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkb2Zqb3Jnb213ZHlhd213YmNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkzMzE0MTcsImV4cCI6MjA2NDkwNzQxN30.2i9ru8fXLZEYD_jNHoHd0ZJmN4k9gKcPOChdiuL_AMY';
       final url = Uri.parse('$supabaseUrl/storage/v1/object/public/ai-dictionaries/global_lexicon.json');
       
       final response = await http.get(url, headers: {
@@ -42,6 +41,7 @@ class AICategorizationService {
         });
       }
     } catch (e) {
+      //
     }
     _isInitialized = true;
   }
@@ -76,6 +76,7 @@ class AICategorizationService {
         'category_name': category.name,
       });
     } catch (e) {
+      //
     }
   }
 
@@ -83,53 +84,61 @@ class AICategorizationService {
     if (!_isInitialized) await _loadDictionaries();
 
     final lowerCaseDescription = description.toLowerCase();
-    final allCategories = await _categoryRepository.getAllCategories(walletId);
-    final categoriesByName = { for (var cat in allCategories) cat.name.toLowerCase(): cat };
-    final categoriesById = { for (var cat in allCategories) cat.id: cat };
-    
-    final prefs = await SharedPreferences.getInstance();
-    final keyword = _extractKeywordFromDescription(lowerCaseDescription);
-    if (keyword != null) {
-      final overrideCategoryId = prefs.getInt('ai_override_$keyword');
-      if (overrideCategoryId != null && categoriesById.containsKey(overrideCategoryId)) {
-        return categoriesById[overrideCategoryId];
-      }
-    }
-    
-    for (var entry in _brandCategoryMap.entries) {
-      final brand = entry.key;
-      final categoryName = entry.value;
-      if (lowerCaseDescription.contains(brand)) {
-        if (categoriesByName.containsKey(categoryName.toLowerCase())) {
-          return categoriesByName[categoryName.toLowerCase()];
-        }
-        final type = (categoryName == 'Зарплата' || categoryName == 'Подарунки та Допомога' || categoryName == 'Додатковий Дохід' || categoryName == 'Інвестиції') ? fin_category.CategoryType.income : fin_category.CategoryType.expense;
-        return fin_category.Category(name: categoryName, type: type);
-      }
-    }
+    final categoriesEither = await _categoryRepository.getAllCategories(walletId);
 
-    for (var entry in _generalKeywordCategoryMap.entries) {
-      final categoryName = entry.key;
-      final keywords = entry.value;
-      for (var keyword in keywords) {
-        if (lowerCaseDescription.contains(keyword)) {
-          if (categoriesByName.containsKey(categoryName.toLowerCase())) {
-            return categoriesByName[categoryName.toLowerCase()];
-          }
-          final type = (categoryName == 'Зарплата' || categoryName == 'Подарунки та Допомога' || categoryName == 'Додатковий Дохід' || categoryName == 'Інвестиції') ? fin_category.CategoryType.income : fin_category.CategoryType.expense;
-          return fin_category.Category(name: categoryName, type: type);
+    return categoriesEither.fold(
+      (failure) => null,
+      (allCategories) {
+        final categoriesByName = { for (var cat in allCategories) cat.name.toLowerCase(): cat };
+        final categoriesById = { for (var cat in allCategories) cat.id: cat };
+        
+        final keyword = _extractKeywordFromDescription(lowerCaseDescription);
+        if (keyword != null) {
+          SharedPreferences.getInstance().then((prefs) {
+            final overrideCategoryId = prefs.getInt('ai_override_$keyword');
+            if (overrideCategoryId != null && categoriesById.containsKey(overrideCategoryId)) {
+              return categoriesById[overrideCategoryId];
+            }
+          });
         }
+        
+        for (var entry in _brandCategoryMap.entries) {
+          final brand = entry.key;
+          final categoryName = entry.value;
+          if (lowerCaseDescription.contains(brand)) {
+            if (categoriesByName.containsKey(categoryName.toLowerCase())) {
+              return categoriesByName[categoryName.toLowerCase()];
+            }
+            final type = (categoryName == 'Зарплата' || categoryName == 'Подарунки та Допомога' || categoryName == 'Додатковий Дохід' || categoryName == 'Інвестиції') ? fin_category.CategoryType.income : fin_category.CategoryType.expense;
+            return fin_category.Category(name: categoryName, type: type);
+          }
+        }
+
+        for (var entry in _generalKeywordCategoryMap.entries) {
+          final categoryName = entry.key;
+          final keywords = entry.value;
+          for (var keyword in keywords) {
+            if (lowerCaseDescription.contains(keyword)) {
+              if (categoriesByName.containsKey(categoryName.toLowerCase())) {
+                return categoriesByName[categoryName.toLowerCase()];
+              }
+              final type = (categoryName == 'Зарплата' || categoryName == 'Подарунки та Допомога' || categoryName == 'Додатковий Дохід' || categoryName == 'Інвестиції') ? fin_category.CategoryType.income : fin_category.CategoryType.expense;
+              return fin_category.Category(name: categoryName, type: type);
+            }
+          }
+        }
+        
+        return null;
       }
-    }
-    
-    return null;
+    );
   }
 
-  final Map<String, String> _baseBrandMap = const {
+  static const Map<String, String> _baseBrandMap = {
     'сільпо': 'Продукти', 'атб': 'Продукти', 'varus': 'Продукти', 'novus': 'Продукти',
     'ашан': 'Продукти', 'metro': 'Продукти', 'фора': 'Продукти', 'еко-маркет': 'Продукти', 'наш край': 'Продукти', 'thrash': 'Продукти',
     'rozetka': 'Покупки', 'comfy': 'Електроніка', 'foxtrot': 'Електроніка',
-    'allo': 'Електроніка', 'цитрус': 'Електроніка', 'moyo': 'Електроніка', 'apple': 'Електроніка', 'samsung': 'Електроніка', 'xiaomi': 'Електроніка', 'eldorado': 'Електроніка', 'telemart': 'Електроніка',
+    'allo': 'Електроніка', 'цитрус': 'Електроніка', 'moyo': 'Електроніка', 'apple': 'Електроніка', 'samsung': 'Електроніка', 
+    'xiaomi': 'Електроніка', 'eldorado': 'Електроніка', 'telemart': 'Електроніка',
     'аптека': 'Здоров\'я та медицина', 'подорожник': 'Здоров\'я та медицина', 'синево': 'Здоров\'я та медицина', 'dobrobut': 'Здоров\'я та медицина', 'synevo': 'Здоров\'я та медицина', 'діла': 'Здоров\'я та медицина',
     'wog': 'Автомобіль', 'okko': 'Автомобіль', 'shell': 'Автомобіль',
     'soccar': 'Автомобіль', 'klo': 'Автомобіль', 'upg': 'Автомобіль', 'брсм': 'Автомобіль',
@@ -151,7 +160,7 @@ class AICategorizationService {
     'укрзалізниця': 'Транспорт', 'уз': 'Транспорт', 'busfor': 'Транспорт', 'infobus': 'Транспорт', 'blablacar': 'Транспорт', 'ryanair': 'Подорожі', 'wizzair': 'Подорожі', 'мау': 'Подорожі',
   };
 
-  final Map<String, List<String>> _baseGeneralMap = const {
+  static const Map<String, List<String>> _baseGeneralMap = {
     'Продукти': ['ринок', 'супермаркет', 'гастроном', 'продуктовий', 'базар', 'їжа', 'вода', 'хліб', 'молоко', 'мясо', 'риба', 'овочі', 'фрукти', 'бакалія', 'крупи', 'солодощі'],
     'Кафе, Бари, Ресторани': ['ресторан', 'кафе', 'їдальня', 'їжа на виніс', 'кав\'ярня', 'обід', 'вечеря', 'сніданок', 'ланч', 'coffee', 'latte', 'cappuccino', 'еспресо', 'донер', 'шаурма', 'кебаб', 'хот-дог', 'піца', 'pizza', 'бургер', 'бар', 'паб', 'пиво', 'коктейль', 'вино', 'алкоголь', 'закуски', 'півас'],
     'Транспорт': ['метро', 'автобус', 'тролейбус', 'трамвай', 'маршрутка', 'електричка', 'проїзний', 'автостанція', 'вокзал', 'жетон', 'прокат самокатів', 'оренда авто'],

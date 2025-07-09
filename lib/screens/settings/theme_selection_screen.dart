@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../models/theme_profile.dart';
 import '../../providers/theme_provider.dart';
 import 'theme_editor_screen.dart';
 
@@ -45,7 +44,7 @@ class ThemeSelectionScreen extends StatelessWidget {
                     IconButton(
                       icon: const Icon(Icons.edit_outlined, size: 20),
                       onPressed: () {
-                         Navigator.push(context, MaterialPageRoute(builder: (context) => ThemeEditorScreen(initialProfile: profile)));
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => ThemeEditorScreen(initialProfile: profile)));
                       },
                     ),
                     IconButton(

@@ -1,10 +1,10 @@
-import 'package:sage_wallet_reborn/models/transaction.dart' as FinTransaction;
-import 'package:sage_wallet_reborn/models/category.dart' as FinCategory;
+import 'package:sage_wallet_reborn/models/transaction.dart' as fin_transaction;
+import 'package:sage_wallet_reborn/models/category.dart' as fin_category;
 import 'package:sage_wallet_reborn/utils/database_helper.dart';
 
 class TransactionViewData {
   final int id;
-  final FinTransaction.TransactionType type;
+  final fin_transaction.TransactionType type;
   final double originalAmount;
   final String originalCurrencyCode;
   final double amountInBaseCurrency;
@@ -15,7 +15,7 @@ class TransactionViewData {
   final String categoryName;
   final int? linkedGoalId;
   final int? subscriptionId;
-  final FinCategory.Bucket categoryBucket;
+  final fin_category.Bucket categoryBucket;
 
   TransactionViewData({
     required this.id,
@@ -36,7 +36,7 @@ class TransactionViewData {
   factory TransactionViewData.fromMap(Map<String, dynamic> map) {
     return TransactionViewData(
       id: map[DatabaseHelper.colTransactionId] as int,
-      type: FinTransaction.TransactionType.values.firstWhere(
+      type: fin_transaction.TransactionType.values.firstWhere(
               (e) => e.toString() == map[DatabaseHelper.colTransactionType] as String),
       originalAmount: map[DatabaseHelper.colTransactionOriginalAmount] as double? ?? map['amount'] as double? ?? 0.0,
       originalCurrencyCode: map[DatabaseHelper.colTransactionOriginalCurrencyCode] as String? ?? 'UAH',
@@ -48,12 +48,12 @@ class TransactionViewData {
       categoryName: map['categoryName'] as String,
       linkedGoalId: map[DatabaseHelper.colTransactionLinkedGoalId] as int?,
       subscriptionId: map[DatabaseHelper.colTransactionSubscriptionId] as int?,
-      categoryBucket: FinCategory.stringToExpenseBucket(map[DatabaseHelper.colCategoryBucket] as String?),
+      categoryBucket: fin_category.stringToExpenseBucket(map[DatabaseHelper.colCategoryBucket] as String?),
     );
   }
 
-  FinTransaction.Transaction toTransactionModel() {
-    return FinTransaction.Transaction(
+  fin_transaction.Transaction toTransactionModel() {
+    return fin_transaction.Transaction(
       id: id,
       type: type,
       originalAmount: originalAmount,

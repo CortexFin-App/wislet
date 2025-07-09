@@ -1,31 +1,55 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/constants/app_constants.dart';
 import '../core/di/injector.dart';
+import '../core/error/failures.dart';
+import '../data/repositories/budget_repository.dart';
+import '../data/repositories/goal_repository.dart';
 import '../data/repositories/invitation_repository.dart';
-import '../data/repositories/user_repository.dart';
+import '../data/repositories/transaction_repository.dart';
 import '../models/wallet.dart';
 import '../data/repositories/wallet_repository.dart';
 import '../services/auth_service.dart';
+import '../services/sync_service.dart';
 import 'app_mode_provider.dart';
 
 class WalletProvider with ChangeNotifier {
   final AppModeProvider _appModeProvider;
   final AuthService _authService;
 
+  final WalletRepository _localWalletRepo;
+  final WalletRepository _supabaseWalletRepo;
+
   List<Wallet> _wallets = [];
   Wallet? _currentWallet;
   bool _isLoading = true;
+  String? _errorMessage;
 
   List<Wallet> get wallets => _wallets;
   Wallet? get currentWallet => _currentWallet;
   bool get isLoading => _isLoading;
+  String? get errorMessage => _errorMessage;
 
-  WalletProvider(
-    this._appModeProvider,
-    this._authService,
-  ) {
+  WalletRepository get _activeWalletRepo => _appModeProvider.isOnline ? _supabaseWalletRepo : _localWalletRepo;
+
+  WalletProvider({
+    required AppModeProvider appModeProvider,
+    required AuthService authService,
+    required WalletRepository localWalletRepo,
+    required TransactionRepository localTransactionRepo,
+    required BudgetRepository localBudgetRepo,
+    required GoalRepository localGoalRepo,
+    required WalletRepository supabaseWalletRepo,
+    required TransactionRepository supabaseTransactionRepo,
+    required BudgetRepository supabaseBudgetRepo,
+    required GoalRepository supabaseGoalRepo,
+    required InvitationRepository supabaseInvitationRepo,
+  })  : _appModeProvider = appModeProvider,
+        _authService = authService,
+        _localWalletRepo = localWalletRepo,
+        _supabaseWalletRepo = supabaseWalletRepo {
     _appModeProvider.addListener(onAppModeChanged);
     loadWallets();
   }
@@ -38,6 +62,9 @@ class WalletProvider with ChangeNotifier {
 
   void onAppModeChanged() {
     loadWallets();
+    if (_appModeProvider.isOnline) {
+      getIt<SyncService>().synchronize();
+    }
   }
 
   bool get canEditCurrentWallet {
@@ -48,28 +75,48 @@ class WalletProvider with ChangeNotifier {
   }
 
   Future<void> loadWallets() async {
-    _isLoading = true;
-    notifyListeners();
-    try {
-      final repo = getIt<WalletRepository>();
-      _wallets = await repo.getAllWallets();
-      if (_wallets.isEmpty && !_appModeProvider.isOnline) {
-        await repo.createInitialWallet();
-        _wallets = await repo.getAllWallets();
-      }
-      await _selectInitialWallet();
-    } catch (e) {
-      debugPrint('Error loading wallets: $e');
-      _wallets = [];
-      _currentWallet = null;
-    } finally {
-      _isLoading = false;
-      if (hasListeners) {
-        notifyListeners();
-      }
+    if (!_isLoading) {
+      _isLoading = true;
+      _errorMessage = null;
+      notifyListeners();
+    }
+
+    final result = await _activeWalletRepo.getAllWallets();
+
+    result.fold(
+      (failure) {
+        _errorMessage = failure.userMessage;
+        _wallets = [];
+        _currentWallet = null;
+      },
+      (wallets) async {
+        _wallets = wallets;
+        if (_wallets.isEmpty && !_appModeProvider.isOnline) {
+          final initialResult = await _localWalletRepo.createInitialWallet();
+          initialResult.fold(
+            (fail) => _errorMessage = fail.userMessage,
+            (_) async {
+              final reloadedResult = await _localWalletRepo.getAllWallets();
+              reloadedResult.fold(
+                (f) => _errorMessage = f.userMessage,
+                (reloadedWallets) {
+                  _wallets = reloadedWallets;
+                }
+              );
+            }
+          );
+        }
+        await _selectInitialWallet();
+        _errorMessage = null;
+      },
+    );
+
+    _isLoading = false;
+    if (hasListeners) {
+      notifyListeners();
     }
   }
-  
+
   Future<void> _selectInitialWallet() async {
     if (_wallets.isEmpty) {
       _currentWallet = null;
@@ -85,54 +132,64 @@ class WalletProvider with ChangeNotifier {
   }
 
   Future<void> switchWallet(int walletId, {bool shouldNotify = true}) async {
-    final walletObject = await getIt<WalletRepository>().getWallet(walletId);
-    if (walletObject != null) {
-      final currentUserId = _authService.currentUser?.id;
-      if (currentUserId != null && _appModeProvider.isOnline) {
-        final myMembership = walletObject.members
-            .firstWhereOrNull((member) => member.user.id == currentUserId);
-        walletObject.currentUserRole = myMembership?.role;
-      } else {
-        walletObject.currentUserRole = 'owner';
+    final result = await _activeWalletRepo.getWallet(walletId);
+    result.fold(
+      (failure) {
+        _errorMessage = failure.userMessage;
+      },
+      (walletObject) {
+        if (walletObject != null) {
+          final currentUserId = _authService.currentUser?.id;
+          if (currentUserId != null && _appModeProvider.isOnline) {
+            final myMembership = walletObject.members
+                .firstWhereOrNull((member) => member.user.id == currentUserId);
+            walletObject.currentUserRole = myMembership?.role;
+          } else {
+            walletObject.currentUserRole = 'owner';
+          }
+          _currentWallet = walletObject;
+          SharedPreferences.getInstance().then((prefs) => prefs.setInt(AppConstants.prefsKeySelectedWalletId, walletId));
+        }
       }
-      _currentWallet = walletObject;
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt(AppConstants.prefsKeySelectedWalletId, walletId);
-    }
+    );
     if (shouldNotify) {
       notifyListeners();
     }
   }
 
-  Future<void> createWallet({required String name, bool isDefault = false}) async {
+  Future<Either<AppFailure, int>> createWallet({required String name, bool isDefault = false}) async {
     final userId = _authService.currentUser?.id ?? '1';
-    await getIt<WalletRepository>()
-        .createWallet(name: name, ownerUserId: userId, isDefault: isDefault);
+    final result = await _activeWalletRepo.createWallet(name: name, ownerUserId: userId, isDefault: isDefault);
     await loadWallets();
+    return result;
   }
 
-  Future<void> updateWallet(Wallet wallet) async {
-    await getIt<WalletRepository>().updateWallet(wallet);
+  Future<Either<AppFailure, int>> updateWallet(Wallet wallet) async {
+    final result = await _activeWalletRepo.updateWallet(wallet);
     await loadWallets();
+    return result;
   }
 
-  Future<void> deleteWallet(int walletId) async {
+  Future<Either<AppFailure, int>> deleteWallet(int walletId) async {
     if (_wallets.length <= 1 && !_appModeProvider.isOnline) {
-      throw Exception("Неможливо видалити єдиний локальний гаманець.");
+      return Left(UnexpectedFailure(message: "Неможливо видалити єдиний локальний гаманець."));
     }
-    await getIt<WalletRepository>().deleteWallet(walletId);
+    final result = await _activeWalletRepo.deleteWallet(walletId);
     await loadWallets();
+    return result;
   }
 
-  Future<void> changeUserRole(int walletId, String userId, String newRole) async {
-    if (!_appModeProvider.isOnline) return;
-    await getIt<WalletRepository>().changeUserRole(walletId, userId, newRole);
+  Future<Either<AppFailure, void>> changeUserRole(int walletId, String userId, String newRole) async {
+    if (!_appModeProvider.isOnline) return Left(UnexpectedFailure(message: "Ця дія доступна лише в онлайн-режимі."));
+    final result = await _activeWalletRepo.changeUserRole(walletId, userId, newRole);
     await loadWallets();
+    return result;
   }
 
-  Future<void> removeUserFromWallet(int walletId, String userId) async {
-    if (!_appModeProvider.isOnline) return;
-    await getIt<WalletRepository>().removeUserFromWallet(walletId, userId);
+  Future<Either<AppFailure, void>> removeUserFromWallet(int walletId, String userId) async {
+    if (!_appModeProvider.isOnline) return Left(UnexpectedFailure(message: "Ця дія доступна лише в онлайн-режимі."));
+    final result = await _activeWalletRepo.removeUserFromWallet(walletId, userId);
     await loadWallets();
+    return result;
   }
 }

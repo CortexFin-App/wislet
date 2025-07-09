@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:fpdart/fpdart.dart' hide State;
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 import '../core/di/injector.dart';
+import '../core/error/failures.dart';
 import '../models/transaction_view_data.dart';
 import '../providers/wallet_provider.dart';
 import '../models/transaction.dart' as fin_transaction;
@@ -10,34 +12,26 @@ import '../models/category.dart' as fin_category;
 import '../models/currency_model.dart';
 import 'transactions/add_edit_transaction_screen.dart';
 import '../utils/fade_page_route.dart';
-import '../data/repositories/transaction_repository.dart';
 import '../data/repositories/category_repository.dart';
-import '../data/repositories/budget_repository.dart';
-import '../data/repositories/goal_repository.dart';
+import '../data/repositories/transaction_repository.dart';
 
 class TransactionsListScreen extends StatefulWidget {
   const TransactionsListScreen({super.key});
-
   @override
   TransactionsListScreenState createState() => TransactionsListScreenState();
 }
 
 class TransactionsListScreenState extends State<TransactionsListScreen> {
-  Future<List<TransactionViewData>>? _transactionsFuture;
-  final TransactionRepository _transactionRepository = getIt<TransactionRepository>();
-  final CategoryRepository _categoryRepository = getIt<CategoryRepository>();
-  final BudgetRepository _budgetRepository = getIt<BudgetRepository>();
-  final GoalRepository _goalRepository = getIt<GoalRepository>();
-
+  Future<Either<AppFailure, List<TransactionViewData>>>? _transactionsFuture;
   DateTime? _filterStartDate;
   DateTime? _filterEndDate;
   fin_transaction.TransactionType? _filterTransactionType;
   int? _filterCategoryId;
   List<fin_category.Category> _allCategoriesForFilter = [];
-  bool isScreenSearching = false; 
+  bool isScreenSearching = false;
   String _currentSearchQuery = '';
 
-  bool areFiltersActive() { 
+  bool areFiltersActive() {
     return _filterStartDate != null ||
         _filterEndDate != null ||
         _filterTransactionType != null ||
@@ -60,27 +54,35 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
     final walletProvider = context.read<WalletProvider>();
     final currentWalletId = walletProvider.currentWallet?.id;
     if (currentWalletId == null) return;
-    _allCategoriesForFilter = await _categoryRepository.getAllCategories(currentWalletId);
-    if(mounted) setState(() {});
+    
+    final categoriesEither = await getIt<CategoryRepository>().getAllCategories(currentWalletId);
+    categoriesEither.fold(
+      (l) => _allCategoriesForFilter = [], 
+      (r) => _allCategoriesForFilter = r
+    );
+
+    if (mounted) setState(() {});
   }
 
   void _applyFiltersAndLoadTransactions() {
-    if(!mounted) return;
+    if (!mounted) return;
     final walletProvider = context.read<WalletProvider>();
-    final currentWalletId = walletProvider.currentWallet?.id;
-    if (currentWalletId == null) return;
-
-    setState(() {
-      _transactionsFuture = _transactionRepository.getTransactionsWithDetails(
-        walletId: currentWalletId,
-        startDate: _filterStartDate,
-        endDate: _filterEndDate,
-        filterTransactionType: _filterTransactionType,
-        filterCategoryId: _filterCategoryId,
-        searchQuery: _currentSearchQuery,
-      );
-    });
+    final transactionRepo = getIt<TransactionRepository>();
+    
+    if (walletProvider.currentWallet?.id != null) {
+      setState(() {
+        _transactionsFuture = transactionRepo.getTransactionsWithDetails(
+          walletId: walletProvider.currentWallet!.id!,
+          startDate: _filterStartDate,
+          endDate: _filterEndDate,
+          filterTransactionType: _filterTransactionType,
+          filterCategoryId: _filterCategoryId,
+          searchQuery: _currentSearchQuery,
+        );
+      });
+    }
   }
+
   
   void performSearchQuery(String query) {
     if (!mounted) return;
@@ -93,25 +95,25 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
   }
 
   void toggleSearchMode(bool searching) {
-      if (!mounted) return;
+    if (!mounted) return;
     setState(() {
       isScreenSearching = searching;
-      if(!isScreenSearching && _currentSearchQuery.isNotEmpty) {
-        _currentSearchQuery = ''; 
+      if (!isScreenSearching && _currentSearchQuery.isNotEmpty) {
+        _currentSearchQuery = '';
       }
     });
-      _applyFiltersAndLoadTransactions();
+    _applyFiltersAndLoadTransactions();
   }
-  
+
   Future<void> refreshData() async {
     if (!mounted) return;
     setState(() {
-      _transactionsFuture = null; 
+      _transactionsFuture = null;
     });
     await _loadAllCategoriesForFilter();
     _applyFiltersAndLoadTransactions();
   }
-  
+
   Future<void> _navigateToAddTransaction() async {
     final result = await Navigator.push(
       context,
@@ -122,7 +124,9 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
     }
   }
 
-  Future<void> _navigateToEditTransaction(TransactionViewData transactionData) async {
+  
+  Future<void> _navigateToEditTransaction(
+      TransactionViewData transactionData) async {
     final result = await Navigator.push(
       context,
       FadePageRoute(
@@ -136,29 +140,30 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
     }
   }
 
-  Future<void> _runPostDeletionChecks(fin_transaction.Transaction transaction) async {
-    if (!mounted) return;
-    final walletId = context.read<WalletProvider>().currentWallet?.id;
-    if (walletId == null) return;
-    await _budgetRepository.checkAndNotifyEnvelopeLimits(transaction, walletId);
-    if (transaction.linkedGoalId != null) {
-      await _goalRepository.updateFinancialGoalProgress(transaction.linkedGoalId!);
-    }
-  }
-
-  Future<void> _confirmDeleteTransaction(BuildContext context, TransactionViewData transactionData) async {
+  Future<void> _confirmDeleteTransaction(
+      BuildContext context, TransactionViewData transactionData) async {
     if (!mounted) return;
     final messenger = ScaffoldMessenger.of(context);
-    final currency = appCurrencies.firstWhere((c) => c.code == transactionData.originalCurrencyCode, orElse: () => Currency(code: transactionData.originalCurrencyCode, symbol: transactionData.originalCurrencyCode, name: '', locale: ''));
-    final formattedAmount = NumberFormat.currency(locale: currency.locale, symbol: currency.symbol, decimalDigits: 2).format(transactionData.originalAmount);
-
+    final currency = appCurrencies.firstWhere(
+        (c) => c.code == transactionData.originalCurrencyCode,
+        orElse: () => Currency(
+            code: transactionData.originalCurrencyCode,
+            symbol: transactionData.originalCurrencyCode,
+            name: '',
+            locale: ''));
+    final formattedAmount = NumberFormat.currency(
+            locale: currency.locale,
+            symbol: currency.symbol,
+            decimalDigits: 2)
+        .format(transactionData.originalAmount);
     bool? confirmDelete = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: const Text('Підтвердити видалення'),
-          content: Text('Ви впевнені, що хочете видалити транзакцію на суму $formattedAmount (${transactionData.categoryName}) від ${DateFormat('dd.MM.yyyy').format(transactionData.date)}?'),
+          content: Text(
+              'Ви впевнені, що хочете видалити транзакцію на суму $formattedAmount (${transactionData.categoryName}) від ${DateFormat('dd.MM.yyyy').format(transactionData.date)}?'),
           actions: <Widget>[
             TextButton(
               child: const Text('Скасувати'),
@@ -167,36 +172,34 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
               },
             ),
             TextButton(
-              style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.error),
+              style: TextButton.styleFrom(
+                  foregroundColor: Theme.of(context).colorScheme.error),
               child: const Text('Видалити'),
               onPressed: () {
-                  Navigator.of(dialogContext).pop(true);
-                },
+                Navigator.of(dialogContext).pop(true);
+              },
             ),
           ],
         );
       },
     );
-
     if (confirmDelete == true && mounted) {
-        fin_transaction.Transaction deletedTransactionModel = transactionData.toTransactionModel();
-        await _transactionRepository.deleteTransaction(transactionData.id);
-        if (mounted) {
-            await _runPostDeletionChecks(deletedTransactionModel);
-            messenger.showSnackBar(
-            SnackBar(content: Text('Транзакцію "${transactionData.categoryName}" видалено')),
-            );
-            refreshData(); 
-        }
+      await getIt<TransactionRepository>().deleteTransaction(transactionData.id);
+      if (mounted) {
+        messenger.showSnackBar(
+          SnackBar(
+              content: Text('Транзакцію "${transactionData.categoryName}" видалено')),
+        );
+        refreshData();
+      }
     }
   }
-  
+
   void showFilterDialog() {
     DateTime? tempStartDate = _filterStartDate;
     DateTime? tempEndDate = _filterEndDate;
     fin_transaction.TransactionType? tempTransactionType = _filterTransactionType;
     int? tempCategoryId = _filterCategoryId;
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -262,7 +265,8 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    Text('Тип транзакції:', style: Theme.of(context).textTheme.titleMedium),
+                    Text('Тип транзакції:',
+                        style: Theme.of(context).textTheme.titleMedium),
                     DropdownButtonFormField<fin_transaction.TransactionType?>(
                       value: tempTransactionType,
                       hint: const Text('Всі типи'),
@@ -276,7 +280,10 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
                         ...fin_transaction.TransactionType.values.map((type) {
                           return DropdownMenuItem<fin_transaction.TransactionType?>(
                             value: type,
-                            child: Text(type == fin_transaction.TransactionType.income ? 'Дохід' : 'Витрата'),
+                            child: Text(type ==
+                                    fin_transaction.TransactionType.income
+                                ? 'Дохід'
+                                : 'Витрата'),
                           );
                         }),
                       ],
@@ -296,7 +303,8 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
                           value: null,
                           child: Text('Всі категорії'),
                         ),
-                        ..._allCategoriesForFilter.map((fin_category.Category category) {
+                        ..._allCategoriesForFilter
+                            .map((fin_category.Category category) {
                           return DropdownMenuItem<int?>(
                             value: category.id,
                             child: Text(category.name),
@@ -313,13 +321,13 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
                       children: [
                         TextButton(
                           onPressed: () {
-                            if(mounted){
-                                setState(() {
+                            if (mounted) {
+                              setState(() {
                                 _filterStartDate = null;
                                 _filterEndDate = null;
                                 _filterTransactionType = null;
                                 _filterCategoryId = null;
-                                });
+                              });
                             }
                             _applyFiltersAndLoadTransactions();
                             Navigator.pop(ctx);
@@ -329,13 +337,13 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
                         const SizedBox(width: 8),
                         ElevatedButton(
                           onPressed: () {
-                            if(mounted){
-                                setState(() {
+                            if (mounted) {
+                              setState(() {
                                 _filterStartDate = tempStartDate;
                                 _filterEndDate = tempEndDate;
                                 _filterTransactionType = tempTransactionType;
                                 _filterCategoryId = tempCategoryId;
-                                });
+                              });
                             }
                             _applyFiltersAndLoadTransactions();
                             Navigator.pop(ctx);
@@ -355,13 +363,15 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
     );
   }
 
-  Widget _buildEmptyState(BuildContext context) { 
-    bool localAreFiltersActive = areFiltersActive(); 
-    String title = localAreFiltersActive && _currentSearchQuery.isNotEmpty 
-        ? 'За запитом "$_currentSearchQuery" нічого не знайдено' 
-        : (localAreFiltersActive ? 'Транзакцій не знайдено' : 'Транзакцій ще немає');
-    String message = localAreFiltersActive 
-        ? 'Спробуйте змінити параметри фільтрації або пошуковий запит.' 
+  Widget _buildEmptyState(BuildContext context) {
+    bool localAreFiltersActive = areFiltersActive();
+    String title = localAreFiltersActive && _currentSearchQuery.isNotEmpty
+        ? 'За запитом "$_currentSearchQuery" нічого не знайдено'
+        : (localAreFiltersActive
+            ? 'Транзакцій не знайдено'
+            : 'Транзакцій ще немає');
+    String message = localAreFiltersActive
+        ? 'Спробуйте змінити параметри фільтрації або пошуковий запит.'
         : 'Додайте свою першу транзакцію, щоб почати відстежувати фінанси.';
     return Center(
       child: Padding(
@@ -371,9 +381,11 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
             Icon(
-              localAreFiltersActive ? Icons.search_off_rounded : Icons.receipt_long_outlined,
+              localAreFiltersActive
+                  ? Icons.search_off_rounded
+                  : Icons.receipt_long_outlined,
               size: 80,
-              color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5),
+              color: Theme.of(context).colorScheme.onSurfaceVariant.withAlpha(128),
             ),
             const SizedBox(height: 24),
             Text(
@@ -392,22 +404,32 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
-            if (!localAreFiltersActive || (_currentSearchQuery.isEmpty && !(_filterStartDate != null || _filterEndDate != null || _filterTransactionType != null || _filterCategoryId != null)))
+            if (!localAreFiltersActive ||
+                (_currentSearchQuery.isEmpty &&
+                    !(_filterStartDate != null ||
+                        _filterEndDate != null ||
+                        _filterTransactionType != null ||
+                        _filterCategoryId != null)))
               ElevatedButton.icon(
                 icon: const Icon(Icons.add_circle_outline),
                 label: const Text('Додати транзакцію'),
                 onPressed: _navigateToAddTransaction,
               ),
-            if (localAreFiltersActive && !(_currentSearchQuery.isNotEmpty && _filterStartDate == null && _filterEndDate == null && _filterTransactionType == null && _filterCategoryId == null))
+            if (localAreFiltersActive &&
+                !(_currentSearchQuery.isNotEmpty &&
+                    _filterStartDate == null &&
+                    _filterEndDate == null &&
+                    _filterTransactionType == null &&
+                    _filterCategoryId == null))
               TextButton(
                 onPressed: () {
-                  if(mounted){
-                      setState(() {
+                  if (mounted) {
+                    setState(() {
                       _filterStartDate = null;
                       _filterEndDate = null;
                       _filterTransactionType = null;
                       _filterCategoryId = null;
-                      });
+                    });
                   }
                   _applyFiltersAndLoadTransactions();
                 },
@@ -419,9 +441,15 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
     );
   }
 
-  Widget _buildShimmerLoadingList() { 
-    final Color baseColor = Theme.of(context).brightness == Brightness.light ? Colors.grey[300]! : Colors.grey[700]!;
-    final Color highlightColor = Theme.of(context).brightness == Brightness.light ? Colors.grey[100]! : Colors.grey[500]!;
+  Widget _buildShimmerLoadingList() {
+    final Color baseColor =
+        Theme.of(context).brightness == Brightness.light
+            ? Colors.grey[300]!
+            : Colors.grey[700]!;
+    final Color highlightColor =
+        Theme.of(context).brightness == Brightness.light
+            ? Colors.grey[100]!
+            : Colors.grey[500]!;
     return Shimmer.fromColors(
       baseColor: baseColor,
       highlightColor: highlightColor,
@@ -433,7 +461,7 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
             child: Container(
               padding: const EdgeInsets.all(12.0),
               decoration: BoxDecoration(
-                color: baseColor, 
+                color: baseColor,
                 borderRadius: BorderRadius.circular(12.0),
               ),
               child: Row(
@@ -451,9 +479,15 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(width: MediaQuery.of(context).size.width * 0.4, height: 14, color: Theme.of(context).cardColor),
+                        Container(
+                            width: MediaQuery.of(context).size.width * 0.4,
+                            height: 14,
+                            color: Theme.of(context).cardColor),
                         const SizedBox(height: 6),
-                        Container(width: MediaQuery.of(context).size.width * 0.25, height: 12, color: Theme.of(context).cardColor),
+                        Container(
+                            width: MediaQuery.of(context).size.width * 0.25,
+                            height: 12,
+                            color: Theme.of(context).cardColor),
                       ],
                     ),
                   ),
@@ -467,105 +501,132 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
       ),
     );
   }
-  
+
   @override
-  Widget build(BuildContext context) { 
-    return FutureBuilder<List<TransactionViewData>>(
+  Widget build(BuildContext context) {
+    return FutureBuilder<Either<AppFailure, List<TransactionViewData>>>(
       future: _transactionsFuture,
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting || _transactionsFuture == null) {
+        if (snapshot.connectionState == ConnectionState.waiting ||
+            _transactionsFuture == null) {
           return _buildShimmerLoadingList();
-        } else if (snapshot.hasError) {
-          return Center(child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text('Помилка завантаження транзакцій: ${snapshot.error}\nБудь ласка, спробуйте ще раз.', textAlign: TextAlign.center),
-          ));
-        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return _buildEmptyState(context);
-        } else {
-          final transactions = snapshot.data!;
-          final TextTheme textTheme = Theme.of(context).textTheme;
-          final ColorScheme colorScheme = Theme.of(context).colorScheme;
-          return SafeArea(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(8.0),
-              itemCount: transactions.length,
-              itemBuilder: (context, index) {
-                final transaction = transactions[index];
-                final isIncome = transaction.type == fin_transaction.TransactionType.income;
-                final amountColor = isIncome ? colorScheme.tertiary.withOpacity(0.9) : colorScheme.error;
-                final amountPrefix = isIncome ? '+' : '-';
-                
-                final currency = appCurrencies.firstWhere((c) => c.code == transaction.originalCurrencyCode, orElse: () => Currency(code: transaction.originalCurrencyCode, symbol: transaction.originalCurrencyCode, name: '', locale: ''));
-                final formattedAmount = NumberFormat.currency(locale: currency.locale, symbol: currency.symbol, decimalDigits: 2).format(transaction.originalAmount.abs());
-                String subtitleText = DateFormat('dd.MM.yyyy, HH:mm').format(transaction.date);
-                bool hasDescription = transaction.description?.isNotEmpty == true;
-                if (hasDescription) {
-                  subtitleText = "${transaction.description!.replaceAll("\n", " ")}\n$subtitleText";
-                }
-                
-                return Card(
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: amountColor.withOpacity(0.1),
-                      child: Icon(
-                        isIncome ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
-                        color: amountColor,
-                        size: 20,
-                      ),
-                    ),
-                    title: Text(
-                      transaction.categoryName,
-                      style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
-                    ),
-                    subtitle: Text(
-                      subtitleText,
-                      style: textTheme.bodySmall,
-                      maxLines: hasDescription ? 2 : 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    isThreeLine: hasDescription,
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Flexible(
-                          child: Text(
-                            '$amountPrefix$formattedAmount',
-                            style: textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold, color: amountColor),
-                            textAlign: TextAlign.right,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        Tooltip(
-                          message: 'Редагувати',
-                          child: IconButton(
-                            icon: const Icon(Icons.edit_outlined, size: 20),
-                            color: colorScheme.onSurfaceVariant,
-                            padding: const EdgeInsets.only(left: 8),
-                            constraints: const BoxConstraints(),
-                            onPressed: () => _navigateToEditTransaction(transaction),
-                          ),
-                        ),
-                        Tooltip(
-                          message: 'Видалити',
-                          child: IconButton(
-                            icon: const Icon(Icons.delete_outline, size: 20),
-                            color: colorScheme.error.withOpacity(0.8),
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(),
-                            onPressed: () => _confirmDeleteTransaction(context, transaction),
-                          ),
-                        ),
-                      ],
-                    ),
-                    onTap: () => _navigateToEditTransaction(transaction),
-                  ),
-                );
-              },
-            ),
-          );
         }
+        
+        return snapshot.data!.fold(
+          (failure) => Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                    'Помилка завантаження транзакцій: ${failure.userMessage}\nБудь ласка, спробуйте ще раз.',
+                    textAlign: TextAlign.center),
+              )),
+          (transactions) {
+            if (transactions.isEmpty) {
+              return _buildEmptyState(context);
+            }
+            final TextTheme textTheme = Theme.of(context).textTheme;
+            final ColorScheme colorScheme = Theme.of(context).colorScheme;
+            return SafeArea(
+              child: ListView.builder(
+                padding: const EdgeInsets.all(8.0),
+                itemCount: transactions.length,
+                itemBuilder: (context, index) {
+                  final transaction = transactions[index];
+                  final isIncome =
+                      transaction.type == fin_transaction.TransactionType.income;
+                  final amountColor = isIncome
+                      ? colorScheme.tertiary.withAlpha(230)
+                      : colorScheme.error;
+                  final amountPrefix = isIncome ? '+' : '-';
+
+                  final currency = appCurrencies.firstWhere(
+                      (c) => c.code == transaction.originalCurrencyCode,
+                      orElse: () => Currency(
+                          code: transaction.originalCurrencyCode,
+                          symbol: transaction.originalCurrencyCode,
+                          name: '',
+                          locale: ''));
+                  final formattedAmount = NumberFormat.currency(
+                          locale: currency.locale,
+                          symbol: currency.symbol,
+                          decimalDigits: 2)
+                      .format(transaction.originalAmount.abs());
+                  String subtitleText =
+                      DateFormat('dd.MM.yyyy, HH:mm').format(transaction.date);
+                  bool hasDescription = transaction.description?.isNotEmpty == true;
+                  if (hasDescription) {
+                    subtitleText =
+                        "${transaction.description!.replaceAll("\n", " ")}\n$subtitleText";
+                  }
+
+                  return Card(
+                    child: ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: amountColor.withAlpha(26),
+                        child: Icon(
+                          isIncome
+                              ? Icons.arrow_downward_rounded
+                              : Icons.arrow_upward_rounded,
+                          color: amountColor,
+                          size: 20,
+                        ),
+                      ),
+                      title: Text(
+                        transaction.categoryName,
+                        style: textTheme.titleSmall
+                            ?.copyWith(fontWeight: FontWeight.w600),
+                      ),
+                      subtitle: Text(
+                        subtitleText,
+                        style: textTheme.bodySmall,
+                        maxLines: hasDescription ? 2 : 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      isThreeLine: hasDescription,
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              '$amountPrefix$formattedAmount',
+                              style: textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold, color: amountColor),
+                              textAlign: TextAlign.right,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Tooltip(
+                            message: 'Редагувати',
+                            child: IconButton(
+                              icon: const Icon(Icons.edit_outlined, size: 20),
+                              color: colorScheme.onSurfaceVariant,
+                              padding: const EdgeInsets.only(left: 8),
+                              constraints: const BoxConstraints(),
+                              onPressed: () =>
+                                  _navigateToEditTransaction(transaction),
+                            ),
+                          ),
+                          Tooltip(
+                            message: 'Видалити',
+                            child: IconButton(
+                              icon: const Icon(Icons.delete_outline, size: 20),
+                              color: colorScheme.error.withAlpha(204),
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                              onPressed: () =>
+                                  _confirmDeleteTransaction(context, transaction),
+                            ),
+                          ),
+                        ],
+                      ),
+                      onTap: () => _navigateToEditTransaction(transaction),
+                    ),
+                  );
+                },
+              ),
+            );
+          }
+        );
       },
     );
   }

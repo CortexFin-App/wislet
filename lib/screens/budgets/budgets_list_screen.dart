@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:fpdart/fpdart.dart' hide State;
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../core/di/injector.dart';
+import '../../core/error/failures.dart';
 import '../../models/budget_models.dart';
 import '../../providers/wallet_provider.dart';
 import '../../data/repositories/budget_repository.dart';
@@ -19,7 +21,7 @@ class BudgetsListScreen extends StatefulWidget {
 
 class BudgetsListScreenState extends State<BudgetsListScreen> {
   final BudgetRepository _budgetRepository = getIt<BudgetRepository>();
-  Future<List<Budget>>? _budgetsFuture;
+  Future<Either<AppFailure, List<Budget>>>? _budgetsFuture;
 
   @override
   void initState() {
@@ -70,7 +72,7 @@ class BudgetsListScreenState extends State<BudgetsListScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
-            Icon(Icons.inventory_2_outlined, size: 80, color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5)),
+            Icon(Icons.inventory_2_outlined, size: 80, color: Theme.of(context).colorScheme.onSurfaceVariant.withAlpha(128)),
             const SizedBox(height: 24),
             Text(
               'Жодного бюджету ще не створено',
@@ -133,53 +135,56 @@ class BudgetsListScreenState extends State<BudgetsListScreen> {
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: _loadBudgets,
-        child: FutureBuilder<List<Budget>>(
+        child: FutureBuilder<Either<AppFailure, List<Budget>>>(
           future: _budgetsFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting || _budgetsFuture == null) {
               return _buildShimmerList();
-            } else if (snapshot.hasError) {
-              return Center(child: Text('Помилка завантаження бюджетів: ${snapshot.error}'));
-            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return _buildEmptyState();
-            } else {
-              final budgets = snapshot.data!;
-              return ListView.builder(
-                padding: const EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 80.0),
-                itemCount: budgets.length,
-                itemBuilder: (context, index) {
-                  final budget = budgets[index];
-                  return Card(
-                    margin: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 8.0),
-                    color: !budget.isActive ? Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.5) : null,
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-                      leading: CircleAvatar(
-                        radius: 24,
-                        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                        child: Icon(
-                          _getIconForStrategy(budget.strategyType),
-                          color: Theme.of(context).colorScheme.onPrimaryContainer,
-                        ),
-                      ),
-                      title: Text(
-                        budget.name,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              decoration: !budget.isActive ? TextDecoration.lineThrough : null,
-                            ),
-                      ),
-                      subtitle: Text(
-                        "${DateFormat('dd.MM.yy').format(budget.startDate)} - ${DateFormat('dd.MM.yy').format(budget.endDate)}\n${budgetStrategyTypeToString(budget.strategyType)}",
-                        style: Theme.of(context).textTheme.bodySmall),
-                      trailing: budget.isActive ? const Icon(Icons.keyboard_arrow_right) : const Chip(label: Text('Архівний'), padding: EdgeInsets.zero),
-                      isThreeLine: true,
-                      onTap: () => _navigateToBudgetDetails(budget),
-                    ),
-                  );
-                },
-              );
             }
+
+            return snapshot.data!.fold(
+              (failure) => Center(child: Text('Помилка завантаження бюджетів: ${failure.userMessage}')),
+              (budgets) {
+                if (budgets.isEmpty) {
+                  return _buildEmptyState();
+                }
+                return ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 80.0),
+                  itemCount: budgets.length,
+                  itemBuilder: (context, index) {
+                    final budget = budgets[index];
+                    return Card(
+                      margin: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 8.0),
+                      color: !budget.isActive ? Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha(128) : null,
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                        leading: CircleAvatar(
+                          radius: 24,
+                          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                          child: Icon(
+                            _getIconForStrategy(budget.strategyType),
+                            color: Theme.of(context).colorScheme.onPrimaryContainer,
+                          ),
+                        ),
+                        title: Text(
+                          budget.name,
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                decoration: !budget.isActive ? TextDecoration.lineThrough : null,
+                              ),
+                        ),
+                        subtitle: Text(
+                          "${DateFormat('dd.MM.yy').format(budget.startDate)} - ${DateFormat('dd.MM.yy').format(budget.endDate)}\n${budgetStrategyTypeToString(budget.strategyType)}",
+                          style: Theme.of(context).textTheme.bodySmall),
+                        trailing: budget.isActive ? const Icon(Icons.keyboard_arrow_right) : const Chip(label: Text('Архівний'), padding: EdgeInsets.zero),
+                        isThreeLine: true,
+                        onTap: () => _navigateToBudgetDetails(budget),
+                      ),
+                    );
+                  },
+                );
+              },
+            );
           },
         ),
       ),

@@ -16,6 +16,8 @@ class Subscription {
   final bool isActive;
   final String? website;
   final int? reminderDaysBefore;
+  final DateTime? updatedAt;
+  final bool isDeleted;
 
   Subscription({
     this.id,
@@ -31,6 +33,8 @@ class Subscription {
     this.isActive = true,
     this.website,
     this.reminderDaysBefore,
+    this.updatedAt,
+    this.isDeleted = false,
   });
 
   Map<String, dynamic> toMap() {
@@ -48,6 +52,8 @@ class Subscription {
       'isActive': isActive ? 1 : 0,
       'website': website,
       'reminderDaysBefore': reminderDaysBefore,
+      'updated_at': updatedAt?.toIso8601String() ?? DateTime.now().toIso8601String(),
+      'is_deleted': isDeleted ? 1 : 0,
     };
   }
 
@@ -66,6 +72,8 @@ class Subscription {
       isActive: map['isActive'] == 1,
       website: map['website'],
       reminderDaysBefore: map['reminderDaysBefore'],
+      updatedAt: map['updated_at'] != null ? DateTime.parse(map['updated_at'] as String) : null,
+      isDeleted: (map['is_deleted'] is bool) ? map['is_deleted'] : ((map['is_deleted'] as int? ?? 0) == 1),
     );
   }
 

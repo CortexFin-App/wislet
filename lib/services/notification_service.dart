@@ -54,6 +54,7 @@ class NotificationService {
     if (status.isGranted) {
       return true;
     } else if (status.isPermanentlyDenied) {
+      if (!context.mounted) return false;
       await showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -147,7 +148,7 @@ class NotificationService {
       body,
       tz.TZDateTime.from(dueDateTime, tz.local),
       platformDetails,
-      androidAllowWhileIdle: true,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
       payload: payload
     );

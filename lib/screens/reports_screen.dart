@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:shimmer/shimmer.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:shimmer/shimmer.dart';
 import '../core/di/injector.dart';
 import '../providers/currency_provider.dart';
 import '../providers/wallet_provider.dart';
 import '../models/currency_model.dart';
-import '../models/category.dart' as FinCategory;
-import '../models/transaction.dart' as FinTransactionModel;
+import '../models/category.dart' as fin_category;
+import '../models/transaction.dart' as fin_transaction;
 import '../data/repositories/transaction_repository.dart';
 import '../data/repositories/category_repository.dart';
 import '../data/repositories/plan_repository.dart';
@@ -18,7 +18,7 @@ import '../services/report_generation_service.dart';
 
 class PlanActualReportItemDisplay {
   final String categoryName;
-  final FinCategory.CategoryType categoryType;
+  final fin_category.CategoryType categoryType;
   final String formattedPlannedAmount;
   final String formattedActualAmount;
   final String formattedDifference;
@@ -82,10 +82,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
   DateTime _reportStartDate = DateTime(DateTime.now().year, DateTime.now().month, 1);
   DateTime _reportEndDate = DateTime(DateTime.now().year, DateTime.now().month + 1, 0);
-  
+
   Future<Map<String, dynamic>>? _reportsFuture;
   int? _touchedIndexPieChart;
-  
+
   final String _baseCurrencyCode = 'UAH';
   static const double _tabletBreakpoint = 720.0;
 
@@ -96,7 +96,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
       _initiateReportGeneration();
     });
   }
-  
+
   void _initiateReportGeneration() {
     if (mounted) {
       final walletProvider = context.read<WalletProvider>();
@@ -128,7 +128,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
       });
     }
   }
-  
+
   Future<void> _showExportDialog() async {
     ReportFormat? selectedFormat = ReportFormat.pdf;
     await showDialog(
@@ -190,41 +190,54 @@ class _ReportsScreenState extends State<ReportsScreen> {
   }
 
   Future<void> _handleExport(ReportFormat format) async {
-    ScaffoldMessenger.of(context).showSnackBar(
+    if (!mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(
       const SnackBar(content: Text('Генерація звіту...')),
     );
     try {
       final walletId = context.read<WalletProvider>().currentWallet!.id!;
-      final transactions = await _transactionRepository.getTransactionsWithDetails(
+      final transactionsEither = await _transactionRepository.getTransactionsWithDetails(
         walletId: walletId,
         startDate: _reportStartDate,
         endDate: _reportEndDate,
       );
-      if (transactions.isEmpty) {
-        if(mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Немає транзакцій за обраний період для експорту.')),
-          );
+
+      await transactionsEither.fold(
+        (failure) {
+          if(mounted) {
+            messenger.showSnackBar(
+              SnackBar(content: Text('Помилка завантаження даних для експорту: ${failure.userMessage}')),
+            );
+          }
+        },
+        (transactions) async {
+          if (transactions.isEmpty) {
+            if(mounted) {
+              messenger.showSnackBar(
+                const SnackBar(content: Text('Немає транзакцій за обраний період для експорту.')),
+              );
+            }
+            return;
+          }
+
+          final String timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+          final reportPeriod = "Звіт за період з ${DateFormat('dd.MM.yyyy').format(_reportStartDate)} по ${DateFormat('dd.MM.yyyy').format(_reportEndDate)}";
+
+          if (format == ReportFormat.pdf) {
+            final bytes = await _reportService.generatePdfBytes(transactions, reportPeriod);
+            final file = XFile.fromData(bytes, mimeType: 'application/pdf', name: 'report_$timestamp.pdf');
+            await Share.shareXFiles([file], subject: 'Фінансовий звіт', text: reportPeriod);
+          } else {
+            final bytes = await _reportService.generateCsvBytes(transactions);
+            final file = XFile.fromData(bytes, mimeType: 'text/csv', name: 'report_$timestamp.csv');
+            await Share.shareXFiles([file], subject: 'Фінансовий звіт', text: reportPeriod);
+          }
         }
-        return;
-      }
-      
-      final String timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
-      final reportPeriod = "Звіт за період з ${DateFormat('dd.MM.yyyy').format(_reportStartDate)} по ${DateFormat('dd.MM.yyyy').format(_reportEndDate)}";
-      
-      if (format == ReportFormat.pdf) {
-        final bytes = await _reportService.generatePdfBytes(transactions, reportPeriod);
-        final file = XFile.fromData(bytes, mimeType: 'application/pdf', name: 'report_$timestamp.pdf');
-        await Share.shareXFiles([file], subject: 'Фінансовий звіт', text: reportPeriod);
-      } else {
-        final bytes = await _reportService.generateCsvBytes(transactions);
-        final file = XFile.fromData(bytes, mimeType: 'text/csv', name: 'report_$timestamp.csv');
-        await Share.shareXFiles([file], subject: 'Фінансовий звіт', text: reportPeriod);
-      }
-      
+      );
     } catch (e) {
       if(mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        messenger.showSnackBar(
           SnackBar(content: Text('Помилка генерації звіту: $e')),
         );
       }
@@ -270,63 +283,66 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
   Future<Map<String, dynamic>> _generateReports(int currentWalletId, Currency displayCurrency) async {
     final DateTime rateDateForPeriodReports = _reportEndDate.isAfter(DateTime.now()) ? DateTime.now() : _reportEndDate;
-    
+
     final ConversionRateInfo? displayRateInfoForPeriod = await _fetchDisplayRateInfoForDate(displayCurrency, rateDateForPeriodReports);
-    if(!mounted) return {};
+    if(!mounted) throw Exception("Component is not mounted");
+
+    final allCategoriesEither = await _categoryRepository.getAllCategories(currentWalletId);
+    if (!mounted) throw Exception("Component is not mounted");
+    final allCategories = allCategoriesEither.getOrElse((_) => []);
+
+    final allPlansEither = await _planRepository.getPlansForPeriod(currentWalletId, _reportStartDate, _reportEndDate);
+    if (!mounted) throw Exception("Component is not mounted");
+    final allPlans = allPlansEither.getOrElse((_) => []);
 
     List<PlanActualReportItemDisplay> planActualItems = [];
-    final allCategories = await _categoryRepository.getAllCategories(currentWalletId);
-    if(!mounted) return {};
-    
-    final allPlans = await _planRepository.getPlansForPeriod(currentWalletId, _reportStartDate, _reportEndDate);
-    if(!mounted) return {};
-
     for (var category in allCategories) {
       double totalPlannedUAH = allPlans
           .where((plan) => plan.categoryId == category.id)
           .fold(0.0, (sum, p) => sum + p.plannedAmountInBaseCurrency);
-      if(!mounted) return {};
-      
-      double totalActualUAH = await _transactionRepository.getTotalAmount(
+      if(!mounted) throw Exception("Component is not mounted");
+
+      final totalActualUAHEither = await _transactionRepository.getTotalAmount(
         walletId: currentWalletId,
         startDate: _reportStartDate,
         endDate: _reportEndDate,
-        transactionType: category.type == FinCategory.CategoryType.income 
-            ? FinTransactionModel.TransactionType.income 
-            : FinTransactionModel.TransactionType.expense,
+        transactionType: category.type == fin_category.CategoryType.income
+            ? fin_transaction.TransactionType.income
+            : fin_transaction.TransactionType.expense,
         categoryId: category.id,
       );
-      if(!mounted) return {};
-      
+      if (!mounted) throw Exception("Component is not mounted");
+      final totalActualUAH = totalActualUAHEither.getOrElse((_) => 0.0);
+
       if (totalPlannedUAH > 0 || totalActualUAH > 0) {
-        double differenceValue = category.type == FinCategory.CategoryType.income 
-                                    ? totalActualUAH - totalPlannedUAH 
+        double differenceValue = category.type == fin_category.CategoryType.income
+                                    ? totalActualUAH - totalPlannedUAH
                                     : totalPlannedUAH - totalActualUAH;
-        
-        final differenceColor = differenceValue > 0 ? Colors.green.shade700 : (differenceValue < 0 ? Colors.red.shade700 : Theme.of(context).textTheme.bodyMedium!.color!);
-        if (!mounted) return {};
+
+        final differenceColor = differenceValue >= 0 ? Colors.green.shade700 : Colors.red.shade700;
+        if (!mounted) throw Exception("Component is not mounted");
 
         planActualItems.add(PlanActualReportItemDisplay(
           categoryName: category.name,
           categoryType: category.type,
           formattedPlannedAmount: _formatAmountWithRateInfo(totalPlannedUAH, displayCurrency, displayRateInfoForPeriod),
           formattedActualAmount: _formatAmountWithRateInfo(totalActualUAH, displayCurrency, displayRateInfoForPeriod),
-          formattedDifference: (differenceValue > 0 ? "+" : (differenceValue < 0 ? "-" : "")) + _formatAmountWithRateInfo(differenceValue.abs(), displayCurrency, displayRateInfoForPeriod),
+          formattedDifference: (differenceValue >= 0 ? "+" : "") + _formatAmountWithRateInfo(differenceValue, displayCurrency, displayRateInfoForPeriod),
           differenceColor: differenceColor,
         ));
       }
     }
 
-    List<ChartDataPointDisplay> pieDisplayData = [];
-    final expensesGroupedUAH = await _transactionRepository.getExpensesGroupedByCategory(currentWalletId, _reportStartDate, _reportEndDate);
-    if(!mounted) return {};
+    final expensesGroupedUAHEither = await _transactionRepository.getExpensesGroupedByCategory(currentWalletId, _reportStartDate, _reportEndDate);
+    if(!mounted) throw Exception("Component is not mounted");
+    final expensesGroupedUAH = expensesGroupedUAHEither.getOrElse((_) => []);
 
+    List<ChartDataPointDisplay> pieDisplayData = [];
     final colorScheme = Theme.of(context).colorScheme;
-    if(!mounted) return {};
-    
+    if(!mounted) throw Exception("Component is not mounted");
     final List<Color> pieColors = [
       colorScheme.primary, colorScheme.secondary, colorScheme.tertiary,
-      colorScheme.error, colorScheme.outline, colorScheme.primaryContainer, 
+      colorScheme.error, colorScheme.outline, colorScheme.primaryContainer,
       colorScheme.secondaryContainer, colorScheme.tertiaryContainer, Colors.cyan, Colors.purpleAccent,
     ];
 
@@ -344,26 +360,28 @@ class _ReportsScreenState extends State<ReportsScreen> {
     List<MonthlyTrendDisplayData> trendDisplayItems = [];
     double maxChartYValue = 0;
     DateTime currentMonthEnd = DateTime(DateTime.now().year, DateTime.now().month + 1, 0);
-    
+
     for (int i = 5; i >= 0; i--) {
         DateTime monthEndDateForTrend = DateTime(currentMonthEnd.year, currentMonthEnd.month - i + 1, 0);
         DateTime monthStartDateForTrend = DateTime(monthEndDateForTrend.year, monthEndDateForTrend.month, 1);
-        
+
         final ConversionRateInfo? displayRateInfoForMonth = await _fetchDisplayRateInfoForDate(displayCurrency, monthEndDateForTrend);
-        if(!mounted) return {};
-        
-        double monthlyIncomeUAH = await _transactionRepository.getTotalAmount(walletId: currentWalletId, startDate: monthStartDateForTrend, endDate: monthEndDateForTrend, transactionType: FinTransactionModel.TransactionType.income);
-        if(!mounted) return {};
-        
-        double monthlyExpensesUAH = await _transactionRepository.getTotalAmount(walletId: currentWalletId, startDate: monthStartDateForTrend, endDate: monthEndDateForTrend, transactionType: FinTransactionModel.TransactionType.expense);
-        if(!mounted) return {};
-        
+        if(!mounted) throw Exception("Component is not mounted");
+
+        final monthlyIncomeUAHEither = await _transactionRepository.getTotalAmount(walletId: currentWalletId, startDate: monthStartDateForTrend, endDate: monthEndDateForTrend, transactionType: fin_transaction.TransactionType.income);
+        final monthlyIncomeUAH = monthlyIncomeUAHEither.getOrElse((l) => 0.0);
+        if(!mounted) throw Exception("Component is not mounted");
+
+        final monthlyExpensesUAHEither = await _transactionRepository.getTotalAmount(walletId: currentWalletId, startDate: monthStartDateForTrend, endDate: monthEndDateForTrend, transactionType: fin_transaction.TransactionType.expense);
+        final monthlyExpensesUAH = monthlyExpensesUAHEither.getOrElse((l) => 0.0);
+        if(!mounted) throw Exception("Component is not mounted");
+
         double incomeForChart = _convertToDisplayValueWithRateInfo(monthlyIncomeUAH, displayCurrency, displayRateInfoForMonth);
         double expenseForChart = _convertToDisplayValueWithRateInfo(monthlyExpensesUAH, displayCurrency, displayRateInfoForMonth);
-        
+
         trendDisplayItems.add(MonthlyTrendDisplayData(
-            month: monthStartDateForTrend, 
-            incomeForChart: incomeForChart, 
+            month: monthStartDateForTrend,
+            incomeForChart: incomeForChart,
             expenseForChart: expenseForChart,
             formattedIncome: _formatAmountWithRateInfo(monthlyIncomeUAH, displayCurrency, displayRateInfoForMonth),
             formattedExpense: _formatAmountWithRateInfo(monthlyExpensesUAH, displayCurrency, displayRateInfoForMonth)
@@ -379,7 +397,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
       'lineChartMaxY': maxChartYValue == 0 ? 1000.0 : (maxChartYValue * 1.25).ceilToDouble(),
     };
   }
-  
+
   @override
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
@@ -405,7 +423,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               ),
               Row(
                 children: [
-                    IconButton(
+                  IconButton(
                     icon: const Icon(Icons.ios_share_outlined),
                     tooltip: 'Експорт звіту',
                     onPressed: _showExportDialog,
@@ -436,7 +454,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 return const Center(child: Text('Немає даних для побудови звітів.'));
               }
               final data = snapshot.data!;
-              Widget chartsSection = (screenWidth > _tabletBreakpoint) 
+              Widget chartsSection = (screenWidth > _tabletBreakpoint)
                 ? Row(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
                     Expanded(child: _buildPieChartSection(context, data['spendingPieChartData'] as List<ChartDataPointDisplay>)),
                     const SizedBox(width: 16),
@@ -498,7 +516,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "${item.categoryName} (${item.categoryType == FinCategory.CategoryType.income ? 'Дохід' : 'Витрата'})",
+                        "${item.categoryName} (${item.categoryType == fin_category.CategoryType.income ? 'Дохід' : 'Витрата'})",
                         style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 8),
@@ -617,7 +635,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               Expanded(
                 child: LineChart(
                   LineChartData(
-                    gridData: FlGridData(show: true, drawVerticalLine: true, getDrawingHorizontalLine: (value) => FlLine(color: Theme.of(context).colorScheme.outline.withOpacity(0.2), strokeWidth: 0.5), getDrawingVerticalLine: (value) => FlLine(color: Theme.of(context).colorScheme.outline.withOpacity(0.2), strokeWidth: 0.5)),
+                    gridData: FlGridData(show: true, drawVerticalLine: true, getDrawingHorizontalLine: (value) => FlLine(color: Theme.of(context).colorScheme.outline.withAlpha(51), strokeWidth: 0.5), getDrawingVerticalLine: (value) => FlLine(color: Theme.of(context).colorScheme.outline.withAlpha(51), strokeWidth: 0.5)),
                     titlesData: FlTitlesData(
                       show: true,
                       rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -641,7 +659,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                         ),
                       ),
                       leftTitles: AxisTitles(
-                          sideTitles: SideTitles(
+                        sideTitles: SideTitles(
                           showTitles: true,
                           reservedSize: 42,
                           getTitlesWidget: (double value, TitleMeta meta) {
@@ -655,14 +673,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
                         ),
                       ),
                     ),
-                    borderData: FlBorderData(show: true, border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.5), width: 1)),
+                    borderData: FlBorderData(show: true, border: Border.all(color: Theme.of(context).colorScheme.outline.withAlpha(128), width: 1)),
                     minX: 0,
                     maxX: trendData.isEmpty ? 0 : (trendData.length - 1).toDouble(),
                     minY: 0,
                     maxY: lineChartMaxY,
                     lineBarsData: [
-                      LineChartBarData(spots: trendData.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.incomeForChart)).toList(), isCurved: true, color: Theme.of(context).colorScheme.tertiary, barWidth: 3, isStrokeCapRound: true, dotData: const FlDotData(show: false), belowBarData: BarAreaData(show: true, color: Theme.of(context).colorScheme.tertiary.withOpacity(0.2))),
-                      LineChartBarData(spots: trendData.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.expenseForChart)).toList(), isCurved: true, color: Theme.of(context).colorScheme.error, barWidth: 3, isStrokeCapRound: true, dotData: const FlDotData(show: false), belowBarData: BarAreaData(show: true, color: Theme.of(context).colorScheme.error.withOpacity(0.2))),
+                      LineChartBarData(spots: trendData.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.incomeForChart)).toList(), isCurved: true, color: Theme.of(context).colorScheme.tertiary, barWidth: 3, isStrokeCapRound: true, dotData: const FlDotData(show: false), belowBarData: BarAreaData(show: true, color: Theme.of(context).colorScheme.tertiary.withAlpha(51))),
+                      LineChartBarData(spots: trendData.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.expenseForChart)).toList(), isCurved: true, color: Theme.of(context).colorScheme.error, barWidth: 3, isStrokeCapRound: true, dotData: const FlDotData(show: false), belowBarData: BarAreaData(show: true, color: Theme.of(context).colorScheme.error.withAlpha(51))),
                     ],
                     lineTouchData: LineTouchData(
                       touchTooltipData: LineTouchTooltipData(
@@ -673,10 +691,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
                               final trendDataItem = trendData[index];
                               String text;
                               Color spotColor;
-                              if (barSpot.barIndex == 0) { 
+                              if (barSpot.barIndex == 0) {
                                 text = 'Дохід: ${trendDataItem.formattedIncome}';
                                 spotColor = Theme.of(context).colorScheme.tertiary;
-                              } else { 
+                              } else {
                                 text = 'Витрати: ${trendDataItem.formattedExpense}';
                                 spotColor = Theme.of(context).colorScheme.error;
                               }
@@ -710,7 +728,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 48),
         child: Column(
           children: [
-            Icon(icon, size: 48, color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5)),
+            Icon(icon, size: 48, color: Theme.of(context).colorScheme.onSurfaceVariant.withAlpha(128)),
             const SizedBox(height: 16),
             Text(title, style: Theme.of(context).textTheme.titleMedium, textAlign: TextAlign.center),
             const SizedBox(height: 8),
@@ -727,16 +745,16 @@ class _ReportsScreenState extends State<ReportsScreen> {
         padding: const EdgeInsets.all(12.0),
         margin: const EdgeInsets.symmetric(vertical: 4.0),
         decoration: BoxDecoration(
-          color: Colors.white, 
+          color: Colors.white,
           borderRadius: BorderRadius.circular(12.0),
         ),
         child: lineCount == 0 ? null : Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: List.generate(lineCount, (index) => 
+          children: List.generate(lineCount, (index) =>
             Container(
-              height: 10, 
-              width: MediaQuery.of(context).size.width * (lineWidthFraction - (index * 0.1)), 
+              height: 10,
+              width: MediaQuery.of(context).size.width * (lineWidthFraction - (index * 0.1)),
               color: Colors.white,
               margin: const EdgeInsets.only(bottom: 4),
             )
@@ -764,14 +782,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
       child: ListView(
         padding: const EdgeInsets.all(8.0),
         children: [
-          _buildSkeletonTitle(), 
+          _buildSkeletonTitle(),
           _buildSkeletonCard(height: 100, lineCount: 4, lineWidthFraction: 0.7),
           _buildSkeletonCard(height: 100, lineCount: 4, lineWidthFraction: 0.6),
           const SizedBox(height: 16),
-          _buildSkeletonTitle(), 
+          _buildSkeletonTitle(),
           _buildSkeletonCard(height: 250, lineCount: 0),
           const SizedBox(height: 16),
-          _buildSkeletonTitle(), 
+          _buildSkeletonTitle(),
           _buildSkeletonCard(height: 280, lineCount: 0),
         ],
       ),

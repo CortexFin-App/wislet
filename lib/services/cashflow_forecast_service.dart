@@ -1,3 +1,4 @@
+import 'package:fpdart/fpdart.dart';
 import 'package:sage_wallet_reborn/data/repositories/subscription_repository.dart';
 import 'package:sage_wallet_reborn/models/transaction.dart';
 import 'package:sage_wallet_reborn/data/repositories/repeating_transaction_repository.dart';
@@ -17,9 +18,19 @@ class CashflowForecastService {
   }) async {
     final List<ForecastDataPoint> forecast = [];
     final now = DateTime.now();
-    double currentBalance = await _transactionRepo.getOverallBalance(walletId);
-    final activeRepeatingTxs = await _rtRepo.getAllRepeatingTransactions(walletId);
-    final activeSubscriptions = await _subRepo.getAllSubscriptions(walletId);
+
+    final balanceEither = await _transactionRepo.getOverallBalance(walletId);
+    if (balanceEither.isLeft()) return [];
+    double currentBalance = balanceEither.getRight().getOrElse(() => 0.0);
+
+    final rtEither = await _rtRepo.getAllRepeatingTransactions(walletId);
+    if (rtEither.isLeft()) return [];
+    final activeRepeatingTxs = rtEither.getRight().getOrElse(() => []);
+    
+    final subEither = await _subRepo.getAllSubscriptions(walletId);
+    if (subEither.isLeft()) return [];
+    final activeSubscriptions = subEither.getRight().getOrElse(() => []);
+
     forecast.add(ForecastDataPoint(date: now, balance: currentBalance));
 
     for (int i = 1; i <= days; i++) {

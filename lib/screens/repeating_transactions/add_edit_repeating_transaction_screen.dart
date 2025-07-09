@@ -8,7 +8,7 @@ import '../../data/repositories/repeating_transaction_repository.dart';
 import '../../models/category.dart';
 import '../../models/currency_model.dart';
 import '../../models/repeating_transaction_model.dart';
-import '../../models/transaction.dart' as FinTransaction;
+import '../../models/transaction.dart' as fin_transaction;
 import '../../providers/wallet_provider.dart';
 
 class AddEditRepeatingTransactionScreen extends StatefulWidget {
@@ -25,17 +25,17 @@ class _AddEditRepeatingTransactionScreenState extends State<AddEditRepeatingTran
   final _formKey = GlobalKey<FormState>();
   final RepeatingTransactionRepository _repeatingTransactionRepository = getIt<RepeatingTransactionRepository>();
   final CategoryRepository _categoryRepository = getIt<CategoryRepository>();
-  
+
   late TextEditingController _descriptionController;
   late TextEditingController _amountController;
   late TextEditingController _intervalController;
   late TextEditingController _occurrencesController;
 
-  FinTransaction.TransactionType _selectedType = FinTransaction.TransactionType.expense;
+  fin_transaction.TransactionType _selectedType = fin_transaction.TransactionType.expense;
   Currency? _selectedCurrency;
   Category? _selectedCategory;
   Frequency _selectedFrequency = Frequency.monthly;
-  DateTime _startDate = DateTime.now();
+  late DateTime _startDate;
   DateTime? _endDate;
   bool _isActive = true;
   List<Category> _availableCategories = [];
@@ -43,12 +43,12 @@ class _AddEditRepeatingTransactionScreenState extends State<AddEditRepeatingTran
   List<int> _selectedWeekDays = [];
   List<bool> _selectedToggleButtons = List<bool>.filled(7, false);
   final List<String> _weekDayLabels = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"];
-  
+
   MonthlyRepeatType _monthlyType = MonthlyRepeatType.specificDay;
   int _selectedMonthNumericDay = 1;
   int? _selectedYearMonth;
   int? _selectedYearNumericDay;
-  
+
   final List<String> _monthLabels = [
     "Січень", "Лютий", "Березень", "Квітень", "Травень", "Червень",
     "Липень", "Серпень", "Вересень", "Жовтень", "Листопад", "Грудень"
@@ -71,9 +71,8 @@ class _AddEditRepeatingTransactionScreenState extends State<AddEditRepeatingTran
     if (_isEditing) {
       final t = widget.template!;
       _selectedType = t.type;
-      _selectedCurrency = appCurrencies.firstWhere(
-          (c) => c.code == t.originalCurrencyCode,
-          orElse: () => appCurrencies.first);
+      _selectedCurrency = appCurrencies.firstWhereOrNull(
+          (c) => c.code == t.originalCurrencyCode);
       _selectedFrequency = t.frequency;
       _startDate = t.startDate;
       _endDate = t.endDate;
@@ -96,7 +95,7 @@ class _AddEditRepeatingTransactionScreenState extends State<AddEditRepeatingTran
       } else {
         _selectedMonthNumericDay = _startDate.day;
       }
-      
+
       if (t.frequency == Frequency.yearly) {
         _selectedYearMonth = t.yearMonth ?? _startDate.month;
         _selectedYearNumericDay = t.yearDay ?? _startDate.day;
@@ -110,7 +109,7 @@ class _AddEditRepeatingTransactionScreenState extends State<AddEditRepeatingTran
       _selectedYearMonth = _startDate.month;
       _selectedYearNumericDay = _startDate.day;
     }
-    
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadCategories();
     });
@@ -126,24 +125,31 @@ class _AddEditRepeatingTransactionScreenState extends State<AddEditRepeatingTran
     }
 
     setState(() => _isLoadingCategories = true);
-    final categories = await _categoryRepository.getCategoriesByType(currentWalletId,
-        _selectedType == FinTransaction.TransactionType.income
+    final categoriesEither = await _categoryRepository.getCategoriesByType(currentWalletId,
+        _selectedType == fin_transaction.TransactionType.income
             ? CategoryType.income
             : CategoryType.expense);
     if (!mounted) return;
-    
-    setState(() {
-      _availableCategories = categories;
-      if (_isEditing && widget.template != null) {
-        final foundCategory = categories.firstWhereOrNull((cat) => cat.id == widget.template!.categoryId);
-        if (foundCategory != null) {
-          _selectedCategory = foundCategory;
-        }
+
+    categoriesEither.fold(
+      (failure) {
+        setState(() => _isLoadingCategories = false);
+      },
+      (categories) {
+        setState(() {
+          _availableCategories = categories;
+          if (_isEditing && widget.template != null) {
+            final foundCategory = categories.firstWhereOrNull((cat) => cat.id == widget.template!.categoryId);
+            if (foundCategory != null) {
+              _selectedCategory = foundCategory;
+            }
+          }
+          _isLoadingCategories = false;
+        });
       }
-      _isLoadingCategories = false;
-    });
+    );
   }
-  
+
   int _getDaysInMonth(int year, int month) {
     if (month < 1 || month > 12) return 30;
     if (month == DateTime.february) {
@@ -155,15 +161,15 @@ class _AddEditRepeatingTransactionScreenState extends State<AddEditRepeatingTran
   }
 
   DateTime _calculateInitialNextDueDate(DateTime startDate, Frequency frequency, int interval, String? weekDays, String? monthDay, int? yearMonth, int? yearDay) {
-    DateTime nextDate = startDate; 
+    DateTime nextDate = startDate;
     DateTime startDateAtMidnight = DateTime(startDate.year, startDate.month, startDate.day);
-    
+
     if (frequency == Frequency.daily) {
         nextDate = startDateAtMidnight;
     } else if (frequency == Frequency.weekly && weekDays != null && weekDays.isNotEmpty) {
-        List<int> allowedWeekDays = weekDays.split(',').map((e) => int.parse(e.trim())).toList();
+      List<int> allowedWeekDays = weekDays.split(',').map((e) => int.parse(e.trim())).toList();
         allowedWeekDays.sort();
-        
+
         if (allowedWeekDays.isNotEmpty) {
           DateTime searchDate = startDateAtMidnight;
           if (!allowedWeekDays.contains(searchDate.weekday)) {
@@ -176,7 +182,7 @@ class _AddEditRepeatingTransactionScreenState extends State<AddEditRepeatingTran
                       break;
                   }
               }
-              if (!found) { 
+              if (!found) {
                   searchDate = searchDate.add(Duration(days: 7 - searchDate.weekday + allowedWeekDays.first));
               }
           }
@@ -216,7 +222,7 @@ class _AddEditRepeatingTransactionScreenState extends State<AddEditRepeatingTran
         int targetMonth = yearMonth;
         int targetDay = yearDay;
         DateTime potentialDateThisYear = DateTime(currentYear, targetMonth, targetDay.clamp(1, _getDaysInMonth(currentYear, targetMonth)));
-        
+
         if (potentialDateThisYear.isBefore(startDateAtMidnight)) {
             currentYear += interval;
             nextDate = DateTime(currentYear, targetMonth, targetDay.clamp(1, _getDaysInMonth(currentYear, targetMonth)));
@@ -233,7 +239,10 @@ class _AddEditRepeatingTransactionScreenState extends State<AddEditRepeatingTran
     final currentWalletId = walletProvider.currentWallet?.id;
     if (currentWalletId == null && !_isEditing) return;
     if (_selectedCategory == null || _selectedCurrency == null) return;
-    if (_selectedFrequency == Frequency.weekly && _selectedWeekDays.isEmpty) return;
+    if (_selectedFrequency == Frequency.weekly && _selectedWeekDays.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Для щотижневого повторення потрібно обрати хоча б один день.')));
+        return;
+    }
 
     final String description = _descriptionController.text.trim();
     final double? originalAmount =
@@ -242,29 +251,29 @@ class _AddEditRepeatingTransactionScreenState extends State<AddEditRepeatingTran
     final int? occurrences = _occurrencesController.text.trim().isEmpty
         ? null
         : int.tryParse(_occurrencesController.text.trim());
-    
+
     String? weekDaysString;
     if (_selectedFrequency == Frequency.weekly && _selectedWeekDays.isNotEmpty) {
       _selectedWeekDays.sort();
       weekDaysString = _selectedWeekDays.join(',');
     }
-    
+
     String? monthDayValue;
     if (_selectedFrequency == Frequency.monthly) {
       monthDayValue = _monthlyType == MonthlyRepeatType.lastDay ? 'last' : _selectedMonthNumericDay.toString();
     }
     int? finalYearMonth = _selectedFrequency == Frequency.yearly ? _selectedYearMonth : null;
     int? finalYearDay = _selectedFrequency == Frequency.yearly ? _selectedYearNumericDay : null;
-    
+
     if (originalAmount == null || originalAmount <= 0) return;
-    
+
     DateTime initialNextDueDate = _calculateInitialNextDueDate(
-      _startDate, 
-      _selectedFrequency, 
-      interval, 
-      weekDaysString, 
-      monthDayValue, 
-      finalYearMonth, 
+      _startDate,
+      _selectedFrequency,
+      interval,
+      weekDaysString,
+      monthDayValue,
+      finalYearMonth,
       finalYearDay
     );
 
@@ -289,6 +298,8 @@ class _AddEditRepeatingTransactionScreenState extends State<AddEditRepeatingTran
       yearDay: finalYearDay,
     );
     
+    final navigator = Navigator.of(context);
+
     if (_isEditing) {
       await _repeatingTransactionRepository.updateRepeatingTransaction(templateToSave);
     } else {
@@ -296,7 +307,7 @@ class _AddEditRepeatingTransactionScreenState extends State<AddEditRepeatingTran
     }
 
     if (mounted) {
-      Navigator.of(context).pop(true);
+      navigator.pop(true);
     }
   }
 
@@ -337,13 +348,13 @@ class _AddEditRepeatingTransactionScreenState extends State<AddEditRepeatingTran
                     const SizedBox(height: 16),
                     if (_selectedFrequency == Frequency.weekly)
                       _buildWeeklyRepeatOptions(),
-                    
+
                     if (_selectedFrequency == Frequency.monthly)
                       _buildMonthlyRepeatOptions(),
-                    
+
                     if (_selectedFrequency == Frequency.yearly)
                       _buildYearlyRepeatOptions(),
-                    
+
                     _buildDateAndStatusSection(),
                     const SizedBox(height: 24),
                     SizedBox(
@@ -422,15 +433,15 @@ class _AddEditRepeatingTransactionScreenState extends State<AddEditRepeatingTran
           ],
         ),
         const SizedBox(height: 16),
-        DropdownButtonFormField<FinTransaction.TransactionType>(
+        DropdownButtonFormField<fin_transaction.TransactionType>(
             value: _selectedType,
             decoration: const InputDecoration(
                 labelText: 'Тип транзакції',
                 border: OutlineInputBorder()),
-            items: FinTransaction.TransactionType.values
+            items: fin_transaction.TransactionType.values
                 .map((t) => DropdownMenuItem(
                     value: t,
-                    child: Text(t == FinTransaction.TransactionType.income
+                    child: Text(t == fin_transaction.TransactionType.income
                         ? 'Дохід'
                         : 'Витрата')))
                 .toList(),
@@ -585,9 +596,9 @@ class _AddEditRepeatingTransactionScreenState extends State<AddEditRepeatingTran
               child: DropdownButtonFormField<int>(
                 value: _selectedMonthNumericDay.clamp(1, _getDaysInMonth(_startDate.year, _startDate.month)),
                 decoration: const InputDecoration(
-                  labelText: 'Оберіть число',
-                  border: OutlineInputBorder(),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8)
+                    labelText: 'Оберіть число',
+                    border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8)
                 ),
                 items: List.generate(31, (i) => i + 1)
                     .map((day) => DropdownMenuItem(
@@ -689,22 +700,15 @@ class _AddEditRepeatingTransactionScreenState extends State<AddEditRepeatingTran
                 firstDate: DateTime(2000),
                 lastDate: DateTime(2100));
             if (pickedDate != null) {
-              final TimeOfDay? pickedTime = await showTimePicker(
+                final TimeOfDay? pickedTime = await showTimePicker(
                 context: context,
                 initialTime: TimeOfDay.fromDateTime(_startDate)
               );
-              if (pickedTime != null && mounted) {
+              if (mounted) {
                 setState(() {
                   _startDate = DateTime(
                     pickedDate.year, pickedDate.month, pickedDate.day,
-                    pickedTime.hour, pickedTime.minute
-                  );
-                });
-              } else if (mounted) { 
-                  setState(() {
-                  _startDate = DateTime(
-                    pickedDate.year, pickedDate.month, pickedDate.day,
-                    _startDate.hour, _startDate.minute 
+                    pickedTime?.hour ?? _startDate.hour, pickedTime?.minute ?? _startDate.minute
                   );
                 });
               }
@@ -722,7 +726,7 @@ class _AddEditRepeatingTransactionScreenState extends State<AddEditRepeatingTran
                 context: context,
                 initialDate: _endDate ??
                     _startDate.add(const Duration(days: 30)),
-                firstDate: _startDate, 
+                firstDate: _startDate,
                 lastDate: DateTime(2100));
             if (picked != null) setState(() => _endDate = picked);
           },
@@ -730,7 +734,7 @@ class _AddEditRepeatingTransactionScreenState extends State<AddEditRepeatingTran
               ? IconButton(
                   icon: const Icon(Icons.clear),
                   onPressed: () => setState(() => _endDate = null))
-              : const SizedBox(width: 40), 
+              : const SizedBox(width: 40),
         ),
         SwitchListTile(
           contentPadding: const EdgeInsets.only(left:0, right:0, top:8, bottom:8),
