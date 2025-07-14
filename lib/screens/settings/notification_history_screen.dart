@@ -104,7 +104,7 @@ class _NotificationHistoryScreenState extends State<NotificationHistoryScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.notifications_off_outlined, size: 80, color: Theme.of(context).colorScheme.onSurfaceVariant.withAlpha(128)),
+                    Icon(Icons.notifications_off_outlined, size: 80, color: Theme.of(context).colorScheme.onSurface.withAlpha(77)),
                     const SizedBox(height: 16),
                     Text('Історія сповіщень порожня', style: Theme.of(context).textTheme.headlineSmall),
                   ],
@@ -117,7 +117,7 @@ class _NotificationHistoryScreenState extends State<NotificationHistoryScreen> {
           return ListView.separated(
             padding: const EdgeInsets.all(8.0),
             itemCount: notifications.length,
-            separatorBuilder: (context, index) => const Divider(height: 1, indent: 16, endIndent: 16,),
+            separatorBuilder: (context, index) => const Divider(height: 1, indent: 16, endIndent: 16),
             itemBuilder: (context, index) {
               final notification = notifications[index];
               return ListTile(

@@ -16,6 +16,7 @@ class SupabaseDebtLoanRepositoryImpl implements DebtLoanRepository {
         .from('debts_loans')
         .select()
         .eq('wallet_id', walletId)
+        .eq('is_deleted', false)
         .order('creation_date', ascending: false);
     return Right((response as List).map((data) => DebtLoan.fromMap(data)).toList());
    } catch(e, s) {
@@ -70,7 +71,7 @@ class SupabaseDebtLoanRepositoryImpl implements DebtLoanRepository {
   @override
   Future<Either<AppFailure, int>> deleteDebtLoan(int id) async {
     try {
-      await _client.from('debts_loans').update({'is_deleted': true, 'updated_at': DateTime.now().toIso8601String()}).eq('id', id);
+       await _client.from('debts_loans').update({'is_deleted': true, 'updated_at': DateTime.now().toIso8601String()}).eq('id', id);
       return Right(id);
     } catch(e, s) {
       ErrorMonitoringService.capture(e, stackTrace: s);

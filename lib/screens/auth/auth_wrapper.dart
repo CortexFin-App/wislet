@@ -7,15 +7,16 @@ import '../../core/constants/app_constants.dart';
 import '../../providers/wallet_provider.dart';
 import '../app_navigation_shell.dart';
 import '../onboarding/onboarding_screen.dart';
+import '../onboarding/interactive_onboarding_screen.dart';
 import '../../services/auth_service.dart';
 import '../../services/notification_service.dart';
 import '../../core/di/injector.dart';
 import '../../services/subscription_service.dart';
 import '../../services/navigation_service.dart';
-import '../settings/accept_invitation_screen.dart';
 import 'pin_entry_screen.dart';
+import 'invitation_handler_screen.dart';
 
-enum AuthStatus { loading, onboarding, needsPinAuth, authenticated }
+enum AuthStatus { loading, onboarding, interactiveOnboarding, needsPinAuth, authenticated }
 
 class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
@@ -30,6 +31,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
   final _appLinks = AppLinks();
   StreamSubscription<Uri>? _linkSubscription;
   AuthStatus _status = AuthStatus.loading;
+  bool _initialLinkHandled = false;
 
   @override
   void initState() {
@@ -60,10 +62,18 @@ class _AuthWrapperState extends State<AuthWrapper> {
     final prefs = await SharedPreferences.getInstance();
     final bool onboardingCompleted =
         prefs.getBool(AppConstants.prefsKeyOnboardingComplete) ?? false;
+    final bool interactiveOnboardingCompleted =
+        prefs.getBool('interactiveOnboardingComplete') ?? false;
 
     if (!onboardingCompleted) {
       if (!mounted) return;
       setState(() => _status = AuthStatus.onboarding);
+      return;
+    }
+
+    if (!interactiveOnboardingCompleted) {
+      if (!mounted) return;
+      setState(() => _status = AuthStatus.interactiveOnboarding);
       return;
     }
 
@@ -84,7 +94,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
   }
 
   Future<void> _runStartupChecks() async {
-    await _subscriptionService.checkForUnusedSubscriptions();
+   await _subscriptionService.checkForUnusedSubscriptions();
   }
 
   Future<void> _handleOnboardingFinished() async {
@@ -98,22 +108,34 @@ class _AuthWrapperState extends State<AuthWrapper> {
     }
   }
 
+  Future<void> _handleInteractiveOnboardingFinished() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('interactiveOnboardingComplete', true);
+     if (mounted) {
+      setState(() {
+        _status = AuthStatus.loading;
+      });
+      _initializeApp();
+    }
+  }
+
   Future<void> _initUniLinks() async {
+    _linkSubscription = _appLinks.uriLinkStream.listen((uri) {
+      if (mounted) {
+        _handleIncomingLink(uri);
+      }
+    });
+
+    if (_initialLinkHandled) return;
     try {
       final initialUri = await _appLinks.getInitialAppLink();
       if (initialUri != null && mounted) {
+        _initialLinkHandled = true;
         _handleIncomingLink(initialUri);
       }
     } catch (e) {
       debugPrint("Failed to get initial deeplink: $e");
     }
-    _linkSubscription = _appLinks.uriLinkStream.listen((uri) {
-      if (mounted) {
-        _handleIncomingLink(uri);
-      }
-    }, onError: (err) {
-      debugPrint("Deeplink stream error: $err");
-    });
   }
 
   void _handleIncomingLink(Uri link) {
@@ -124,7 +146,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
         if (navigator != null && navigator.context.mounted) {
           navigator.push(MaterialPageRoute(
               builder: (_) =>
-                  AcceptInvitationScreen(invitationToken: invitationToken)));
+                  InvitationHandlerScreen(invitationToken: invitationToken)));
         }
       }
     }
@@ -137,14 +159,16 @@ class _AuthWrapperState extends State<AuthWrapper> {
         return const Scaffold(body: Center(child: CircularProgressIndicator()));
       case AuthStatus.onboarding:
         return OnboardingScreen(onFinished: _handleOnboardingFinished);
+      case AuthStatus.interactiveOnboarding:
+        return InteractiveOnboardingScreen(onFinished: _handleInteractiveOnboardingFinished);
       case AuthStatus.authenticated:
         return const AppNavigationShell();
       case AuthStatus.needsPinAuth:
         return PinEntryScreen(onSuccess: () async {
           if (mounted) {
-            setState(() => _status = AuthStatus.authenticated);
+             setState(() => _status = AuthStatus.authenticated);
             await _runStartupChecks();
-          }
+           }
         });
     }
   }

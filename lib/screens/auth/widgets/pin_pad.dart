@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../../../utils/app_palette.dart';
 
 class PinPadWidget extends StatelessWidget {
   final void Function(String) onNumberPressed;
@@ -20,17 +22,15 @@ class PinPadWidget extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
-        childAspectRatio: 1.5,
+        childAspectRatio: 1.2,
       ),
       itemCount: 12,
       itemBuilder: (context, index) {
         if (index == 9) {
-          return onBiometricPressed != null
-              ? _buildActionButton(context, Icons.fingerprint, onBiometricPressed!)
-              : const SizedBox.shrink();
+          return _buildActionButton(context, Icons.fingerprint, onBiometricPressed);
         }
         if (index == 10) {
-          return _buildNumberButton(context, '0');
+           return _buildNumberButton(context, '0');
         }
         if (index == 11) {
           return _buildActionButton(context, Icons.backspace_outlined, onBackspacePressed);
@@ -44,21 +44,28 @@ class PinPadWidget extends StatelessWidget {
     return TextButton(
       style: TextButton.styleFrom(
         shape: const CircleBorder(),
-        foregroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: AppPalette.darkPrimaryText,
       ),
-      onPressed: () => onNumberPressed(number),
+      onPressed: () {
+        HapticFeedback.lightImpact();
+        onNumberPressed(number);
+      },
       child: Text(
         number,
-        style: Theme.of(context).textTheme.headlineMedium,
+        style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w600),
       ),
     );
   }
 
-  Widget _buildActionButton(BuildContext context, IconData icon, VoidCallback onPressed) {
+  Widget _buildActionButton(BuildContext context, IconData icon, VoidCallback? onPressed) {
+    if (onPressed == null) return const SizedBox.shrink();
     return IconButton(
       iconSize: 32,
-      icon: Icon(icon, color: Theme.of(context).colorScheme.onSurface),
-      onPressed: onPressed,
+      icon: Icon(icon, color: AppPalette.darkSecondaryText),
+      onPressed: () {
+        HapticFeedback.lightImpact();
+        onPressed();
+      },
     );
   }
 }

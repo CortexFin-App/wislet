@@ -31,8 +31,8 @@ class Wallet {
     return {
       'id': id,
       'name': name,
-      'ownerUserId': ownerUserId,
-      'isDefault': isDefault ? 1 : 0,
+      'owner_user_id': ownerUserId,
+      'is_default': isDefault ? 1 : 0,
       'updated_at': updatedAt?.toIso8601String() ?? DateTime.now().toIso8601String(),
       'is_deleted': isDeleted ? 1 : 0,
     };
@@ -40,11 +40,10 @@ class Wallet {
 
   Map<String, dynamic> toMapForApi() {
     return {
-      'id': id,
+      if (id != null) 'id': id,
       'name': name,
       'is_default': isDefault,
       'owner_user_id': ownerUserId,
-      'updated_at': updatedAt?.toIso8601String() ?? DateTime.now().toIso8601String(),
       'is_deleted': isDeleted,
     };
   }
@@ -69,9 +68,7 @@ class Wallet {
       id: map['id'] as int?,
       name: map['name'] as String,
       ownerUserId: (map['owner_user_id'] ?? map['ownerUserId']).toString(),
-      isDefault: (map['is_default'] is bool)
-          ? map['is_default']
-          : ((map['isDefault'] as int? ?? 0) == 1),
+      isDefault: (map['is_default'] is bool) ? map['is_default'] : ((map['is_default'] as int? ?? 0) == 1),
       members: parsedMembers,
       updatedAt: map['updated_at'] != null ? DateTime.parse(map['updated_at'] as String) : null,
       isDeleted: (map['is_deleted'] is bool) ? map['is_deleted'] : ((map['is_deleted'] as int? ?? 0) == 1),

@@ -62,7 +62,7 @@ class LocalDebtLoanRepositoryImpl implements DebtLoanRepository {
       final db = await _dbHelper.database;
       final List<Map<String, dynamic>> maps = await db.query(
         DatabaseHelper.tableDebtsLoans,
-        where: '${DatabaseHelper.colDebtLoanWalletId} = ?',
+        where: '${DatabaseHelper.colDebtLoanWalletId} = ? AND ${DatabaseHelper.colDebtLoanIsDeleted} = 0',
         whereArgs: [walletId],
         orderBy: '${DatabaseHelper.colDebtLoanCreationDate} DESC',
       );

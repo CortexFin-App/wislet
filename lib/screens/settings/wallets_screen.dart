@@ -7,6 +7,7 @@ import '../../models/wallet.dart';
 import '../../data/repositories/invitation_repository.dart';
 import '../../core/di/injector.dart';
 import '../../services/auth_service.dart';
+import 'add_edit_wallet_screen.dart';
 
 class WalletsScreen extends StatefulWidget {
   const WalletsScreen({super.key});
@@ -50,7 +51,7 @@ class _WalletsScreenState extends State<WalletsScreen> {
     try {
       final invitationToken = await _invitationRepo.generateInvitation(wallet.id!);
       final link = 'https://cortexfinapp.com/invite?token=$invitationToken';
-      await Share.share('Привіт! Запрошую тебе до свого спільного гаманця "${wallet.name}" в додатку Гаманець Мудреця:\n\n$link');
+      await Share.share('Привіт! Запрошую тебе до свого спільного гаманця "${wallet.name}" в додатку Гаманець Мудреця:\n\n$link', subject: 'Запрошення до гаманця');
     } catch (e) {
         messenger.showSnackBar(SnackBar(content: Text('Помилка створення запрошення: $e')));
     }
@@ -132,7 +133,7 @@ class _WalletsScreenState extends State<WalletsScreen> {
                               .read<WalletProvider>()
                               .switchWallet(wallet.id!);
                         }
-                      },
+                        },
                       children: [
                         const Divider(height: 1),
                         ...wallet.members.map((member) {
@@ -246,52 +247,13 @@ class _WalletsScreenState extends State<WalletsScreen> {
 
   Future<void> _showAddEditWalletDialog(BuildContext context,
       {Wallet? walletToEdit}) async {
-    final walletProvider = context.read<WalletProvider>();
-    final isEditing = walletToEdit != null;
-    final nameController = TextEditingController(text: walletToEdit?.name ?? '');
-
-    return showDialog<void>(
+    final result = await showDialog<bool>(
       context: context,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: Text(isEditing ? 'Редагувати гаманець' : 'Новий гаманець'),
-          content: TextField(
-            controller: nameController,
-            autofocus: true,
-            decoration: const InputDecoration(hintText: "Назва гаманця"),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Скасувати'),
-              onPressed: () => Navigator.of(dialogContext).pop(),
-            ),
-            ElevatedButton(
-              child: const Text('Зберегти'),
-              onPressed: () async {
-                final navigator = Navigator.of(dialogContext);
-                final name = nameController.text.trim();
-                if (name.isNotEmpty) {
-                  if (isEditing) {
-                    final updatedWallet = Wallet(
-                      id: walletToEdit.id,
-                      name: name,
-                      isDefault: walletToEdit.isDefault,
-                      ownerUserId: walletToEdit.ownerUserId,
-                    );
-                    await walletProvider.updateWallet(updatedWallet);
-                  } else {
-                    await walletProvider.createWallet(name: name);
-                  }
-                  if (navigator.context.mounted) {
-                    navigator.pop();
-                  }
-                }
-              },
-            ),
-          ],
-        );
-      },
+      builder: (_) => AddEditWalletScreen(walletToEdit: walletToEdit),
     );
+    if (result == true && mounted) {
+      _refreshData();
+    }
   }
 
   Future<void> _confirmDeleteWallet(
@@ -299,7 +261,7 @@ class _WalletsScreenState extends State<WalletsScreen> {
     if (wallet.id == null) return;
     final walletProvider = context.read<WalletProvider>();
     final messenger = ScaffoldMessenger.of(context);
-    return showDialog<void>(
+    final bool? confirmDelete = await showDialog<bool>(
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
@@ -310,7 +272,7 @@ class _WalletsScreenState extends State<WalletsScreen> {
             TextButton(
               child: const Text('Скасувати'),
               onPressed: () {
-                Navigator.of(dialogContext).pop();
+                Navigator.of(dialogContext).pop(false);
               },
             ),
             TextButton(
@@ -318,24 +280,19 @@ class _WalletsScreenState extends State<WalletsScreen> {
                   foregroundColor: Theme.of(context).colorScheme.error),
               child: const Text('Видалити'),
               onPressed: () async {
-                final dialogNavigator = Navigator.of(dialogContext);
-                final result = await walletProvider.deleteWallet(wallet.id!);
-                result.fold(
-                  (failure) {
-                       if (mounted) {
-                         messenger.showSnackBar(SnackBar(content: Text(failure.userMessage)));
-                      }
-                  },
-                  (_) {}
-                );
-                if (dialogNavigator.context.mounted) {
-                  dialogNavigator.pop();
-                }
+                Navigator.of(dialogContext).pop(true);
               },
             ),
           ],
         );
       },
     );
+    
+    if (confirmDelete == true) {
+      await walletProvider.deleteWallet(wallet.id!);
+      if (mounted) {
+        messenger.showSnackBar(SnackBar(content: Text('Гаманець "${wallet.name}" видалено.')));
+      }
+    }
   }
 }

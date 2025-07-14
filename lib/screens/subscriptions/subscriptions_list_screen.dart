@@ -12,7 +12,7 @@ import '../../services/notification_service.dart';
 import '../../services/exchange_rate_service.dart';
 import '../../providers/currency_provider.dart';
 import 'add_edit_subscription_screen.dart';
-import '../../utils/fade_page_route.dart';
+import '../../utils/app_palette.dart';
 
 class SubscriptionsListScreen extends StatefulWidget {
   const SubscriptionsListScreen({super.key});
@@ -173,16 +173,11 @@ class _SubscriptionsListScreenState extends State<SubscriptionsListScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Підписки'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Оновити список',
-            onPressed: _isLoading ? null : _loadAllData,
-          ),
-        ],
       ),
       body: RefreshIndicator(
         onRefresh: _loadAllData,
+        color: AppPalette.darkPrimary,
+        backgroundColor: AppPalette.darkSurface,
         child: Column(
           children: [
             _buildSummaryCard(),
@@ -196,7 +191,7 @@ class _SubscriptionsListScreenState extends State<SubscriptionsListScreen> {
         icon: const Icon(Icons.add),
         label: const Text('Нова підписка'),
         onPressed: () async {
-          final result = await Navigator.push(context, FadePageRoute(builder: (_) => const AddEditSubscriptionScreen()));
+          final result = await Navigator.push<bool>(context, MaterialPageRoute(builder: (_) => const AddEditSubscriptionScreen()));
           if (result == true && mounted) {
             _loadAllData();
           }
@@ -216,7 +211,6 @@ class _SubscriptionsListScreenState extends State<SubscriptionsListScreen> {
 
     return Card(
         margin: const EdgeInsets.all(12.0),
-        elevation: 2,
         child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Row(
@@ -225,7 +219,7 @@ class _SubscriptionsListScreenState extends State<SubscriptionsListScreen> {
                     Text("Витрати на підписки / міс.:", style: Theme.of(context).textTheme.titleMedium),
                     _isLoadingSummary 
                     ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                    : Text(formattedAmount, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)),
+                    : Text(formattedAmount, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: AppPalette.darkPrimary)),
                 ],
             ),
         ),
@@ -235,12 +229,12 @@ class _SubscriptionsListScreenState extends State<SubscriptionsListScreen> {
   Widget _buildSubscriptionList() {
     if (_subscriptions.isEmpty) {
         return Center(
-            child: Padding(
+          child: Padding(
             padding: const EdgeInsets.all(24.0),
             child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
-                    Icon(Icons.subscriptions_outlined, size: 80, color: Theme.of(context).colorScheme.onSurfaceVariant.withAlpha(128)),
+                    Icon(Icons.subscriptions_outlined, size: 80, color: Theme.of(context).colorScheme.onSurface.withAlpha(77)),
                     const SizedBox(height: 24),
                     Text('Список підписок порожній', style: Theme.of(context).textTheme.headlineSmall, textAlign: TextAlign.center),
                     const SizedBox(height: 12),
@@ -251,7 +245,7 @@ class _SubscriptionsListScreenState extends State<SubscriptionsListScreen> {
         );
     }
     return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(8.0, 0, 8.0, 80.0),
+      padding: const EdgeInsets.fromLTRB(8.0, 0, 8.0, 100.0),
       itemCount: _subscriptions.length,
       itemBuilder: (context, index) {
         final sub = _subscriptions[index];
@@ -260,15 +254,17 @@ class _SubscriptionsListScreenState extends State<SubscriptionsListScreen> {
         final categoryName = sub.categoryId != null ? _categoryNames[sub.categoryId] : null;
 
         return Card(
-          color: !sub.isActive ? Theme.of(context).colorScheme.surfaceContainer : null,
+          margin: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 8.0),
+          color: !sub.isActive ? AppPalette.darkSurface.withAlpha(128) : AppPalette.darkSurface,
           child: ListTile(
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             leading: CircleAvatar(
-              backgroundColor: sub.isActive ? Theme.of(context).colorScheme.primary.withAlpha(26) : Colors.grey.withAlpha(26),
-              child: Icon(Icons.star_purple500_sharp, color: sub.isActive ? Theme.of(context).colorScheme.primary : Colors.grey),
+              backgroundColor: sub.isActive ? AppPalette.darkAccent.withAlpha(38) : Colors.grey.withAlpha(38),
+              child: Icon(Icons.star_purple500_sharp, color: sub.isActive ? AppPalette.darkAccent : Colors.grey),
             ),
             title: Text(sub.name, style: Theme.of(context).textTheme.titleMedium?.copyWith(
               decoration: !sub.isActive ? TextDecoration.lineThrough : null,
+              color: !sub.isActive ? AppPalette.darkSecondaryText : AppPalette.darkPrimaryText,
             )),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -287,7 +283,7 @@ class _SubscriptionsListScreenState extends State<SubscriptionsListScreen> {
               ],
             ),
             onTap: () async {
-              final result = await Navigator.push(context, FadePageRoute(builder: (_) => AddEditSubscriptionScreen(subscriptionToEdit: sub)));
+              final result = await Navigator.push<bool>(context, MaterialPageRoute(builder: (_) => AddEditSubscriptionScreen(subscriptionToEdit: sub)));
               if (result == true && mounted) {
                 _loadAllData();
               }
@@ -301,16 +297,18 @@ class _SubscriptionsListScreenState extends State<SubscriptionsListScreen> {
 
   Widget _buildShimmerList() {
     return Shimmer.fromColors(
-        baseColor: Theme.of(context).brightness == Brightness.light ? Colors.grey[300]! : Colors.grey[700]!,
-        highlightColor: Theme.of(context).brightness == Brightness.light ? Colors.grey[100]! : Colors.grey[500]!,
+        baseColor: AppPalette.darkSurface,
+        highlightColor: AppPalette.darkBackground,
         child: ListView.builder(
             padding: const EdgeInsets.fromLTRB(8.0, 0, 8.0, 80.0),
             itemCount: 5,
             itemBuilder: (_, __) => Card(
+              margin: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 8.0),
                   child: ListTile(
-                      leading: const CircleAvatar(),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      leading: const CircleAvatar(backgroundColor: Colors.white),
                       title: Container(height: 16, width: 150, color: Colors.white),
-                      subtitle: Container(height: 12, width: 100, color: Colors.white),
+                      subtitle: Container(height: 12, width: 100, color: Colors.white, margin: const EdgeInsets.only(top: 8)),
                       trailing: Container(height: 16, width: 60, color: Colors.white),
                   ),
             ),

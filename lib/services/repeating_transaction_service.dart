@@ -19,6 +19,7 @@ class RepeatingTransactionService {
       (wallets) async {
         for (final wallet in wallets) {
           if (wallet.id == null) continue;
+          final String userIdForWallet = wallet.ownerUserId;
           
           final rtEither = await _rtRepository.getAllRepeatingTransactions(wallet.id!);
           
@@ -52,7 +53,7 @@ class RepeatingTransactionService {
                     description: rt.description,
                   );
                   
-                  await _transactionRepository.createTransaction(transaction, wallet.id!);
+                  await _transactionRepository.createTransaction(transaction, wallet.id!, userIdForWallet);
                   
                   rt.generatedOccurrencesCount = (rt.generatedOccurrencesCount ?? 0) + 1;
                   rt.nextDueDate = RepeatingTransaction.calculateNextDueDate(checkDate, rt.frequency);

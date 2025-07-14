@@ -17,8 +17,8 @@ abstract class TransactionRepository {
   Future<Either<AppFailure, fin_transaction.Transaction?>> getTransaction(int transactionId);
   Future<Either<AppFailure, List<fin_transaction.Transaction>>> getTransactionsForGoal(int goalId);
   Future<Either<AppFailure, List<fin_transaction.Transaction>>> getTransactionsSince(int walletId, String? lastSyncTimestamp);
-  Future<Either<AppFailure, int>> createTransaction(fin_transaction.Transaction transaction, int walletId);
-  Future<Either<AppFailure, int>> updateTransaction(fin_transaction.Transaction transaction, int walletId);
+  Future<Either<AppFailure, int>> createTransaction(fin_transaction.Transaction transaction, int walletId, String userId);
+  Future<Either<AppFailure, int>> updateTransaction(fin_transaction.Transaction transaction, int walletId, String userId);
   Future<Either<AppFailure, int>> deleteTransaction(int transactionId);
   Future<Either<AppFailure, List<TransactionViewData>>> getTransactionsWithDetails({
     required int walletId,

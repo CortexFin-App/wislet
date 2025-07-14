@@ -15,7 +15,7 @@ class TransactionViewData {
   final String categoryName;
   final int? linkedGoalId;
   final int? subscriptionId;
-  final fin_category.Bucket categoryBucket;
+  final fin_category.Bucket? categoryBucket;
 
   TransactionViewData({
     required this.id,
@@ -30,25 +30,36 @@ class TransactionViewData {
     required this.categoryName,
     this.linkedGoalId,
     this.subscriptionId,
-    required this.categoryBucket,
+    this.categoryBucket,
   });
 
   factory TransactionViewData.fromMap(Map<String, dynamic> map) {
+    String categoryNameValue;
+    fin_category.Bucket? categoryBucketValue;
+
+    if (map.containsKey('categories') && map['categories'] is Map) {
+      final categoryMap = map['categories'] as Map<String, dynamic>;
+      categoryNameValue = categoryMap['name'] as String? ?? 'Без категорії';
+      categoryBucketValue = categoryMap['bucket'] != null ? fin_category.stringToExpenseBucket(categoryMap['bucket'] as String?) : null;
+    } else {
+      categoryNameValue = map['categoryName'] as String? ?? 'Без категорії';
+      categoryBucketValue = map[DatabaseHelper.colCategoryBucket] != null ? fin_category.stringToExpenseBucket(map[DatabaseHelper.colCategoryBucket] as String?) : null;
+    }
+
     return TransactionViewData(
       id: map[DatabaseHelper.colTransactionId] as int,
-      type: fin_transaction.TransactionType.values.firstWhere(
-              (e) => e.toString() == map[DatabaseHelper.colTransactionType] as String),
-      originalAmount: map[DatabaseHelper.colTransactionOriginalAmount] as double? ?? map['amount'] as double? ?? 0.0,
+      type: fin_transaction.TransactionType.values.byName(map[DatabaseHelper.colTransactionType] ?? 'expense'),
+      originalAmount: (map[DatabaseHelper.colTransactionOriginalAmount] as num? ?? 0.0).toDouble(),
       originalCurrencyCode: map[DatabaseHelper.colTransactionOriginalCurrencyCode] as String? ?? 'UAH',
-      amountInBaseCurrency: map[DatabaseHelper.colTransactionAmountInBaseCurrency] as double? ?? map['amount'] as double? ?? 0.0,
-      exchangeRateUsed: map[DatabaseHelper.colTransactionExchangeRateUsed] as double?,
+      amountInBaseCurrency: (map[DatabaseHelper.colTransactionAmountInBaseCurrency] as num? ?? 0.0).toDouble(),
+      exchangeRateUsed: (map[DatabaseHelper.colTransactionExchangeRateUsed] as num?)?.toDouble(),
       date: DateTime.parse(map[DatabaseHelper.colTransactionDate] as String),
       description: map[DatabaseHelper.colTransactionDescription] as String?,
       categoryId: map[DatabaseHelper.colTransactionCategoryId] as int,
-      categoryName: map['categoryName'] as String,
+      categoryName: categoryNameValue,
       linkedGoalId: map[DatabaseHelper.colTransactionLinkedGoalId] as int?,
       subscriptionId: map[DatabaseHelper.colTransactionSubscriptionId] as int?,
-      categoryBucket: fin_category.stringToExpenseBucket(map[DatabaseHelper.colCategoryBucket] as String?),
+      categoryBucket: categoryBucketValue,
     );
   }
 

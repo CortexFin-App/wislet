@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/di/injector.dart';
 import '../../data/repositories/invitation_repository.dart';
+import '../../utils/app_palette.dart';
 
 class AcceptInvitationScreen extends StatefulWidget {
   final String? invitationToken;
@@ -78,7 +79,6 @@ class _AcceptInvitationScreenState extends State<AcceptInvitationScreen> {
                   controller: _linkController,
                   decoration: const InputDecoration(
                     labelText: 'Посилання-запрошення або код',
-                    border: OutlineInputBorder(),
                   ),
                   validator: (val) =>
                       val == null || val.isEmpty ? 'Вставте посилання' : null,
@@ -93,9 +93,6 @@ class _AcceptInvitationScreenState extends State<AcceptInvitationScreen> {
                     : const Icon(Icons.check_circle_outline),
                 label: const Text('Прийняти'),
                 onPressed: _isLoading ? null : _acceptInvite,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
               ),
             ],
           ),
@@ -108,8 +105,9 @@ class _AcceptInvitationScreenState extends State<AcceptInvitationScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primaryContainer.withAlpha(77),
-        borderRadius: BorderRadius.circular(8),
+        color: AppPalette.darkPrimary.withAlpha(50),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppPalette.darkPrimary)
       ),
       child: Row(
         children: [

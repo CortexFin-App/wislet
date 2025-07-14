@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../utils/app_palette.dart';
 
 class OnboardingPage extends StatelessWidget {
   final IconData icon;
@@ -15,8 +16,6 @@ class OnboardingPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isPortrait = MediaQuery.of(context).orientation == Orientation.portrait;
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 40.0, vertical: 20.0),
       child: Column(
@@ -26,21 +25,21 @@ class OnboardingPage extends StatelessWidget {
           const Spacer(flex: 2),
           Icon(
             icon,
-            size: isPortrait ? 120 : 100,
-            color: theme.colorScheme.primary,
+            size: 120,
+            color: AppPalette.darkAccent,
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 48),
           Text(
             title,
             textAlign: TextAlign.center,
-            style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+            style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           Text(
             description,
             textAlign: TextAlign.center,
-            style: theme.textTheme.bodyLarge
-                ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            style: theme.textTheme.titleMedium
+                ?.copyWith(color: AppPalette.darkSecondaryText, height: 1.5),
           ),
           const Spacer(flex: 3),
         ],

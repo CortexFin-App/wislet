@@ -233,13 +233,6 @@ class _AddEditSubscriptionScreenState extends State<AddEditSubscriptionScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_isEditing ? 'Редагувати Підписку' : 'Нова Підписка'),
-        actions: [
-            IconButton(
-                icon: const Icon(Icons.save_outlined),
-                tooltip: 'Зберегти',
-                onPressed: _isSaving ? null : _saveSubscription,
-            )
-        ],
       ),
       body: _isLoadingCategories
       ? const Center(child: CircularProgressIndicator())
@@ -250,13 +243,10 @@ class _AddEditSubscriptionScreenState extends State<AddEditSubscriptionScreen> {
           children: <Widget>[
               TextFormField(
                   controller: _nameController,
-                  decoration: const InputDecoration(
-                      labelText: 'Назва підписки',
-                      prefixIcon: Icon(Icons.star_border_purple500_outlined),
-                  ),
+                  decoration: const InputDecoration(labelText: 'Назва підписки', prefixIcon: Icon(Icons.star_border_purple500_outlined)),
                   validator: (v) => v == null || v.trim().isEmpty ? 'Назва не може бути порожньою' : null,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -292,7 +282,7 @@ class _AddEditSubscriptionScreenState extends State<AddEditSubscriptionScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
               DropdownButtonFormField<BillingCycle>(
                   value: _selectedBillingCycle,
                   decoration: const InputDecoration(labelText: 'Цикл оплати', prefixIcon: Icon(Icons.repeat_outlined)),
@@ -357,11 +347,12 @@ class _AddEditSubscriptionScreenState extends State<AddEditSubscriptionScreen> {
                   subtitle: const Text('Для тимчасового відключення сповіщень та обліку'),
                   value: _isActive,
                   onChanged: (val) => setState(() => _isActive = val),
+                  tileColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               const SizedBox(height: 24),
               ElevatedButton(
                   onPressed: _isSaving ? null : _saveSubscription,
-                  style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
                   child: _isSaving ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white,)) : Text(_isEditing ? 'Зберегти Зміни' : 'Створити Підписку'),
               ),
           ],

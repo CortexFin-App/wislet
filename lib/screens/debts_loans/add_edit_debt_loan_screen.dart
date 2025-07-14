@@ -130,12 +130,6 @@ class _AddEditDebtLoanScreenState extends State<AddEditDebtLoanScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_isEditing ? 'Редагувати Запис' : 'Новий Запис'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.save_outlined),
-            onPressed: _isSaving ? null : _saveDebtLoan,
-          ),
-        ],
       ),
       body: Form(
         key: _formKey,
@@ -152,7 +146,7 @@ class _AddEditDebtLoanScreenState extends State<AddEditDebtLoanScreen> {
                 setState(() => _selectedType = newSelection.first);
               },
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
             TextFormField(
               controller: _personNameController,
               decoration: const InputDecoration(labelText: 'Ім\'я особи або назва організації'),
@@ -203,6 +197,8 @@ class _AddEditDebtLoanScreenState extends State<AddEditDebtLoanScreen> {
               title: const Text('Запис погашено/закрито'),
               value: _isSettled,
               onChanged: (val) => setState(() => _isSettled = val),
+              tileColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             const SizedBox(height: 24),
             ElevatedButton(

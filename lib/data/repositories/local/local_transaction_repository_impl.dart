@@ -1,6 +1,5 @@
 import 'package:fpdart/fpdart.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:sage_wallet_reborn/models/category.dart';
 import 'package:sage_wallet_reborn/models/transaction.dart' as fin_transaction_model;
 import 'package:sage_wallet_reborn/models/transaction_view_data.dart';
 import 'package:sage_wallet_reborn/models/wallet.dart';
@@ -21,10 +20,9 @@ class LocalTransactionRepositoryImpl implements TransactionRepository {
     Transaction txn,
     int walletId,
     fin_transaction_model.TransactionType type,
+    String userId
   ) async {
-    final categoryType = type == fin_transaction_model.TransactionType.income
-        ? CategoryType.income.toString()
-        : CategoryType.expense.toString();
+    final categoryType = type.name;
     const transferCategoryName = "Перекази";
 
     final existing = await txn.query(
@@ -41,6 +39,7 @@ class LocalTransactionRepositoryImpl implements TransactionRepository {
         DatabaseHelper.colCategoryName: transferCategoryName,
         DatabaseHelper.colCategoryType: categoryType,
         DatabaseHelper.colCategoryWalletId: walletId,
+        DatabaseHelper.colCategoryUserId: userId,
       };
       return await txn.insert(DatabaseHelper.tableCategories, newCategory);
     }
@@ -57,6 +56,7 @@ class LocalTransactionRepositoryImpl implements TransactionRepository {
   }) async {
     try {
       final db = await _dbHelper.database;
+      final fromWalletOwnerId = fromWallet.ownerUserId;
 
       double exchangeRate = 1.0;
       if (currencyCode != AppConstants.baseCurrencyCode) {
@@ -72,9 +72,9 @@ class LocalTransactionRepositoryImpl implements TransactionRepository {
 
       await db.transaction((txn) async {
         final expenseCategoryId = await _getOrCreateTransferCategoryId(
-            txn, fromWallet.id!, fin_transaction_model.TransactionType.expense);
+            txn, fromWallet.id!, fin_transaction_model.TransactionType.expense, fromWalletOwnerId);
         final incomeCategoryId = await _getOrCreateTransferCategoryId(
-            txn, toWallet.id!, fin_transaction_model.TransactionType.income);
+            txn, toWallet.id!, fin_transaction_model.TransactionType.income, fromWalletOwnerId);
 
         final expenseTransaction = fin_transaction_model.Transaction(
           type: fin_transaction_model.TransactionType.expense,
@@ -89,6 +89,7 @@ class LocalTransactionRepositoryImpl implements TransactionRepository {
 
         final expenseMap = expenseTransaction.toMap();
         expenseMap[DatabaseHelper.colTransactionWalletId] = fromWallet.id;
+        expenseMap[DatabaseHelper.colTransactionUserId] = fromWalletOwnerId;
         final expenseId =
             await txn.insert(DatabaseHelper.tableTransactions, expenseMap);
 
@@ -106,6 +107,7 @@ class LocalTransactionRepositoryImpl implements TransactionRepository {
 
         final incomeMap = incomeTransaction.toMap();
         incomeMap[DatabaseHelper.colTransactionWalletId] = toWallet.id;
+        incomeMap[DatabaseHelper.colTransactionUserId] = fromWalletOwnerId;
         final incomeId =
             await txn.insert(DatabaseHelper.tableTransactions, incomeMap);
 
@@ -165,11 +167,12 @@ class LocalTransactionRepositoryImpl implements TransactionRepository {
 
   @override
   Future<Either<AppFailure, int>> createTransaction(
-      fin_transaction_model.Transaction transaction, int walletId) async {
+      fin_transaction_model.Transaction transaction, int walletId, String userId) async {
     try {
       final db = await _dbHelper.database;
       final map = transaction.toMap();
       map[DatabaseHelper.colTransactionWalletId] = walletId;
+      map[DatabaseHelper.colTransactionUserId] = userId;
       final newId = await db.insert(DatabaseHelper.tableTransactions, map);
       return Right(newId);
     } catch (e, s) {
@@ -180,11 +183,12 @@ class LocalTransactionRepositoryImpl implements TransactionRepository {
 
   @override
   Future<Either<AppFailure, int>> updateTransaction(
-      fin_transaction_model.Transaction transaction, int walletId) async {
+      fin_transaction_model.Transaction transaction, int walletId, String userId) async {
     try {
       final db = await _dbHelper.database;
       final map = transaction.toMap();
       map[DatabaseHelper.colTransactionWalletId] = walletId;
+      map[DatabaseHelper.colTransactionUserId] = userId;
       final updatedId = await db.update(
         DatabaseHelper.tableTransactions,
         map,
@@ -232,7 +236,8 @@ class LocalTransactionRepositoryImpl implements TransactionRepository {
           "t.${DatabaseHelper.colTransactionDate} DESC, t.${DatabaseHelper.colTransactionId} DESC";
 
       List<String> whereClauses = [
-        't.${DatabaseHelper.colTransactionWalletId} = ?'
+        't.${DatabaseHelper.colTransactionWalletId} = ?',
+        't.${DatabaseHelper.colTransactionIsDeleted} = 0'
       ];
       List<dynamic> whereArgs = [walletId];
 
@@ -248,7 +253,7 @@ class LocalTransactionRepositoryImpl implements TransactionRepository {
       }
       if (filterTransactionType != null) {
         whereClauses.add("t.${DatabaseHelper.colTransactionType} = ?");
-        whereArgs.add(filterTransactionType.toString());
+        whereArgs.add(filterTransactionType.name);
       }
       if (filterCategoryId != null) {
         whereClauses.add("t.${DatabaseHelper.colTransactionCategoryId} = ?");
@@ -267,10 +272,7 @@ class LocalTransactionRepositoryImpl implements TransactionRepository {
 
       final String sql = '''
         SELECT
-          t.${DatabaseHelper.colTransactionId}, t.${DatabaseHelper.colTransactionType}, t.${DatabaseHelper.colTransactionOriginalAmount},
-          t.${DatabaseHelper.colTransactionOriginalCurrencyCode}, t.${DatabaseHelper.colTransactionAmountInBaseCurrency},
-          t.${DatabaseHelper.colTransactionExchangeRateUsed}, t.${DatabaseHelper.colTransactionDate}, t.${DatabaseHelper.colTransactionDescription},
-          t.${DatabaseHelper.colTransactionCategoryId}, c.${DatabaseHelper.colCategoryName} AS categoryName, t.${DatabaseHelper.colTransactionLinkedGoalId}, t.${DatabaseHelper.colTransactionSubscriptionId}, t.${DatabaseHelper.colTransactionLinkedTransferId}, c.${DatabaseHelper.colCategoryBucket}
+          t.*, c.${DatabaseHelper.colCategoryName} AS categoryName, c.${DatabaseHelper.colCategoryBucket}
         FROM ${DatabaseHelper.tableTransactions} t
         INNER JOIN ${DatabaseHelper.tableCategories} c ON t.${DatabaseHelper.colTransactionCategoryId} = c.${DatabaseHelper.colCategoryId}
         $whereStatement
@@ -286,7 +288,7 @@ class LocalTransactionRepositoryImpl implements TransactionRepository {
       return Left(DatabaseFailure(details: e.toString()));
     }
   }
-
+  
   @override
   Future<Either<AppFailure, double>> getOverallBalance(int walletId) async {
     try {
@@ -294,7 +296,7 @@ class LocalTransactionRepositoryImpl implements TransactionRepository {
       double totalIncome = 0;
       var incomeResult = await db.rawQuery(
           'SELECT SUM(${DatabaseHelper.colTransactionAmountInBaseCurrency}) as total FROM ${DatabaseHelper.tableTransactions} WHERE ${DatabaseHelper.colTransactionType} = ? AND ${DatabaseHelper.colTransactionWalletId} = ?',
-          [fin_transaction_model.TransactionType.income.toString(), walletId]);
+          [fin_transaction_model.TransactionType.income.name, walletId]);
       if (incomeResult.isNotEmpty && incomeResult.first['total'] != null) {
         totalIncome = (incomeResult.first['total'] as num).toDouble();
       }
@@ -302,7 +304,7 @@ class LocalTransactionRepositoryImpl implements TransactionRepository {
       var expenseResult = await db.rawQuery(
           'SELECT SUM(${DatabaseHelper.colTransactionAmountInBaseCurrency}) as total FROM ${DatabaseHelper.tableTransactions} WHERE ${DatabaseHelper.colTransactionType} = ? AND ${DatabaseHelper.colTransactionWalletId} = ?',
           [
-            fin_transaction_model.TransactionType.expense.toString(),
+            fin_transaction_model.TransactionType.expense.name,
             walletId
           ]);
       if (expenseResult.isNotEmpty && expenseResult.first['total'] != null) {
@@ -333,7 +335,7 @@ class LocalTransactionRepositoryImpl implements TransactionRepository {
       ];
       List<dynamic> whereArgs = [
         walletId,
-        transactionType.toString(),
+        transactionType.name,
         startDate.toIso8601String(),
         endDate.toIso8601String(),
       ];
@@ -382,7 +384,7 @@ class LocalTransactionRepositoryImpl implements TransactionRepository {
       ''';
       final List<Map<String, dynamic>> maps = await db.rawQuery(sql, [
         walletId,
-        fin_transaction_model.TransactionType.expense.toString(),
+        fin_transaction_model.TransactionType.expense.name,
         startDate.toIso8601String(),
         endDate.toIso8601String(),
       ]);

@@ -104,7 +104,7 @@ class _PinEntryScreenState extends State<PinEntryScreen> {
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               const SizedBox(height: 32),
-              PinIndicator(pinLength: _pin.length),
+              PinIndicator(pinLength: _pin.length, hasError: _errorMessage != null),
               const SizedBox(height: 16),
               AnimatedContainer(
                 duration: const Duration(milliseconds: 300),

@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:fpdart/fpdart.dart';
-import 'package:sqflite/sqflite.dart';
 import '../../../core/error/failures.dart';
 import '../../../models/subscription_model.dart';
 import '../../../services/error_monitoring_service.dart';
@@ -19,14 +18,15 @@ class LocalSubscriptionRepositoryImpl implements SubscriptionRepository {
       int newId = -1;
       await db.transaction((txn) async {
         final map = sub.toMap();
+        map.remove('id');
         map[DatabaseHelper.colSubWalletId] = walletId;
-        newId = await txn.insert(DatabaseHelper.tableSubscriptions, map, conflictAlgorithm: ConflictAlgorithm.replace);
+        newId = await txn.insert(DatabaseHelper.tableSubscriptions, map);
         
         await txn.insert(DatabaseHelper.tableSyncQueue, {
           DatabaseHelper.colSyncEntityType: 'subscription',
           DatabaseHelper.colSyncEntityId: newId.toString(),
           DatabaseHelper.colSyncActionType: 'create',
-          DatabaseHelper.colSyncPayload: jsonEncode(map),
+          DatabaseHelper.colSyncPayload: jsonEncode(map..['id'] = newId),
           DatabaseHelper.colSyncTimestamp: DateTime.now().toIso8601String(),
           DatabaseHelper.colSyncStatus: 'pending'
         });
@@ -48,7 +48,7 @@ class LocalSubscriptionRepositoryImpl implements SubscriptionRepository {
         whereArgs: [id],
       );
       if (maps.isNotEmpty) {
-        return Right(Subscription.fromMap(maps.first));
+       return Right(Subscription.fromMap(maps.first));
       }
       return const Right(null);
     } catch(e, s) {

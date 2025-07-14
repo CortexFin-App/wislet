@@ -12,6 +12,7 @@ import '../../providers/wallet_provider.dart';
 import '../../data/repositories/goal_repository.dart';
 import '../../services/exchange_rate_service.dart';
 import '../../services/notification_service.dart';
+import '../../utils/app_palette.dart';
 
 class AddEditFinancialGoalScreen extends StatefulWidget {
   final FinancialGoal? goalToEdit;
@@ -40,12 +41,7 @@ class _AddEditFinancialGoalScreenState extends State<AddEditFinancialGoalScreen>
 
   bool _isSaving = false;
   bool _isFetchingRate = false;
-  String? _rateFetchingError;
   ConversionRateInfo? _currentRateInfo;
-
-  bool _isManuallyEnteringRate = false;
-  final TextEditingController _manualRateController = TextEditingController();
-  bool _manualRateSetByButton = false;
 
   bool get _isEditing => widget.goalToEdit != null;
 
@@ -73,11 +69,8 @@ class _AddEditFinancialGoalScreenState extends State<AddEditFinancialGoalScreen>
             rate: goal.exchangeRateUsed!,
             effectiveRateDate: goal.creationDate,
             isRateStale: true);
-      } else if (_selectedGoalCurrency!.code != _baseCurrencyCode) {
-        _fetchAndSetExchangeRate(currency: _selectedGoalCurrency);
       } else {
-        _currentRateInfo = ConversionRateInfo(
-            rate: 1.0, effectiveRateDate: DateTime.now(), isRateStale: false);
+        _fetchAndSetExchangeRate(currency: _selectedGoalCurrency);
       }
     } else {
       _targetAmountController = TextEditingController();
@@ -87,13 +80,7 @@ class _AddEditFinancialGoalScreenState extends State<AddEditFinancialGoalScreen>
         (c) => c.code == globalDisplayCurrency.code,
         orElse: () => _availableCurrencies.firstWhere((curr) => curr.code == _baseCurrencyCode),
       );
-
-      if (_selectedGoalCurrency!.code != _baseCurrencyCode) {
-        _fetchAndSetExchangeRate(currency: _selectedGoalCurrency);
-      } else {
-        _currentRateInfo = ConversionRateInfo(
-            rate: 1.0, effectiveRateDate: DateTime.now(), isRateStale: false);
-      }
+      _fetchAndSetExchangeRate(currency: _selectedGoalCurrency);
     }
   }
 
@@ -103,82 +90,31 @@ class _AddEditFinancialGoalScreenState extends State<AddEditFinancialGoalScreen>
     _targetAmountController.dispose();
     _currentAmountController.dispose();
     _notesController.dispose();
-    _manualRateController.dispose();
     super.dispose();
   }
 
-  Future<void> _fetchAndSetExchangeRate({Currency? currency, bool calledFromManualCancel = false}) async {
+  Future<void> _fetchAndSetExchangeRate({Currency? currency}) async {
     final targetCurrency = currency ?? _selectedGoalCurrency;
     final DateTime rateDateForGoal = DateTime.now();
+
     if (targetCurrency == null || targetCurrency.code == _baseCurrencyCode) {
-      if (mounted) {
-        setState(() {
-          _currentRateInfo = ConversionRateInfo(rate: 1.0, effectiveRateDate: rateDateForGoal, isRateStale: false);
-          _rateFetchingError = null;
-          _isFetchingRate = false;
-          if (!calledFromManualCancel) {
-            _isManuallyEnteringRate = false;
-            _manualRateSetByButton = false;
-          }
-        });
-      }
+      if (mounted) setState(() => _currentRateInfo = ConversionRateInfo(rate: 1.0, effectiveRateDate: rateDateForGoal, isRateStale: false));
       return;
     }
-
-    if (mounted) {
-        setState(() {
-        _isFetchingRate = true;
-        _rateFetchingError = null;
-        _currentRateInfo = null;
-        if (!calledFromManualCancel) {
-            _isManuallyEnteringRate = false;
-            _manualRateSetByButton = false;
-        }
-        });
-    }
+    
+    if (mounted) setState(() => _isFetchingRate = true);
 
     try {
       final ConversionRateInfo rateInfo = await _exchangeRateService.getConversionRate(
-        targetCurrency.code,
-        _baseCurrencyCode,
-        date: rateDateForGoal,
+        targetCurrency.code, _baseCurrencyCode, date: rateDateForGoal,
       );
-      if (mounted) {
-        setState(() {
-          _currentRateInfo = rateInfo;
-          _manualRateSetByButton = false;
-          _manualRateController.clear();
-        });
-      }
+      if (mounted) setState(() => _currentRateInfo = rateInfo);
     } catch (e) {
       if (mounted) {
-        setState(() {
-          _rateFetchingError = "Курс для ${targetCurrency.code}: помилка.";
-        });
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Помилка отримання курсу для ${targetCurrency.code}')));
       }
     } finally {
-      if (mounted) {
-        setState(() {
-          _isFetchingRate = false;
-        });
-      }
-    }
-  }
-
-  void _applyManualRate() {
-    final double? manualRate = double.tryParse(_manualRateController.text.replaceAll(',', '.'));
-    if (manualRate != null && manualRate > 0) {
-      if (mounted) {
-        setState(() {
-          _currentRateInfo = ConversionRateInfo(
-              rate: manualRate,
-              effectiveRateDate: DateTime.now(),
-              isRateStale: true);
-          _manualRateSetByButton = true;
-          _isManuallyEnteringRate = false;
-          _rateFetchingError = null;
-        });
-      }
+      if (mounted) setState(() => _isFetchingRate = false);
     }
   }
 
@@ -194,9 +130,7 @@ class _AddEditFinancialGoalScreenState extends State<AddEditFinancialGoalScreen>
       lastDate: DateTime(2101),
     );
     if (picked != null && mounted) {
-      setState(() {
-        _targetDate = picked;
-      });
+      setState(() => _targetDate = picked);
     }
   }
 
@@ -216,30 +150,16 @@ class _AddEditFinancialGoalScreenState extends State<AddEditFinancialGoalScreen>
     final originalTargetAmount = double.tryParse(_targetAmountController.text.replaceAll(',', '.')) ?? 0.0;
     final originalCurrentAmount = double.tryParse(_currentAmountController.text.replaceAll(',', '.')) ?? 0.0;
     final notes = _notesController.text.trim();
-    if (_selectedGoalCurrency == null || originalTargetAmount <= 0 || originalCurrentAmount < 0) {
-      return;
-    }
 
-    double? finalExchangeRate;
-    if (_selectedGoalCurrency!.code == _baseCurrencyCode) {
-      finalExchangeRate = 1.0;
-    } else if (_manualRateSetByButton && _currentRateInfo != null) {
-      finalExchangeRate = _currentRateInfo!.rate;
-    } else if (_currentRateInfo != null && !_currentRateInfo!.isRateStale && _rateFetchingError == null) {
-      finalExchangeRate = _currentRateInfo!.rate;
-    }
-
-    if (finalExchangeRate == null || finalExchangeRate <= 0) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Не вдалося визначити курс для ${_selectedGoalCurrency!.code}.')),
-        );
-      }
+    if (_selectedGoalCurrency == null || originalTargetAmount <= 0 || originalCurrentAmount < 0 || _currentRateInfo == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Не вдалося визначити курс валют. Спробуйте ще раз.')));
       return;
     }
 
     if (mounted) setState(() => _isSaving = true);
 
+    double finalExchangeRate = _currentRateInfo!.rate;
     double targetAmountInBase = originalTargetAmount * finalExchangeRate;
     double currentAmountInBase = originalCurrentAmount * finalExchangeRate;
     bool calculatedIsAchieved = originalCurrentAmount >= originalTargetAmount;
@@ -259,12 +179,9 @@ class _AddEditFinancialGoalScreenState extends State<AddEditFinancialGoalScreen>
       isAchieved: calculatedIsAchieved,
     );
 
-    final Either<AppFailure, int> result;
-    if (_isEditing) {
-      result = await _goalRepository.updateFinancialGoal(goalToSave);
-    } else {
-      result = await _goalRepository.createFinancialGoal(goalToSave, walletId);
-    }
+    final Either<AppFailure, int> result = _isEditing
+      ? await _goalRepository.updateFinancialGoal(goalToSave)
+      : await _goalRepository.createFinancialGoal(goalToSave, walletId);
 
     result.fold(
       (failure) {
@@ -279,13 +196,10 @@ class _AddEditFinancialGoalScreenState extends State<AddEditFinancialGoalScreen>
         }
 
         if (goalToSave.targetDate != null && !goalToSave.isAchieved) {
-          String reminderTitle = "Нагадування: Ціль \"${goalToSave.name}\"";
-          String reminderBody = "Наближається цільова дата (${DateFormat('dd.MM.yyyy').format(goalToSave.targetDate!)}) для вашої фінансової цілі.";
-
           await _notificationService.scheduleNotificationForDueDate(
             id: targetDateReminderId,
-            title: reminderTitle,
-            body: reminderBody,
+            title: 'Нагадування: Ціль "${goalToSave.name}"',
+            body: 'Наближається цільова дата (${DateFormat('dd.MM.yyyy').format(goalToSave.targetDate!)}) для вашої фінансової цілі.',
             dueDateTime: goalToSave.targetDate!,
             payload: 'goal/$savedGoalId',
             channelId: NotificationService.goalNotificationChannelId,
@@ -307,31 +221,11 @@ class _AddEditFinancialGoalScreenState extends State<AddEditFinancialGoalScreen>
 
   @override
   Widget build(BuildContext context) {
-    final String currentCurrencySymbol = _selectedGoalCurrency?.symbol ??
-        (_availableCurrencies.firstWhere((c) => c.code == _baseCurrencyCode))
-            .symbol;
-
-    bool canSave = !_isSaving &&
-        (_selectedGoalCurrency?.code == _baseCurrencyCode ||
-            (_manualRateSetByButton &&
-                _currentRateInfo != null &&
-                _currentRateInfo!.rate > 0) ||
-            (_currentRateInfo != null &&
-                !_currentRateInfo!.isRateStale &&
-                _rateFetchingError == null &&
-                !_isFetchingRate &&
-                _currentRateInfo!.rate > 0));
+    bool canSave = !_isSaving && !_isFetchingRate && _currentRateInfo != null;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(_isEditing ? 'Редагувати ціль' : 'Нова фінансова ціль'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.save_outlined),
-            tooltip: 'Зберегти ціль',
-            onPressed: canSave ? _saveGoal : null,
-          )
-        ],
       ),
       body: Form(
         key: _formKey,
@@ -342,225 +236,95 @@ class _AddEditFinancialGoalScreenState extends State<AddEditFinancialGoalScreen>
               controller: _nameController,
               decoration: const InputDecoration(
                 labelText: 'Назва цілі',
-                border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.flag_outlined),
               ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Будь ласка, введіть назву цілі';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<Currency>(
-              value: _selectedGoalCurrency,
-              decoration: const InputDecoration(
-                  labelText: 'Валюта цілі',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.currency_exchange_outlined)),
-              items: _availableCurrencies.map((Currency currency) {
-                return DropdownMenuItem<Currency>(
-                  value: currency,
-                  child: Text('${currency.name} (${currency.code})'),
-                );
-              }).toList(),
-              onChanged: (Currency? newValue) {
-                if (mounted && newValue != null) {
-                  setState(() {
-                    _selectedGoalCurrency = newValue;
-                    _isManuallyEnteringRate = false;
-                    _manualRateSetByButton = false;
-                    _manualRateController.clear();
-                  });
-                  _fetchAndSetExchangeRate(currency: newValue);
-                }
-              },
-              validator: (value) => value == null ? 'Оберіть валюту' : null,
-            ),
-            const SizedBox(height: 8),
-            if (_isFetchingRate)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 8.0),
-                child: Center(
-                    child: SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2)))),
-            if (!_isFetchingRate &&
-                _rateFetchingError != null &&
-                !_isManuallyEnteringRate &&
-                _selectedGoalCurrency?.code != _baseCurrencyCode)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4.0),
-                child: Column(
-                  children: [
-                    Text(_rateFetchingError!,
-                        style: TextStyle(
-                            color: Theme.of(context).colorScheme.error,
-                            fontSize: 12),
-                        textAlign: TextAlign.center),
-                    TextButton(
-                        child: const Text('Ввести курс вручну?'),
-                        onPressed: () {
-                          if (mounted) {
-                            setState(() {
-                              _isManuallyEnteringRate = true;
-                              _rateFetchingError = null;
-                            });
-                          }
-                        })
-                  ],
-                ),
-              ),
-            if (_isManuallyEnteringRate &&
-                _selectedGoalCurrency?.code != _baseCurrencyCode)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Row(
-                  children: [
-                    Expanded(
-                        child: TextFormField(
-                      controller: _manualRateController,
-                      keyboardType:
-                          const TextInputType.numberWithOptions(decimal: true),
-                      decoration: InputDecoration(
-                          labelText: '1 ${_selectedGoalCurrency?.code} = X UAH',
-                          hintText: 'Введіть курс',
-                          border: const OutlineInputBorder()),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) return 'Вкажіть курс';
-                        final val = double.tryParse(value.replaceAll(',', '.'));
-                        if (val == null || val <= 0) return 'Невірне значення';
-                        return null;
-                      },
-                    )),
-                    IconButton(
-                        icon: const Icon(Icons.check_circle_outline,
-                            color: Colors.green),
-                        tooltip: 'Застосувати курс',
-                        onPressed: _applyManualRate),
-                    IconButton(
-                        icon: const Icon(Icons.cancel_outlined),
-                        tooltip: 'Скасувати ручне введення',
-                        onPressed: () {
-                          if (mounted) {
-                            setState(() {
-                              _isManuallyEnteringRate = false;
-                              _manualRateSetByButton = false;
-                              _manualRateController.clear();
-                            });
-                          }
-                          _fetchAndSetExchangeRate(calledFromManualCancel: true);
-                        })
-                  ],
-                ),
-              ),
-            if (!_isFetchingRate &&
-                _rateFetchingError == null &&
-                _currentRateInfo != null &&
-                _selectedGoalCurrency?.code != _baseCurrencyCode)
-              Padding(
-                  padding: const EdgeInsets.only(top: 4.0, bottom: 8.0),
-                  child: Text(
-                      _manualRateSetByButton
-                          ? "Встановлено вручну: 1 ${_selectedGoalCurrency!.code} = ${(_currentRateInfo!.rate).toStringAsFixed(4)} $_baseCurrencyCode"
-                          : "1 ${_selectedGoalCurrency!.code} ≈ ${(_currentRateInfo!.rate).toStringAsFixed(4)} $_baseCurrencyCode на ${DateFormat('dd.MM.yy').format(_currentRateInfo!.effectiveRateDate)}${_currentRateInfo!.isRateStale ? ' (застарілий)' : ''}",
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: _manualRateSetByButton
-                              ? Theme.of(context).colorScheme.primary
-                              : Theme.of(context).colorScheme.onSurfaceVariant),
-                      textAlign: TextAlign.center)),
-            const SizedBox(height: 8),
-            TextFormField(
-              controller: _targetAmountController,
-              decoration: InputDecoration(
-                labelText: 'Цільова сума',
-                border: const OutlineInputBorder(),
-                prefixIcon: const Icon(Icons.monetization_on_outlined),
-                suffixText: currentCurrencySymbol,
-              ),
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Будь ласка, введіть цільову суму';
-                }
-                final amount = double.tryParse(value.replaceAll(',', '.'));
-                if (amount == null || amount <= 0) {
-                  return 'Сума має бути більшою за нуль';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _currentAmountController,
-              decoration: InputDecoration(
-                labelText: 'Вже накопичено',
-                border: const OutlineInputBorder(),
-                prefixIcon: const Icon(Icons.account_balance_wallet_outlined),
-                suffixText: currentCurrencySymbol,
-              ),
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Будь ласка, введіть поточну суму (може бути 0)';
-                }
-                final amount = double.tryParse(value.replaceAll(',', '.'));
-                if (amount == null || amount < 0) {
-                  return 'Сума не може бути від\'ємною';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.calendar_today_outlined),
-              title: Text(_targetDate == null
-                  ? 'Бажана дата досягнення (необов\'язково)'
-                  : 'Ціль до: ${DateFormat('dd.MM.yyyy').format(_targetDate!)}'),
-              trailing: Icon(Icons.edit_outlined,
-                  color: Theme.of(context).colorScheme.primary),
-              onTap: _pickTargetDate,
-            ),
-            if (_targetDate != null)
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  child: const Text('Очистити дату'),
-                  onPressed: () {
-                    if (mounted) {
-                      setState(() => _targetDate = null);
-                    }
-                  },
-                ),
-              ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _notesController,
-              decoration: const InputDecoration(
-                labelText: 'Нотатки (необов\'язково)',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.notes_outlined),
-                alignLabelWithHint: true,
-              ),
-              maxLines: 3,
-              textInputAction: TextInputAction.done,
+              validator: (value) => (value == null || value.trim().isEmpty) ? 'Будь ласка, введіть назву цілі' : null,
             ),
             const SizedBox(height: 24),
-            _isSaving
-                ? const Center(child: CircularProgressIndicator())
-                : ElevatedButton.icon(
-                    icon: const Icon(Icons.save_outlined),
-                    label: Text(_isEditing ? 'Зберегти зміни' : 'Створити ціль'),
-                    onPressed: canSave ? _saveGoal : null,
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 15),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _targetAmountController,
+                    decoration: InputDecoration(
+                      labelText: 'Цільова сума',
+                      prefixIcon: Icon(Icons.monetization_on_outlined, color: Theme.of(context).colorScheme.secondary),
                     ),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) return 'Введіть суму';
+                      final amount = double.tryParse(value.replaceAll(',', '.'));
+                      if (amount == null || amount <= 0) return 'Сума має бути більшою за нуль';
+                      return null;
+                    },
                   ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: DropdownButtonFormField<Currency>(
+                    value: _selectedGoalCurrency,
+                    decoration: const InputDecoration(labelText: 'Валюта'),
+                    items: _availableCurrencies.map((Currency currency) {
+                      return DropdownMenuItem<Currency>(
+                        value: currency,
+                        child: Text(currency.code),
+                      );
+                    }).toList(),
+                    onChanged: (Currency? newValue) {
+                      if (mounted && newValue != null) {
+                        setState(() => _selectedGoalCurrency = newValue);
+                        _fetchAndSetExchangeRate(currency: newValue);
+                      }
+                    },
+                    validator: (value) => value == null ? 'Оберіть' : null,
+                  ),
+                ),
+              ],
+            ),
+            if (_isFetchingRate)
+              const Padding(
+                padding: EdgeInsets.only(top: 12.0),
+                child: Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
+              ),
+            if (!_isFetchingRate && _currentRateInfo != null && _selectedGoalCurrency?.code != _baseCurrencyCode)
+              Padding(
+                  padding: const EdgeInsets.only(top: 8.0, left: 8.0),
+                  child: Text(
+                      "1 ${_selectedGoalCurrency!.code} ≈ ${(_currentRateInfo!.rate).toStringAsFixed(4)} $_baseCurrencyCode",
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppPalette.darkSecondaryText),
+                  )
+              ),
+            const SizedBox(height: 24),
+            TextFormField(
+              controller: _currentAmountController,
+              decoration: const InputDecoration(
+                labelText: 'Вже накопичено',
+                prefixIcon: Icon(Icons.account_balance_wallet_outlined),
+              ),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              validator: (value) {
+                if (value == null || value.isEmpty) return 'Введіть поточну суму (може бути 0)';
+                final amount = double.tryParse(value.replaceAll(',', '.'));
+                if (amount == null || amount < 0) return 'Сума не може бути від\'ємною';
+                return null;
+              },
+            ),
+            const SizedBox(height: 24),
+            ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              tileColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+              leading: const Icon(Icons.calendar_today_outlined, color: AppPalette.darkSecondaryText),
+              title: Text(_targetDate == null ? 'Бажана дата досягнення (необов\'язково)' : 'Ціль до: ${DateFormat('dd.MM.yyyy').format(_targetDate!)}'),
+              trailing: const Icon(Icons.edit_outlined, color: AppPalette.darkSecondaryText, size: 20),
+              onTap: _pickTargetDate,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: canSave ? _saveGoal : null,
+              child: _isSaving ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : Text(_isEditing ? 'Зберегти зміни' : 'Створити ціль'),
+            ),
           ],
         ),
       ),

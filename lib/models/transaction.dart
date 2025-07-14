@@ -31,35 +31,35 @@ class Transaction {
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
-      'type': type.toString(),
-      'originalAmount': originalAmount,
-      'originalCurrencyCode': originalCurrencyCode,
-      'amountInBaseCurrency': amountInBaseCurrency,
-      'exchangeRateUsed': exchangeRateUsed,
-      'categoryId': categoryId,
+      if (id != null) 'id': id,
+      'type': type.name,
+      'original_amount': originalAmount,
+      'original_currency_code': originalCurrencyCode,
+      'amount_in_base_currency': amountInBaseCurrency,
+      'exchange_rate_used': exchangeRateUsed,
+      'category_id': categoryId,
       'date': date.toIso8601String(),
       'description': description,
-      'linkedGoalId': linkedGoalId,
-      'subscriptionId': subscriptionId,
-      'linkedTransferId': linkedTransferId,
+      'linked_goal_id': linkedGoalId,
+      'subscription_id': subscriptionId,
+      'linked_transfer_id': linkedTransferId,
     };
   }
 
   factory Transaction.fromMap(Map<String, dynamic> map) {
     return Transaction(
       id: map['id'] as int?,
-      type: TransactionType.values.firstWhere((e) => e.toString() == map['type']),
-      originalAmount: (map['originalAmount'] as num).toDouble(),
-      originalCurrencyCode: map['originalCurrencyCode'] as String,
-      amountInBaseCurrency: (map['amountInBaseCurrency'] as num).toDouble(),
-      exchangeRateUsed: (map['exchangeRateUsed'] as num?)?.toDouble(),
-      categoryId: map['categoryId'] as int,
+      type: TransactionType.values.byName(map['type']),
+      originalAmount: (map['original_amount'] as num).toDouble(),
+      originalCurrencyCode: map['original_currency_code'] as String,
+      amountInBaseCurrency: (map['amount_in_base_currency'] as num).toDouble(),
+      exchangeRateUsed: (map['exchange_rate_used'] as num?)?.toDouble(),
+      categoryId: map['category_id'] as int,
       date: DateTime.parse(map['date'] as String),
       description: map['description'] as String?,
-      linkedGoalId: map['linkedGoalId'] as int?,
-      subscriptionId: map['subscriptionId'] as int?,
-      linkedTransferId: map['linkedTransferId'] as int?,
+      linkedGoalId: map['linked_goal_id'] as int?,
+      subscriptionId: map['subscription_id'] as int?,
+      linkedTransferId: map['linked_transfer_id'] as int?,
     );
   }
 }

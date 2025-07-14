@@ -20,10 +20,17 @@ class SupabaseInvitationRepositoryImpl implements InvitationRepository {
 
   @override
   Future<void> acceptInvitation(String token) async {
-    await _client.functions.invoke(
-      'accept-invite',
-      body: {'token': token},
-    );
+    try {
+      await _client.functions.invoke(
+        'accept-invite',
+        body: {'token': token},
+      );
+    } catch (e) {
+      if (e.toString().contains('23505') || e.toString().contains('duplicate key')) {
+        return;
+      }
+      rethrow;
+    }
   }
 
   @override

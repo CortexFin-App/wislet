@@ -8,6 +8,7 @@ import '../../models/debt_loan_model.dart';
 import '../../models/currency_model.dart';
 import '../../providers/wallet_provider.dart';
 import '../../data/repositories/debt_loan_repository.dart';
+import '../../utils/app_palette.dart';
 import 'add_edit_debt_loan_screen.dart';
 
 class DebtsLoansListScreen extends StatefulWidget {
@@ -70,6 +71,7 @@ class _DebtsLoansListScreenState extends State<DebtsLoansListScreen> with Single
         title: const Text('Борги та Кредити'),
         bottom: TabBar(
           controller: _tabController,
+          indicatorColor: AppPalette.darkAccent,
           tabs: const [
             Tab(text: 'Я винен'),
             Tab(text: 'Мені винні'),
@@ -91,9 +93,6 @@ class _DebtsLoansListScreenState extends State<DebtsLoansListScreen> with Single
             return snapshot.data!.fold(
               (failure) => Center(child: Text('Помилка завантаження: ${failure.userMessage}')),
               (allItems) {
-                if (allItems.isEmpty) {
-                  return _buildEmptyState();
-                }
                 final debts = allItems.where((i) => i.type == DebtLoanType.debt).toList();
                 final loans = allItems.where((i) => i.type == DebtLoanType.loan).toList();
 
@@ -146,16 +145,18 @@ class _DebtsLoansListScreenState extends State<DebtsLoansListScreen> with Single
       itemBuilder: (context, index) {
         final item = items[index];
         final isDebt = item.type == DebtLoanType.debt;
-        final color = isDebt ? Colors.red.shade700 : Colors.green.shade700;
+        final color = isDebt ? AppPalette.darkNegative : AppPalette.darkPositive;
         final currency = appCurrencies.firstWhere((c) => c.code == item.currencyCode, orElse: () => Currency(code: item.currencyCode, name: '', symbol: item.currencyCode, locale: 'uk_UA'));
+        
         return Card(
           color: item.isSettled ? Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha(128) : null,
           child: ListTile(
             leading: Icon(
               isDebt ? Icons.arrow_circle_up_rounded : Icons.arrow_circle_down_rounded,
               color: item.isSettled ? Colors.grey : color,
+              size: 32,
             ),
-            title: Text(item.personName, style: TextStyle(decoration: item.isSettled ? TextDecoration.lineThrough : null)),
+            title: Text(item.personName, style: TextStyle(decoration: item.isSettled ? TextDecoration.lineThrough : null, fontWeight: FontWeight.bold)),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

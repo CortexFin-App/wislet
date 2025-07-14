@@ -10,4 +10,5 @@ abstract class CategoryRepository {
   Future<Either<AppFailure, int>> deleteCategory(int id);
   Future<Either<AppFailure, String>> getCategoryNameById(int categoryId);
   Future<Either<AppFailure, Category>> createCategoryFromMap(Map<String, dynamic> categoryMap, int walletId);
+  Future<void> addDefaultCategories(int walletId);
 }

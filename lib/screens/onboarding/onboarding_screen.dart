@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../../utils/app_palette.dart';
 import 'onboarding_page_widget.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -16,7 +18,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   static const _onboardingData = [
     {
       'icon': Icons.account_balance_wallet_outlined,
-      'title': 'Ласкаво просимо до Гаманця Мудреця!',
+      'title': 'Ласкаво просимо до Sage Wallet!',
       'description': 'Ваш персональний помічник для легкого та ефективного управління фінансами.',
     },
     {
@@ -74,17 +76,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ),
                   _currentPage == _onboardingData.length - 1
                       ? ElevatedButton(
-                          onPressed: widget.onFinished,
-                          style: ElevatedButton.styleFrom(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(18.0),
-                            ),
-                            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                          ),
+                          onPressed: () {
+                             HapticFeedback.heavyImpact();
+                             widget.onFinished();
+                          },
                           child: const Text('Почати'),
                         )
                       : TextButton(
                           onPressed: () {
+                            HapticFeedback.lightImpact();
                             _pageController.nextPage(
                               duration: const Duration(milliseconds: 400),
                               curve: Curves.easeInOut,
@@ -103,12 +103,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Widget buildDot(int index, BuildContext context) {
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      margin: const EdgeInsets.only(right: 5),
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+      margin: const EdgeInsets.only(right: 8),
       height: 8,
       width: _currentPage == index ? 24 : 8,
       decoration: BoxDecoration(
-        color: _currentPage == index ? Theme.of(context).colorScheme.primary : Colors.grey,
+        color: _currentPage == index ? AppPalette.darkPrimary : AppPalette.darkSurface,
         borderRadius: BorderRadius.circular(5),
       ),
     );

@@ -13,7 +13,7 @@ class SupabaseBudgetRepositoryImpl implements BudgetRepository {
   @override
   Future<Either<AppFailure, List<Budget>>> getAllBudgets(int walletId) async {
     try {
-      final response = await _client.from('budgets').select().eq('wallet_id', walletId);
+      final response = await _client.from('budgets').select().eq('wallet_id', walletId).eq('is_deleted', false);
       return Right((response as List).map((data) => Budget.fromMap(data)).toList());
     } catch (e, s) {
       ErrorMonitoringService.capture(e, stackTrace: s);
@@ -54,7 +54,7 @@ class SupabaseBudgetRepositoryImpl implements BudgetRepository {
   @override
   Future<Either<AppFailure, int>> deleteBudget(int budgetId) async {
     try {
-      await _client.from('budgets').delete().eq('id', budgetId);
+      await _client.from('budgets').update({'is_deleted': true}).eq('id', budgetId);
       return Right(budgetId);
     } catch (e, s) {
       ErrorMonitoringService.capture(e, stackTrace: s);

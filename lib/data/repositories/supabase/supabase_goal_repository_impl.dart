@@ -12,7 +12,7 @@ class SupabaseGoalRepositoryImpl implements GoalRepository {
   @override
   Future<Either<AppFailure, List<FinancialGoal>>> getAllFinancialGoals(int walletId) async {
     try {
-      final response = await _client.from('financial_goals').select().eq('wallet_id', walletId);
+      final response = await _client.from('financial_goals').select().eq('wallet_id', walletId).eq('is_deleted', false);
       final goals = (response as List).map((data) => FinancialGoal.fromMap(data)).toList();
       return Right(goals);
     } catch(e, s) {

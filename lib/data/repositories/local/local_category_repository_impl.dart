@@ -3,13 +3,39 @@ import 'package:fpdart/fpdart.dart';
 import 'package:sqflite/sqflite.dart';
 import '../../../core/error/failures.dart';
 import '../../../models/category.dart';
+import '../../../services/auth_service.dart';
+import '../../../core/di/injector.dart';
 import '../../../services/error_monitoring_service.dart';
 import '../../../utils/database_helper.dart';
 import '../category_repository.dart';
+import '../../static/default_categories.dart';
 
 class LocalCategoryRepositoryImpl implements CategoryRepository {
   final DatabaseHelper _dbHelper;
   LocalCategoryRepositoryImpl(this._dbHelper);
+
+  @override
+  Future<void> addDefaultCategories(int walletId) async {
+    try {
+      final db = await _dbHelper.database;
+      final authService = getIt<AuthService>();
+      final userId = authService.currentUser?.id ?? '1';
+
+      await db.transaction((txn) async {
+        for (var catData in defaultCategories) {
+          final categoryMap = {
+            DatabaseHelper.colCategoryName: catData['name'],
+            DatabaseHelper.colCategoryType: catData['type'],
+            DatabaseHelper.colCategoryWalletId: walletId,
+            DatabaseHelper.colCategoryUserId: userId,
+          };
+          await txn.insert(DatabaseHelper.tableCategories, categoryMap, conflictAlgorithm: ConflictAlgorithm.ignore);
+        }
+      });
+    } catch(e, s) {
+      ErrorMonitoringService.capture(e, stackTrace: s);
+    }
+  }
 
   @override
   Future<Either<AppFailure, int>> createCategory(Category category, int walletId) async {
@@ -123,7 +149,7 @@ class LocalCategoryRepositoryImpl implements CategoryRepository {
       final List<Map<String, dynamic>> maps = await db.query(
         DatabaseHelper.tableCategories,
         where: '${DatabaseHelper.colCategoryWalletId} = ? AND ${DatabaseHelper.colCategoryType} = ? AND ${DatabaseHelper.colCategoryIsDeleted} = 0',
-        whereArgs: [walletId, type.toString()],
+        whereArgs: [walletId, type.name],
       );
       return Right(List.generate(maps.length, (i) => Category.fromMap(maps[i])));
     } catch(e, s) {

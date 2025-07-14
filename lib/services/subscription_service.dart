@@ -22,13 +22,14 @@ class SubscriptionService {
       (wallets) async {
         for (final wallet in wallets) {
           if (wallet.id == null) continue;
+          final String userIdForWallet = wallet.ownerUserId;
           
           final subsEither = await _subRepository.getAllSubscriptions(wallet.id!);
           subsEither.fold(
             (l) => null,
             (activeSubs) async {
               for (Subscription sub in activeSubs) {
-                if (!sub.isActive) continue;
+                if (!sub.isActive || sub.categoryId == null) continue;
                 DateTime checkDate = sub.nextPaymentDate;
                 while (checkDate.isBefore(DateTime.now()) || checkDate.isAtSameMomentAs(DateTime.now())) {
                   final transaction = fin_transaction.Transaction(
@@ -42,7 +43,7 @@ class SubscriptionService {
                     description: sub.name,
                     subscriptionId: sub.id,
                   );
-                  await _transactionRepository.createTransaction(transaction, wallet.id!);
+                  await _transactionRepository.createTransaction(transaction, wallet.id!, userIdForWallet);
                   sub.nextPaymentDate = sub.calculateNextPaymentDate(checkDate, sub.billingCycle);
                   await _subRepository.updateSubscription(sub, wallet.id!);
                   checkDate = sub.nextPaymentDate;

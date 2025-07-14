@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../core/di/injector.dart';
 import '../../providers/pro_status_provider.dart';
 import '../../services/billing_service.dart';
+import '../../utils/app_palette.dart';
 
 class PremiumScreen extends StatelessWidget {
   const PremiumScreen({super.key});
@@ -13,33 +14,21 @@ class PremiumScreen extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Гаманець Мудреця Pro'),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Theme.of(context).colorScheme.primary,
-                Theme.of(context).colorScheme.secondary
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
       ),
+      extendBodyBehindAppBar: true,
       body: SingleChildScrollView(
         child: Column(
           children: [
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
+              padding: const EdgeInsets.fromLTRB(20, 80, 20, 40),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    Theme.of(context).colorScheme.primary,
-                    Theme.of(context).colorScheme.secondary
+                    AppPalette.darkPrimary,
+                    AppPalette.darkPrimaryVariant..withAlpha(204)
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -47,8 +36,8 @@ class PremiumScreen extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  Icon(Icons.workspace_premium,
-                      size: 80, color: Colors.white.withAlpha(230)),
+                  const Icon(Icons.workspace_premium_rounded,
+                      size: 80, color: AppPalette.darkAccent),
                   const SizedBox(height: 16),
                   Text(
                     'Розблокуйте Повний Потенціал',
@@ -100,26 +89,25 @@ class PremiumScreen extends StatelessWidget {
                         'Безпечно синхронізуйте ваші дані між усіма пристроями, включаючи веб-версію.',
                   ),
                   const SizedBox(height: 40),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                      textStyle: textTheme.titleMedium
-                          ?.copyWith(fontWeight: FontWeight.bold),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30)),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        backgroundColor: AppPalette.darkAccent,
+                        foregroundColor: AppPalette.darkBackground,
+                      ),
+                      onPressed: proStatusProvider.isPro
+                          ? null
+                          : () async {
+                              final billingService = getIt<BillingService>();
+                              await billingService.buyProSubscription();
+                            },
+                      child: Center(
+                          child: Text(proStatusProvider.isPro
+                              ? 'Pro-версія вже активна'
+                              : 'Активувати Pro')),
                     ),
-                    onPressed: proStatusProvider.isPro
-                        ? null
-                        : () async {
-                            final billingService = getIt<BillingService>();
-                            await billingService.buyProSubscription();
-                          },
-                    child: Center(
-                        child: Text(proStatusProvider.isPro
-                            ? 'Pro-версія вже активна'
-                            : 'Активувати Pro')),
                   ),
                 ],
               ),
@@ -139,7 +127,7 @@ class PremiumScreen extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 32, color: Theme.of(context).colorScheme.secondary),
+          Icon(icon, size: 32, color: AppPalette.darkAccent),
           const SizedBox(width: 20),
           Expanded(
             child: Column(

@@ -20,7 +20,6 @@ import '../utils/slide_page_route.dart';
 import 'auth/login_register_screen.dart';
 import 'settings/notification_history_screen.dart';
 import 'settings/wallets_screen.dart';
-import 'settings/accept_invitation_screen.dart';
 import 'premium_screen.dart';
 import 'categories_screen.dart';
 import 'subscriptions/subscriptions_list_screen.dart';
@@ -144,7 +143,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final Uint8List jsonBytes = utf8.encode(jsonString);
       final String timestamp =
           DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
-      final String fileName = 'finance_app_backup_$timestamp.json';
+      final String fileName = 'sage_wallet_backup_$timestamp.json';
       final file = XFile.fromData(jsonBytes,
           mimeType: 'application/json', name: fileName);
       await Share.shareXFiles([file],
@@ -163,14 +162,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _restoreFromBackup() async {
     if (_isProcessingRestore) return;
     if (!mounted) return;
-
+    
     final messenger = ScaffoldMessenger.of(context);
 
     final bool? confirmRestore = await showDialog<bool>(
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
-          title: const Text('Відновити дані?'),
+         title: const Text('Відновити дані?'),
           content: const Text(
               'УВАГА! Поточні дані в додатку будуть повністю замінені даними з резервної копії. Цю дію неможливо буде скасувати. Продовжити?'),
           actions: <Widget>[
@@ -191,7 +190,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (confirmRestore != true) {
       return;
     }
-    if (!mounted) return;
+
     setState(() => _isProcessingRestore = true);
 
     try {
@@ -204,7 +203,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final String jsonString = await file.readAsString();
         final Map<String, dynamic> jsonData = jsonDecode(jsonString);
         await _dbHelper.importDatabaseFromJson(jsonData);
-
+        
         messenger.showSnackBar(
           const SnackBar(
               content:
@@ -232,7 +231,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final themeProvider = context.watch<ThemeProvider>();
     final currencyProvider = context.watch<CurrencyProvider>();
     final proStatusProvider = context.watch<ProStatusProvider>();
-    final TextTheme textTheme = Theme.of(context).textTheme;
     final appModeProvider = context.watch<AppModeProvider>();
 
     return Scaffold(
@@ -240,257 +238,244 @@ class _SettingsScreenState extends State<SettingsScreen> {
         title: const Text('Налаштування'),
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
         children: <Widget>[
-          if (!appModeProvider.isOnline)
-            ListTile(
-              leading: Icon(Icons.cloud_sync_outlined,
-                  color: Theme.of(context).colorScheme.primary),
-              title: Text('Увійти / Синхронізація',
-                  style: TextStyle(
-                      color: Theme.of(context).colorScheme.primary)),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const LoginRegisterScreen()));
-              },
-            ),
-          Card(
-            elevation: 2,
-            color: Theme.of(context).colorScheme.primaryContainer,
-            child: ListTile(
-              leading: Icon(Icons.workspace_premium_outlined,
-                  color: Theme.of(context).colorScheme.onPrimaryContainer),
-              title: Text('Гаманець Мудреця Pro',
-                  style: textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color:
-                          Theme.of(context).colorScheme.onPrimaryContainer)),
-              subtitle: Text(
-                  proStatusProvider.isPro
-                      ? 'Статус активовано'
-                      : 'Розблокувати всі можливості',
-                  style: textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onPrimaryContainer
-                          .withAlpha(204))),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () async {
-                final proProvider = context.read<ProStatusProvider>();
-                await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const PremiumScreen()));
-                proProvider.loadProStatus();
-              },
-            ),
-          ),
-          const Divider(height: 32, thickness: 0.5),
-          Text(
-            'Вигляд та Персоналізація',
-            style: textTheme.titleLarge,
-          ),
-          const SizedBox(height: 16),
-          SegmentedButton<ThemeMode>(
-            segments: const <ButtonSegment<ThemeMode>>[
-              ButtonSegment<ThemeMode>(
-                  value: ThemeMode.light,
-                  label: Text('Світла'),
-                  icon: Icon(Icons.wb_sunny_outlined)),
-              ButtonSegment<ThemeMode>(
-                  value: ThemeMode.dark,
-                  label: Text('Темна'),
-                  icon: Icon(Icons.nightlight_outlined)),
-              ButtonSegment<ThemeMode>(
-                  value: ThemeMode.system,
-                  label: Text('Системна'),
-                  icon: Icon(Icons.settings_suggest_outlined)),
+          _buildAccountSection(context, appModeProvider, proStatusProvider),
+          _SettingsSection(
+            title: 'Персоналізація',
+            children: [
+              _SettingsTile(
+                icon: Icons.palette_outlined,
+                title: 'Колірна палітра',
+                subtitle: themeProvider.currentProfile.name,
+                onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => const ThemeSelectionScreen()));
+                },
+              ),
+              ListTile(
+                contentPadding: const EdgeInsets.only(left: 16.0, right: 0),
+                leading: const Icon(Icons.brightness_6_outlined),
+                title: const Text('Теми'),
+                trailing: SegmentedButton<ThemeMode>(
+                  showSelectedIcon: false,
+                  style: SegmentedButton.styleFrom(
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                  ),
+                  segments: const [
+                    ButtonSegment(value: ThemeMode.light, label: Text("Світла")),
+                    ButtonSegment(value: ThemeMode.dark, label: Text("Темна")),
+                    ButtonSegment(value: ThemeMode.system, label: Text("Системна")),
+                  ],
+                  selected: {themeProvider.themeMode},
+                  onSelectionChanged: (newSelection) => themeProvider.setThemeMode(newSelection.first),
+                ),
+              ),
+              ListTile(
+                contentPadding: const EdgeInsets.only(left: 16.0, right: 16.0),
+                leading: const Icon(Icons.currency_exchange_outlined),
+                title: const Text('Валюта'),
+                trailing: DropdownButton<Currency>(
+                  value: currencyProvider.selectedCurrency,
+                  underline: const SizedBox.shrink(),
+                  items: appCurrencies.map((Currency currency) {
+                    return DropdownMenuItem<Currency>(
+                      value: currency,
+                      child: Text(currency.code),
+                    );
+                  }).toList(),
+                  onChanged: (Currency? newValue) {
+                    if (newValue != null) {
+                      context.read<CurrencyProvider>().setCurrency(newValue);
+                    }
+                  },
+                ),
+              ),
             ],
-            selected: <ThemeMode>{themeProvider.themeMode},
-            onSelectionChanged: (Set<ThemeMode> newSelection) {
-              themeProvider.setThemeMode(newSelection.first);
-            },
           ),
-          ListTile(
-            contentPadding: const EdgeInsets.only(left: 16.0, right: 4.0),
-            leading: const Icon(Icons.palette_outlined),
-            title: const Text('Колірна палітра'),
-            subtitle: Text(themeProvider.currentProfile.name),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const ThemeSelectionScreen()));
-            },
+
+          _SettingsSection(
+            title: 'Управління',
+            children: [
+               _SettingsTile(
+                icon: Icons.account_balance_wallet_outlined,
+                title: 'Гаманці',
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WalletsScreen())),
+              ),
+               _SettingsTile(
+                icon: Icons.category_outlined,
+                title: 'Категорії',
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CategoriesScreen())),
+              ),
+               _SettingsTile(
+                icon: Icons.subscriptions_outlined,
+                title: 'Підписки',
+                onTap: () => Navigator.push(context, SlidePageRoute(builder: (_) => const SubscriptionsListScreen())),
+              ),
+                _SettingsTile(
+                icon: Icons.swap_calls_outlined,
+                title: 'Конвертер валют',
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const CurrencyConverterScreen())),
+              ),
+            ],
+           ),
+
+           _SettingsSection(
+            title: 'Автоматизація',
+            children: [
+              SwitchListTile(
+                title: const Text('AI-визначення категорії'),
+                subtitle: const Text('Пропонувати категорію на основі опису'),
+                value: proStatusProvider.isPro && _aiCategorizationEnabled,
+                onChanged: proStatusProvider.isPro ? _setAiCategorizationEnabled : null,
+                secondary: const Icon(Icons.auto_awesome_outlined),
+              ),
+            ]
           ),
-          const Divider(height: 32, thickness: 0.5),
-          Text(
-            'Загальні',
-            style: textTheme.titleLarge,
+
+          _SettingsSection(
+            title: 'Безпека та Дані',
+            children: [
+              _SettingsTile(
+                icon: Icons.password_outlined,
+                title: _isPinSet ? 'Змінити PIN-код' : 'Встановити PIN-код',
+                onTap: _navigateToPinSetup,
+              ),
+              if (_deviceSupportsBiometrics)
+                SwitchListTile(
+                  title: const Text('Вхід за допомогою біометрії'),
+                  subtitle: !_isPinSet ? const Text('Спочатку встановіть PIN-код') : null,
+                  value: _isPinSet && _isBiometricEnabled,
+                  onChanged: _isPinSet ? _toggleBiometricAuth : null,
+                  secondary: const Icon(Icons.fingerprint),
+                ),
+              _SettingsTile(
+                icon: Icons.history_outlined,
+                title: 'Історія сповіщень',
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationHistoryScreen())),
+              ),
+            ],
           ),
-          ListTile(
-            leading: const Icon(Icons.account_balance_wallet_outlined),
-            title: const Text('Управління гаманцями'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const WalletsScreen()));
-            },
+
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 24.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    icon: _isProcessingBackup ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.backup_outlined),
+                    label: const Text('Бекап'),
+                    onPressed: _createBackup,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    icon: _isProcessingRestore ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.restore_page_outlined),
+                    label: const Text('Відновити'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    onPressed: _restoreFromBackup,
+                  ),
+                ),
+              ],
+            ),
           ),
+          
           if (appModeProvider.isOnline)
-            ListTile(
-              leading: const Icon(Icons.group_add_outlined),
-              title: const Text('Прийняти запрошення'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const AcceptInvitationScreen()));
-              },
+            Center(
+              child: TextButton(
+                onPressed: _logout,
+                style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.error),
+                child: const Text('Вийти з акаунту'),
+              ),
             ),
-          ListTile(
-            leading: const Icon(Icons.category_outlined),
-            title: const Text('Управління категоріями'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const CategoriesScreen()));
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.swap_calls_outlined),
-            title: const Text('Конвертер валют'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const CurrencyConverterScreen()));
-            },
-          ),
-          DropdownButtonFormField<Currency>(
-            decoration: const InputDecoration(
-                labelText: 'Основна валюта відображення',
-                prefixIcon: Icon(Icons.currency_exchange_outlined)),
-            value: currencyProvider.selectedCurrency,
-            items: appCurrencies.map((Currency currency) {
-              return DropdownMenuItem<Currency>(
-                value: currency,
-                child: Text('${currency.name} (${currency.symbol})'),
-              );
-            }).toList(),
-            onChanged: (Currency? newValue) {
-              if (newValue != null) {
-                context.read<CurrencyProvider>().setCurrency(newValue);
-              }
-            },
-          ),
-          const Divider(height: 32, thickness: 0.5),
-          Text(
-            'Автоматизація',
-            style: textTheme.titleLarge,
-          ),
-          SwitchListTile(
-            title: const Text('Авто-визначення категорії'),
-            subtitle: const Text('AI-асистент пропонуватиме категорію'),
-            value: proStatusProvider.isPro && _aiCategorizationEnabled,
-            onChanged:
-                proStatusProvider.isPro ? _setAiCategorizationEnabled : null,
-            secondary: const Icon(Icons.auto_awesome_outlined),
-          ),
-          ListTile(
-            title: const Text('Підписки'),
-            leading: const Icon(Icons.subscriptions_outlined),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              Navigator.push(
-                context,
-                SlidePageRoute(
-                    builder: (context) => const SubscriptionsListScreen()),
-              );
-            },
-          ),
-          const Divider(height: 32, thickness: 0.5),
-          Text(
-            'Безпека та Дані',
-            style: textTheme.titleLarge,
-          ),
-          ListTile(
-            leading: const Icon(Icons.password_outlined),
-            title: Text(_isPinSet ? 'Змінити PIN-код' : 'Встановити PIN-код'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: _navigateToPinSetup,
-          ),
-          if (_deviceSupportsBiometrics)
-            SwitchListTile(
-              title: const Text('Вхід за допомогою біометрії'),
-              subtitle:
-                  !_isPinSet ? const Text('Спочатку встановіть PIN-код') : null,
-              value: _isPinSet && _isBiometricEnabled,
-              onChanged: _isPinSet ? _toggleBiometricAuth : null,
-              secondary: const Icon(Icons.fingerprint),
-            ),
-          ListTile(
-            title: const Text('Історія сповіщень'),
-            leading: const Icon(Icons.history_outlined),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const NotificationHistoryScreen()),
-              );
-            },
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton.icon(
-            icon: _isProcessingBackup
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2))
-                : const Icon(Icons.backup_outlined),
-            label: const Text('Створити резервну копію'),
-            onPressed: _createBackup,
-          ),
-          const SizedBox(height: 12),
-          ElevatedButton.icon(
-            icon: _isProcessingRestore
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2))
-                : const Icon(Icons.restore_page_outlined),
-            label: const Text('Відновити з резервної копії'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
-              foregroundColor:
-                  Theme.of(context).colorScheme.onSecondaryContainer,
-            ),
-            onPressed: _restoreFromBackup,
-          ),
-          if (appModeProvider.isOnline) ...[
-            const Divider(height: 32),
-            ListTile(
-              leading:
-                  Icon(Icons.logout, color: Theme.of(context).colorScheme.error),
-              title: Text('Вийти з акаунту',
-                  style:
-                      TextStyle(color: Theme.of(context).colorScheme.error)),
-              onTap: _logout,
-            ),
-          ]
         ],
       ),
+    );
+  }
+
+  Widget _buildAccountSection(BuildContext context, AppModeProvider appModeProvider, ProStatusProvider proStatusProvider) {
+    if (appModeProvider.isOnline) return const SizedBox.shrink();
+
+    return Column(
+      children: [
+        Card(
+          color: Theme.of(context).colorScheme.primaryContainer,
+          child: _SettingsTile(
+            icon: Icons.cloud_sync_outlined,
+            title: 'Увійти або створити акаунт',
+            subtitle: 'Для синхронізації та спільного доступу',
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginRegisterScreen())),
+          ),
+        ),
+        if (!proStatusProvider.isPro) ...[
+          const SizedBox(height: 8),
+          Card(
+            color: Theme.of(context).colorScheme.tertiaryContainer,
+            child: _SettingsTile(
+              icon: Icons.workspace_premium_outlined,
+              title: 'Отримати Pro-статус',
+              subtitle: 'Розблокувати всі можливості',
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PremiumScreen())),
+            ),
+          )
+        ],
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+}
+
+class _SettingsSection extends StatelessWidget {
+  final String title;
+  final List<Widget> children;
+
+  const _SettingsSection({required this.title, required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 24.0, bottom: 8.0, left: 16.0),
+          child: Text(title.toUpperCase(), style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+        ),
+        Card(
+          child: Column(
+            children: children,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SettingsTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+  final VoidCallback onTap;
+
+  const _SettingsTile({
+    required this.icon,
+    required this.title,
+    this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(icon, color: Theme.of(context).colorScheme.onSurfaceVariant),
+      title: Text(title),
+      subtitle: subtitle != null ? Text(subtitle!) : null,
+      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+      onTap: onTap,
     );
   }
 }

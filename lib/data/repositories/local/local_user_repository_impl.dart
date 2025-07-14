@@ -1,3 +1,4 @@
+import 'package:sqflite/sqflite.dart';
 import 'package:sage_wallet_reborn/models/user.dart';
 import 'package:sage_wallet_reborn/utils/database_helper.dart';
 import 'package:sage_wallet_reborn/data/repositories/user_repository.dart';
@@ -9,7 +10,11 @@ class LocalUserRepositoryImpl implements UserRepository {
   @override
   Future<int> createDefaultUser() async {
     final db = await _dbHelper.database;
-    return await db.insert(DatabaseHelper.tableUsers, {'name': 'Основний користувач', 'id': '1'}); // Додаємо ID за замовчуванням
+    return await db.insert(
+      DatabaseHelper.tableUsers,
+      {DatabaseHelper.colUserName: 'Основний користувач', DatabaseHelper.colUserId: '1'},
+      conflictAlgorithm: ConflictAlgorithm.ignore,
+    );
   }
   
   @override

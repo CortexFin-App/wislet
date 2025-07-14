@@ -45,6 +45,7 @@ class SupabaseSubscriptionRepositoryImpl implements SubscriptionRepository {
     try {
       final map = sub.toMap();
       map['wallet_id'] = walletId;
+      map['user_id'] = _client.auth.currentUser!.id;
       final response = await _client.from('subscriptions').insert(map).select().single();
       return Right(response['id'] as int);
     } catch(e, s) {
@@ -58,6 +59,7 @@ class SupabaseSubscriptionRepositoryImpl implements SubscriptionRepository {
     try {
       final map = sub.toMap();
       map['wallet_id'] = walletId;
+      map['user_id'] = _client.auth.currentUser!.id;
       final response = await _client.from('subscriptions').update(map).eq('id', sub.id!).select().single();
       return Right(response['id'] as int);
     } catch(e, s) {

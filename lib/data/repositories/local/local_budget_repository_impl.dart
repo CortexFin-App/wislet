@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:fpdart/fpdart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/error/failures.dart';
@@ -26,15 +25,6 @@ class LocalBudgetRepositoryImpl implements BudgetRepository {
         final map = budget.toMap();
         map[DatabaseHelper.colBudgetWalletId] = walletId;
         newId = await txn.insert(DatabaseHelper.tableBudgets, map);
-
-        await txn.insert(DatabaseHelper.tableSyncQueue, {
-          DatabaseHelper.colSyncEntityType: 'budget',
-          DatabaseHelper.colSyncEntityId: newId.toString(),
-          DatabaseHelper.colSyncActionType: 'create',
-          DatabaseHelper.colSyncPayload: jsonEncode(map..['id'] = newId),
-          DatabaseHelper.colSyncTimestamp: DateTime.now().toIso8601String(),
-          DatabaseHelper.colSyncStatus: 'pending'
-        });
       });
       return Right(newId);
     } catch(e, s) {
@@ -56,15 +46,6 @@ class LocalBudgetRepositoryImpl implements BudgetRepository {
           where: '${DatabaseHelper.colBudgetId} = ?',
           whereArgs: [budget.id],
         );
-
-        await txn.insert(DatabaseHelper.tableSyncQueue, {
-          DatabaseHelper.colSyncEntityType: 'budget',
-          DatabaseHelper.colSyncEntityId: budget.id.toString(),
-          DatabaseHelper.colSyncActionType: 'update',
-          DatabaseHelper.colSyncPayload: jsonEncode(map),
-          DatabaseHelper.colSyncTimestamp: DateTime.now().toIso8601String(),
-          DatabaseHelper.colSyncStatus: 'pending'
-        });
       });
       return Right(updatedRows);
     } catch(e, s) {
@@ -82,19 +63,10 @@ class LocalBudgetRepositoryImpl implements BudgetRepository {
           final now = DateTime.now().toIso8601String();
           deletedRows = await txn.update(
             DatabaseHelper.tableBudgets,
-            { 'is_deleted': 1, 'updated_at': now },
+            { DatabaseHelper.colBudgetIsDeleted: 1, DatabaseHelper.colBudgetUpdatedAt: now },
             where: '${DatabaseHelper.colBudgetId} = ?',
             whereArgs: [budgetId],
           );
-
-          await txn.insert(DatabaseHelper.tableSyncQueue, {
-            DatabaseHelper.colSyncEntityType: 'budget',
-            DatabaseHelper.colSyncEntityId: budgetId.toString(),
-            DatabaseHelper.colSyncActionType: 'delete',
-            DatabaseHelper.colSyncPayload: jsonEncode({'id': budgetId}),
-            DatabaseHelper.colSyncTimestamp: now,
-            DatabaseHelper.colSyncStatus: 'pending'
-          });
        });
       return Right(deletedRows);
     } catch(e, s) {

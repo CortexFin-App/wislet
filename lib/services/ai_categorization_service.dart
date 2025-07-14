@@ -62,10 +62,10 @@ class AICategorizationService {
     
     return null;
   }
-  
+
   Future<void> rememberUserChoice(String description, fin_category.Category category) async {
     final keyword = _extractKeywordFromDescription(description);
-    if (keyword == null || category.id == null) return;
+    if (keyword == null || category.id == null || description.trim().isEmpty) return;
     
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('ai_override_$keyword', category.id!);
@@ -82,6 +82,7 @@ class AICategorizationService {
 
   Future<fin_category.Category?> suggestCategory({required String description, required int walletId}) async {
     if (!_isInitialized) await _loadDictionaries();
+    if (description.trim().isEmpty) return null;
 
     final lowerCaseDescription = description.toLowerCase();
     final categoriesEither = await _categoryRepository.getAllCategories(walletId);
@@ -89,17 +90,19 @@ class AICategorizationService {
     return categoriesEither.fold(
       (failure) => null,
       (allCategories) {
-        final categoriesByName = { for (var cat in allCategories) cat.name.toLowerCase(): cat };
-        final categoriesById = { for (var cat in allCategories) cat.id: cat };
+         final categoriesByName = { for (var cat in allCategories) cat.name.toLowerCase(): cat };
+        final categoriesById = { for (var cat in allCategories) if(cat.id != null) cat.id!: cat };
         
         final keyword = _extractKeywordFromDescription(lowerCaseDescription);
         if (keyword != null) {
-          SharedPreferences.getInstance().then((prefs) {
+          final prefsFuture = SharedPreferences.getInstance().then((prefs) {
             final overrideCategoryId = prefs.getInt('ai_override_$keyword');
             if (overrideCategoryId != null && categoriesById.containsKey(overrideCategoryId)) {
               return categoriesById[overrideCategoryId];
             }
+            return null;
           });
+          return prefsFuture;
         }
         
         for (var entry in _brandCategoryMap.entries) {
@@ -143,17 +146,17 @@ class AICategorizationService {
     'wog': 'Автомобіль', 'okko': 'Автомобіль', 'shell': 'Автомобіль',
     'soccar': 'Автомобіль', 'klo': 'Автомобіль', 'upg': 'Автомобіль', 'брсм': 'Автомобіль',
     'bolt': 'Таксі', 'uklon': 'Таксі', 'uber': 'Таксі',
-    'glovo': 'Доставка їжі', 'bolt food': 'Доставка їжі', 'loko': 'Доставка їжі', 'zakaz.ua': 'Продукти', 'нова пошта': 'Послуги', 'укрпошта': 'Послуги',
+     'glovo': 'Доставка їжі', 'bolt food': 'Доставка їжі', 'loko': 'Доставка їжі', 'zakaz.ua': 'Продукти', 'нова пошта': 'Послуги', 'укрпошта': 'Послуги',
     'zara': 'Одяг та взуття', 'h&m': 'Одяг та взуття', 'bershka': 'Одяг та взуття',
     'intertop': 'Одяг та взуття', 'answear': 'Одяг та взуття', 'md fashion': 'Одяг та взуття', 'lc waikiki': 'Одяг та взуття', 'reserved': 'Одяг та взуття', 'pull&bear': 'Одяг та взуття', 'stradivarius': 'Одяг та взуття',
-    'mcdonald\'s': 'Кафе, Бари, Ресторани', 'макдональдз': 'Кафе, Бари, Ресторани', 'kfc': 'Кафе, Бари, Ресторани',
+     'mcdonald\'s': 'Кафе, Бари, Ресторани', 'макдональдз': 'Кафе, Бари, Ресторани', 'kfc': 'Кафе, Бари, Ресторани',
     'пузата хата': 'Кафе, Бари, Ресторани', 'salateira': 'Кафе, Бари, Ресторани', 'lviv croissants': 'Кафе, Бари, Ресторани',
     'арома кава': 'Кафе, Бари, Ресторани', 'мафія': 'Кафе, Бари, Ресторани', 'сушія': 'Кафе, Бари, Ресторани', 'домінос': 'Кафе, Бари, Ресторани',
     'starbucks': 'Кафе, Бари, Ресторани',
     'eva': 'Побут', 'watsons': 'Побут', 'prostor': 'Побут', 'jysk': 'Дім та Побут', 'епіцентр': 'Дім та Побут', 'леруа мерлен': 'Дім та Побут',
     'lanet': 'Інтернет та ТБ', 'воля': 'Інтернет та ТБ', 'тріолан': 'Інтернет та ТБ', 'київстар': 'Зв\'язок', 'vodafone': 'Зв\'язок', 'lifecell': 'Зв\'язок',
     'netflix': 'Підписки', 'spotify': 'Підписки', 'youtube premium': 'Підписки',
-    'google one': 'Підписки', 'icloud': 'Підписки', 'megogo': 'Підписки', 'sweet.tv': 'Підписки',
+     'google one': 'Підписки', 'icloud': 'Підписки', 'megogo': 'Підписки', 'sweet.tv': 'Підписки',
     'google drive': 'Підписки', 'dropbox': 'Підписки', 'patreon': 'Підписки',
     'projector': 'Освіта', 'hillel': 'Освіта', 'goit': 'Освіта', 'prometheus': 'Освіта',
     'multiplex': 'Розваги та Хобі', 'planeta kino': 'Розваги та Хобі', 'playstation': 'Розваги та Хобі', 'steam': 'Розваги та Хобі',
@@ -162,7 +165,7 @@ class AICategorizationService {
 
   static const Map<String, List<String>> _baseGeneralMap = {
     'Продукти': ['ринок', 'супермаркет', 'гастроном', 'продуктовий', 'базар', 'їжа', 'вода', 'хліб', 'молоко', 'мясо', 'риба', 'овочі', 'фрукти', 'бакалія', 'крупи', 'солодощі'],
-    'Кафе, Бари, Ресторани': ['ресторан', 'кафе', 'їдальня', 'їжа на виніс', 'кав\'ярня', 'обід', 'вечеря', 'сніданок', 'ланч', 'coffee', 'latte', 'cappuccino', 'еспресо', 'донер', 'шаурма', 'кебаб', 'хот-дог', 'піца', 'pizza', 'бургер', 'бар', 'паб', 'пиво', 'коктейль', 'вино', 'алкоголь', 'закуски', 'півас'],
+    'Кафе, Бари, Ресторани': ['ресторан', 'кафе', 'їдальня', 'їжа на виніс', 'кав\'ярня', 'обід', 'вечеря', 'сніданок', 'ланч', 'coffee', 'latte', 'cappuccino', 'еспресо', 'донер', 'шаурма', 'кебаб', 'хот-дог', 'піца', 'pizza', 'бургер', 'бар', 'паб', 'пиво', 'коктейль', 'вино', 'алкоголь', 'закуски', 'пивас'],
     'Транспорт': ['метро', 'автобус', 'тролейбус', 'трамвай', 'маршрутка', 'електричка', 'проїзний', 'автостанція', 'вокзал', 'жетон', 'прокат самокатів', 'оренда авто'],
     'Житло та Комунальні Послуги': ['оренда квартири', 'квартплата', 'комуналка', 'комунальні', 'електроенергія', 'світло', 'газ', 'вода', 'опалення', 'осбб', 'інтернет', 'кабельне', 'вивіз сміття', 'домогосподарка', 'прибирання'],
     'Одяг та взуття': ['штани', 'сукня', 'кросівки', 'футболка', 'куртка', 'светр', 'черевики', 'костюм', 'білизна', 'одяг', 'взуття'],

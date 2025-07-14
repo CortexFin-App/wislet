@@ -66,7 +66,7 @@ class LocalGoalRepositoryImpl implements GoalRepository {
       final db = await _dbHelper.database;
       final List<Map<String, dynamic>> maps = await db.query(
         DatabaseHelper.tableFinancialGoals,
-        where: '${DatabaseHelper.colGoalWalletId} = ?',
+        where: '${DatabaseHelper.colGoalWalletId} = ? AND ${DatabaseHelper.colGoalIsDeleted} = 0',
         whereArgs: [walletId],
         orderBy: '${DatabaseHelper.colGoalCreationDate} DESC',
       );

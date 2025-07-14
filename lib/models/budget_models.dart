@@ -5,6 +5,19 @@ enum BudgetStrategyType {
   zeroBased,
 }
 
+String budgetStrategyTypeToString(BudgetStrategyType type) {
+  switch (type) {
+    case BudgetStrategyType.categoryBased:
+      return 'За категоріями';
+    case BudgetStrategyType.envelope:
+      return 'Конверти';
+    case BudgetStrategyType.rule50_30_20:
+      return 'Правило 50/30/20';
+    case BudgetStrategyType.zeroBased:
+      return 'Нульовий бюджет';
+  }
+}
+
 class Budget {
   final int? id;
   final String name;
@@ -30,14 +43,13 @@ class Budget {
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
+      if (id != null) 'id': id,
       'name': name,
-      'startDate': startDate.toIso8601String(),
-      'endDate': endDate.toIso8601String(),
-      'strategyType': strategyType.toString(),
-      'plannedIncomeInBaseCurrency': plannedIncomeInBaseCurrency,
-      'isActive': isActive ? 1 : 0,
-      'updated_at': updatedAt?.toIso8601String() ?? DateTime.now().toIso8601String(),
+      'start_date': startDate.toIso8601String(),
+      'end_date': endDate.toIso8601String(),
+      'strategy_type': strategyType.name,
+      'planned_income_in_base_currency': plannedIncomeInBaseCurrency,
+      'is_active': isActive ? 1 : 0,
       'is_deleted': isDeleted ? 1 : 0,
     };
   }
@@ -46,11 +58,11 @@ class Budget {
     return Budget(
       id: map['id'],
       name: map['name'],
-      startDate: DateTime.parse(map['startDate']),
-      endDate: DateTime.parse(map['endDate']),
-      strategyType: BudgetStrategyType.values.firstWhere((e) => e.toString() == map['strategyType']),
-      plannedIncomeInBaseCurrency: (map['plannedIncomeInBaseCurrency'] as num?)?.toDouble(),
-      isActive: map['isActive'] == 1,
+      startDate: DateTime.parse(map['start_date']),
+      endDate: DateTime.parse(map['end_date']),
+      strategyType: BudgetStrategyType.values.byName(map['strategy_type']),
+      plannedIncomeInBaseCurrency: (map['planned_income_in_base_currency'] as num?)?.toDouble(),
+      isActive: (map['is_active'] is bool) ? map['is_active'] : ((map['is_active'] as int? ?? 1) == 1),
       updatedAt: map['updated_at'] != null ? DateTime.parse(map['updated_at'] as String) : null,
       isDeleted: (map['is_deleted'] is bool) ? map['is_deleted'] : ((map['is_deleted'] as int? ?? 0) == 1),
     );
@@ -84,15 +96,14 @@ class BudgetEnvelope {
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
-      'budgetId': budgetId,
+      if (id != null) 'id': id,
+      'budget_id': budgetId,
       'name': name,
-      'categoryId': categoryId,
-      'originalPlannedAmount': originalPlannedAmount,
-      'originalCurrencyCode': originalCurrencyCode,
-      'plannedAmountInBaseCurrency': plannedAmountInBaseCurrency,
-      'exchangeRateUsed': exchangeRateUsed,
-      'updated_at': updatedAt?.toIso8601String() ?? DateTime.now().toIso8601String(),
+      'category_id': categoryId,
+      'original_planned_amount': originalPlannedAmount,
+      'original_currency_code': originalCurrencyCode,
+      'planned_amount_in_base_currency': plannedAmountInBaseCurrency,
+      'exchange_rate_used': exchangeRateUsed,
       'is_deleted': isDeleted ? 1 : 0,
     };
   }
@@ -100,28 +111,15 @@ class BudgetEnvelope {
   factory BudgetEnvelope.fromMap(Map<String, dynamic> map) {
     return BudgetEnvelope(
       id: map['id'],
-      budgetId: map['budgetId'],
+      budgetId: map['budget_id'],
       name: map['name'],
-      categoryId: map['categoryId'],
-      originalPlannedAmount: (map['originalPlannedAmount'] as num).toDouble(),
-      originalCurrencyCode: map['originalCurrencyCode'],
-      plannedAmountInBaseCurrency: (map['plannedAmountInBaseCurrency'] as num).toDouble(),
-      exchangeRateUsed: (map['exchangeRateUsed'] as num?)?.toDouble(),
+      categoryId: map['category_id'],
+      originalPlannedAmount: (map['original_planned_amount'] as num).toDouble(),
+      originalCurrencyCode: map['original_currency_code'],
+      plannedAmountInBaseCurrency: (map['planned_amount_in_base_currency'] as num).toDouble(),
+      exchangeRateUsed: (map['exchange_rate_used'] as num?)?.toDouble(),
       updatedAt: map['updated_at'] != null ? DateTime.parse(map['updated_at'] as String) : null,
       isDeleted: (map['is_deleted'] is bool) ? map['is_deleted'] : ((map['is_deleted'] as int? ?? 0) == 1),
     );
-  }
-}
-
-String budgetStrategyTypeToString(BudgetStrategyType type) {
-  switch (type) {
-    case BudgetStrategyType.categoryBased:
-      return 'За категоріями';
-    case BudgetStrategyType.envelope:
-      return 'Конверти';
-    case BudgetStrategyType.rule50_30_20:
-      return 'Правило 50/30/20';
-    case BudgetStrategyType.zeroBased:
-      return 'Нульовий бюджет';
   }
 }

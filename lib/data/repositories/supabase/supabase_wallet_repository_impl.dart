@@ -48,8 +48,8 @@ class SupabaseWalletRepositoryImpl implements WalletRepository {
       {required String name, required String ownerUserId, bool isDefault = false}) async {
     try {
       final response = await _client.rpc(
-        'create_wallet_and_assign_owner',
-        params: {'wallet_name': name, 'is_default_wallet': isDefault},
+        'create_new_wallet',
+        params: {'p_name': name, 'p_is_default': isDefault},
       );
       return Right(response as int);
     } catch (e, s) {

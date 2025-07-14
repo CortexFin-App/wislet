@@ -10,6 +10,11 @@ class SupabaseCategoryRepositoryImpl implements CategoryRepository {
   SupabaseCategoryRepositoryImpl(this._client);
 
   @override
+  Future<void> addDefaultCategories(int walletId) async {
+    return;
+  }
+
+  @override
   Future<Either<AppFailure, List<Category>>> getAllCategories(int walletId) async {
     try {
       final response = await _client.from('categories').select().eq('wallet_id', walletId).eq('is_deleted', false);

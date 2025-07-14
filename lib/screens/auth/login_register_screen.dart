@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sage_wallet_reborn/services/auth_service.dart';
+import '../../core/di/injector.dart';
+import '../../data/repositories/invitation_repository.dart';
+import '../../providers/wallet_provider.dart';
+import '../../utils/app_palette.dart';
 
 class LoginRegisterScreen extends StatefulWidget {
-  const LoginRegisterScreen({super.key});
+  final String? invitationToken;
+  const LoginRegisterScreen({super.key, this.invitationToken});
 
   @override
   State<LoginRegisterScreen> createState() => _LoginRegisterScreenState();
@@ -31,6 +36,7 @@ class _LoginRegisterScreenState extends State<LoginRegisterScreen> with SingleTi
         title: const Text('Онлайн-акаунт'),
         bottom: TabBar(
           controller: _tabController,
+          indicatorColor: AppPalette.darkAccent,
           tabs: const [
             Tab(text: 'Вхід'),
             Tab(text: 'Реєстрація'),
@@ -40,8 +46,8 @@ class _LoginRegisterScreenState extends State<LoginRegisterScreen> with SingleTi
       body: TabBarView(
         controller: _tabController,
         children: [
-          _AuthForm(isLogin: true, tabController: _tabController),
-          _AuthForm(isLogin: false, tabController: _tabController),
+          _AuthForm(isLogin: true, tabController: _tabController, invitationToken: widget.invitationToken),
+          _AuthForm(isLogin: false, tabController: _tabController, invitationToken: widget.invitationToken),
         ],
       ),
     );
@@ -51,7 +57,8 @@ class _LoginRegisterScreenState extends State<LoginRegisterScreen> with SingleTi
 class _AuthForm extends StatefulWidget {
   final bool isLogin;
   final TabController tabController;
-  const _AuthForm({required this.isLogin, required this.tabController});
+  final String? invitationToken;
+  const _AuthForm({required this.isLogin, required this.tabController, this.invitationToken});
 
   @override
   State<_AuthForm> createState() => _AuthFormState();
@@ -61,6 +68,7 @@ class _AuthFormState extends State<_AuthForm> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final InvitationRepository _invitationRepo = getIt<InvitationRepository>();
   bool _isLoading = false;
   String? _errorMessage;
   bool _showConfirmationMessage = false;
@@ -70,6 +78,20 @@ class _AuthFormState extends State<_AuthForm> {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+  
+  Future<void> _processInvitation() async {
+    if (widget.invitationToken != null) {
+      final messenger = ScaffoldMessenger.of(context);
+      final walletProvider = context.read<WalletProvider>();
+      try {
+        await _invitationRepo.acceptInvitation(widget.invitationToken!);
+        await walletProvider.loadWallets();
+        messenger.showSnackBar(const SnackBar(content: Text('Запрошення прийнято!')));
+      } catch (e) {
+        messenger.showSnackBar(SnackBar(content: Text('Не вдалося прийняти запрошення: $e')));
+      }
+    }
   }
 
   Future<void> _submit() async {
@@ -82,10 +104,13 @@ class _AuthFormState extends State<_AuthForm> {
 
     try {
       final authService = context.read<AuthService>();
+      final navigator = Navigator.of(context);
+
       if (widget.isLogin) {
         await authService.login(
             _emailController.text.trim(), _passwordController.text.trim());
-        if (mounted) Navigator.of(context).pop();
+        await _processInvitation();
+        if (mounted) navigator.popUntil((route) => route.isFirst);
       } else {
         final result = await authService.register(
             _emailController.text.trim(), _passwordController.text.trim());
@@ -93,7 +118,8 @@ class _AuthFormState extends State<_AuthForm> {
           if (result == RegistrationResult.needsConfirmation) {
             setState(() => _showConfirmationMessage = true);
           } else if (result == RegistrationResult.success) {
-            Navigator.of(context).pop();
+            await _processInvitation();
+            navigator.popUntil((route) => route.isFirst);
           }
         }
       }
@@ -117,7 +143,7 @@ class _AuthFormState extends State<_AuthForm> {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const Icon(Icons.mark_email_read_outlined, size: 80, color: Colors.green),
+            const Icon(Icons.mark_email_read_outlined, size: 80, color: AppPalette.darkPositive),
             const SizedBox(height: 24),
             Text('Реєстрація майже завершена!',
                 style: Theme.of(context).textTheme.headlineSmall,
@@ -143,7 +169,7 @@ class _AuthFormState extends State<_AuthForm> {
         children: [
           TextFormField(
             controller: _emailController,
-            decoration: const InputDecoration(labelText: 'Email'),
+            decoration: const InputDecoration(labelText: 'Email', prefixIcon: Icon(Icons.email_outlined)),
             keyboardType: TextInputType.emailAddress,
             validator: (value) =>
                 value == null || !value.contains('@') ? 'Введіть коректний email' : null,
@@ -151,7 +177,7 @@ class _AuthFormState extends State<_AuthForm> {
           const SizedBox(height: 16),
           TextFormField(
             controller: _passwordController,
-            decoration: const InputDecoration(labelText: 'Пароль'),
+            decoration: const InputDecoration(labelText: 'Пароль', prefixIcon: Icon(Icons.lock_outline)),
             obscureText: true,
             validator: (value) =>
                 value == null || value.length < 6 ? 'Пароль має бути не менше 6 символів' : null,
@@ -168,9 +194,6 @@ class _AuthFormState extends State<_AuthForm> {
             ),
           ElevatedButton(
             onPressed: _isLoading ? null : _submit,
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-            ),
             child: _isLoading
                 ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
                 : Text(widget.isLogin ? 'Увійти' : 'Зареєструватися'),

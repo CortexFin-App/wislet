@@ -77,7 +77,6 @@ class _AddEditRepeatingTransactionScreenState extends State<AddEditRepeatingTran
       _startDate = t.startDate;
       _endDate = t.endDate;
       _isActive = t.isActive;
-
       if (t.frequency == Frequency.weekly && t.weekDays != null) {
         _selectedWeekDays = t.weekDays!;
         for (int i = 0; i < _selectedToggleButtons.length; i++) {
@@ -87,7 +86,7 @@ class _AddEditRepeatingTransactionScreenState extends State<AddEditRepeatingTran
 
       if (t.frequency == Frequency.monthly && t.monthDay != null) {
         if (t.monthDay == 'last') {
-          _monthlyType = MonthlyRepeatType.lastDay;
+           _monthlyType = MonthlyRepeatType.lastDay;
         } else {
           _monthlyType = MonthlyRepeatType.specificDay;
           _selectedMonthNumericDay = int.tryParse(t.monthDay!) ?? 1;
@@ -136,16 +135,18 @@ class _AddEditRepeatingTransactionScreenState extends State<AddEditRepeatingTran
         setState(() => _isLoadingCategories = false);
       },
       (categories) {
-        setState(() {
-          _availableCategories = categories;
-          if (_isEditing && widget.template != null) {
-            final foundCategory = categories.firstWhereOrNull((cat) => cat.id == widget.template!.categoryId);
-            if (foundCategory != null) {
-              _selectedCategory = foundCategory;
+        if(mounted) {
+          setState(() {
+            _availableCategories = categories;
+            if (_isEditing && widget.template != null) {
+              final foundCategory = categories.firstWhereOrNull((cat) => cat.id == widget.template!.categoryId);
+              if (foundCategory != null) {
+                 _selectedCategory = foundCategory;
+              }
             }
-          }
-          _isLoadingCategories = false;
-        });
+            _isLoadingCategories = false;
+          });
+        }
       }
     );
   }
@@ -183,7 +184,7 @@ class _AddEditRepeatingTransactionScreenState extends State<AddEditRepeatingTran
                   }
               }
               if (!found) {
-                  searchDate = searchDate.add(Duration(days: 7 - searchDate.weekday + allowedWeekDays.first));
+                 searchDate = searchDate.add(Duration(days: 7 - searchDate.weekday + allowedWeekDays.first));
               }
           }
           nextDate = searchDate;
@@ -204,7 +205,7 @@ class _AddEditRepeatingTransactionScreenState extends State<AddEditRepeatingTran
         if (potentialDateInCurrentMonth.isBefore(startDateAtMidnight)) {
             currentMonth += interval;
             while (currentMonth > 12) {
-                currentMonth -= 12;
+                 currentMonth -= 12;
                 currentYear++;
             }
             if (monthDay == 'last') {
@@ -215,7 +216,7 @@ class _AddEditRepeatingTransactionScreenState extends State<AddEditRepeatingTran
             }
             nextDate = DateTime(currentYear, currentMonth, actualTargetDay);
         } else {
-            nextDate = potentialDateInCurrentMonth;
+             nextDate = potentialDateInCurrentMonth;
         }
     } else if (frequency == Frequency.yearly && yearMonth != null && yearDay != null) {
         int currentYear = startDate.year;
@@ -227,7 +228,7 @@ class _AddEditRepeatingTransactionScreenState extends State<AddEditRepeatingTran
             currentYear += interval;
             nextDate = DateTime(currentYear, targetMonth, targetDay.clamp(1, _getDaysInMonth(currentYear, targetMonth)));
         } else {
-            nextDate = potentialDateThisYear;
+             nextDate = potentialDateThisYear;
         }
     }
     return DateTime(nextDate.year, nextDate.month, nextDate.day, startDate.hour, startDate.minute, startDate.second);
@@ -240,8 +241,9 @@ class _AddEditRepeatingTransactionScreenState extends State<AddEditRepeatingTran
     if (currentWalletId == null && !_isEditing) return;
     if (_selectedCategory == null || _selectedCurrency == null) return;
     if (_selectedFrequency == Frequency.weekly && _selectedWeekDays.isEmpty) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Для щотижневого повторення потрібно обрати хоча б один день.')));
-        return;
+         return;
     }
 
     final String description = _descriptionController.text.trim();
@@ -255,7 +257,7 @@ class _AddEditRepeatingTransactionScreenState extends State<AddEditRepeatingTran
     String? weekDaysString;
     if (_selectedFrequency == Frequency.weekly && _selectedWeekDays.isNotEmpty) {
       _selectedWeekDays.sort();
-      weekDaysString = _selectedWeekDays.join(',');
+       weekDaysString = _selectedWeekDays.join(',');
     }
 
     String? monthDayValue;
@@ -298,8 +300,6 @@ class _AddEditRepeatingTransactionScreenState extends State<AddEditRepeatingTran
       yearDay: finalYearDay,
     );
     
-    final navigator = Navigator.of(context);
-
     if (_isEditing) {
       await _repeatingTransactionRepository.updateRepeatingTransaction(templateToSave);
     } else {
@@ -307,7 +307,7 @@ class _AddEditRepeatingTransactionScreenState extends State<AddEditRepeatingTran
     }
 
     if (mounted) {
-      navigator.pop(true);
+      Navigator.of(context).pop(true);
     }
   }
 
@@ -361,8 +361,6 @@ class _AddEditRepeatingTransactionScreenState extends State<AddEditRepeatingTran
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: _saveTemplate,
-                        style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 12)),
                         child: Text(
                             _isEditing ? 'Зберегти зміни' : 'Створити шаблон'),
                       ),
@@ -381,7 +379,7 @@ class _AddEditRepeatingTransactionScreenState extends State<AddEditRepeatingTran
         TextFormField(
           controller: _descriptionController,
           decoration: const InputDecoration(
-              labelText: 'Опис', border: OutlineInputBorder()),
+              labelText: 'Опис'),
           validator: (value) =>
               value == null || value.isEmpty ? 'Введіть опис' : null,
         ),
@@ -390,11 +388,10 @@ class _AddEditRepeatingTransactionScreenState extends State<AddEditRepeatingTran
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: TextFormField(
+               child: TextFormField(
                   controller: _amountController,
                   decoration: const InputDecoration(
-                      labelText: 'Сума',
-                      border: OutlineInputBorder()),
+                      labelText: 'Сума'),
                   keyboardType:
                       const TextInputType.numberWithOptions(
                           decimal: true),
@@ -419,8 +416,7 @@ class _AddEditRepeatingTransactionScreenState extends State<AddEditRepeatingTran
               child: DropdownButtonFormField<Currency>(
                 value: _selectedCurrency,
                 decoration: const InputDecoration(
-                    labelText: 'Валюта',
-                    border: OutlineInputBorder()),
+                    labelText: 'Валюта'),
                 items: appCurrencies
                     .map((c) => DropdownMenuItem(
                         value: c, child: Text(c.code)))
@@ -436,8 +432,7 @@ class _AddEditRepeatingTransactionScreenState extends State<AddEditRepeatingTran
         DropdownButtonFormField<fin_transaction.TransactionType>(
             value: _selectedType,
             decoration: const InputDecoration(
-                labelText: 'Тип транзакції',
-                border: OutlineInputBorder()),
+                labelText: 'Тип транзакції'),
             items: fin_transaction.TransactionType.values
                 .map((t) => DropdownMenuItem(
                     value: t,
@@ -459,8 +454,7 @@ class _AddEditRepeatingTransactionScreenState extends State<AddEditRepeatingTran
           DropdownButtonFormField<Category>(
             value: _selectedCategory,
             decoration: const InputDecoration(
-                labelText: 'Категорія',
-                border: OutlineInputBorder()),
+                labelText: 'Категорія'),
             items: _availableCategories
                 .map((c) => DropdownMenuItem(
                     value: c, child: Text(c.name)))
@@ -489,7 +483,7 @@ class _AddEditRepeatingTransactionScreenState extends State<AddEditRepeatingTran
         DropdownButtonFormField<Frequency>(
             value: _selectedFrequency,
             decoration: const InputDecoration(
-                labelText: 'Частота', border: OutlineInputBorder()),
+                labelText: 'Частота'),
             items: Frequency.values
                 .map((f) => DropdownMenuItem(
                     value: f,
@@ -519,8 +513,7 @@ class _AddEditRepeatingTransactionScreenState extends State<AddEditRepeatingTran
             controller: _intervalController,
             decoration: const InputDecoration(
                 labelText:
-                    'Інтервал (напр., кожні X днів/тижнів/місяців)',
-                border: OutlineInputBorder()),
+                    'Інтервал (напр., кожні X днів/тижнів/місяців)'),
             keyboardType: TextInputType.number,
             validator: (value) {
               if (value == null || value.isEmpty) {
@@ -565,7 +558,7 @@ class _AddEditRepeatingTransactionScreenState extends State<AddEditRepeatingTran
                 child: Text(label),
               )).toList(),
             ),
-          ),
+           ),
         ],
       ),
     );
@@ -597,7 +590,6 @@ class _AddEditRepeatingTransactionScreenState extends State<AddEditRepeatingTran
                 value: _selectedMonthNumericDay.clamp(1, _getDaysInMonth(_startDate.year, _startDate.month)),
                 decoration: const InputDecoration(
                     labelText: 'Оберіть число',
-                    border: OutlineInputBorder(),
                     contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8)
                 ),
                 items: List.generate(31, (i) => i + 1)
@@ -640,7 +632,7 @@ class _AddEditRepeatingTransactionScreenState extends State<AddEditRepeatingTran
           const SizedBox(height: 8),
           DropdownButtonFormField<int>(
             value: _selectedYearMonth,
-            decoration: const InputDecoration(labelText: 'Місяць', border: OutlineInputBorder()),
+            decoration: const InputDecoration(labelText: 'Місяць'),
             items: List.generate(12, (i) => i + 1)
               .map((month) => DropdownMenuItem(
                 value: month,
@@ -649,7 +641,7 @@ class _AddEditRepeatingTransactionScreenState extends State<AddEditRepeatingTran
             onChanged: (val){
               if(val != null){
                 setState(() {
-                  _selectedYearMonth = val;
+                   _selectedYearMonth = val;
                   int daysInNewMonth = _getDaysInMonth(_startDate.year, _selectedYearMonth!);
                   if(_selectedYearNumericDay != null && _selectedYearNumericDay! > daysInNewMonth){
                     _selectedYearNumericDay = daysInNewMonth;
@@ -660,11 +652,11 @@ class _AddEditRepeatingTransactionScreenState extends State<AddEditRepeatingTran
             validator: (val) => val == null ? 'Оберіть місяць' : null,
           ),
           const SizedBox(height: 12),
-            DropdownButtonFormField<int>(
+          DropdownButtonFormField<int>(
             value: (_selectedYearNumericDay != null && _selectedYearMonth != null)
                 ? _selectedYearNumericDay!.clamp(1, _getDaysInMonth(_startDate.year, _selectedYearMonth!))
                 : null,
-            decoration: const InputDecoration(labelText: 'День', border: OutlineInputBorder()),
+            decoration: const InputDecoration(labelText: 'День'),
             items: List.generate(_getDaysInMonth(_startDate.year, _selectedYearMonth ?? _startDate.month), (i) => i + 1)
               .map((day) => DropdownMenuItem(
                 value: day,
@@ -703,7 +695,7 @@ class _AddEditRepeatingTransactionScreenState extends State<AddEditRepeatingTran
                 final TimeOfDay? pickedTime = await showTimePicker(
                 context: context,
                 initialTime: TimeOfDay.fromDateTime(_startDate)
-              );
+               );
               if (mounted) {
                 setState(() {
                   _startDate = DateTime(

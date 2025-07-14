@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:fpdart/fpdart.dart' hide State;
 import 'package:provider/provider.dart';
-import '../core/di/injector.dart';
 import '../core/error/failures.dart';
-import '../data/repositories/category_repository.dart';
 import '../models/category.dart';
 import '../providers/wallet_provider.dart';
+import '../utils/app_palette.dart';
 
 class CategoriesScreen extends StatefulWidget {
   const CategoriesScreen({super.key});
@@ -15,7 +14,6 @@ class CategoriesScreen extends StatefulWidget {
 }
 
 class _CategoriesScreenState extends State<CategoriesScreen> with SingleTickerProviderStateMixin {
-  final CategoryRepository _categoryRepository = getIt<CategoryRepository>();
   late TabController _tabController;
   Future<Either<AppFailure, List<Category>>>? _categoriesFuture;
 
@@ -35,10 +33,11 @@ class _CategoriesScreenState extends State<CategoriesScreen> with SingleTickerPr
   
   void _loadCategories() {
     if (mounted) {
-      final walletId = context.read<WalletProvider>().currentWallet?.id;
+      final walletProvider = context.read<WalletProvider>();
+      final walletId = walletProvider.currentWallet?.id;
       if (walletId != null) {
-        setState(() {
-          _categoriesFuture = _categoryRepository.getAllCategories(walletId);
+         setState(() {
+           _categoriesFuture = walletProvider.categoryRepository.getAllCategories(walletId);
         });
       }
     }
@@ -51,12 +50,22 @@ class _CategoriesScreenState extends State<CategoriesScreen> with SingleTickerPr
   }
   
   Future<void> _showAddEditCategoryDialog({Category? category}) async {
+    final walletProvider = context.read<WalletProvider>();
+    final walletId = walletProvider.currentWallet?.id;
+    if (walletId == null) {
+      if(!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Помилка: неможливо визначити активний гаманець.'))
+      );
+      return;
+    }
+
     final formKey = GlobalKey<FormState>();
     final nameController = TextEditingController(text: category?.name ?? '');
     CategoryType selectedType = category?.type ?? (_tabController.index == 0 ? CategoryType.expense : CategoryType.income);
     Bucket? selectedBucket = category?.bucket;
 
-    await showDialog(
+    final result = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
         return StatefulBuilder(
@@ -78,11 +87,11 @@ class _CategoriesScreenState extends State<CategoriesScreen> with SingleTickerPr
                       value: selectedType,
                       decoration: const InputDecoration(labelText: 'Тип'),
                       items: const [
-                        DropdownMenuItem(value: CategoryType.expense, child: Text('Витрата')),
-                        DropdownMenuItem(value: CategoryType.income, child: Text('Дохід')),
+                         DropdownMenuItem(value: CategoryType.expense, child: Text('Витрата')),
+                         DropdownMenuItem(value: CategoryType.income, child: Text('Дохід')),
                       ],
                       onChanged: (value) {
-                        setDialogState(() {
+                         setDialogState(() {
                           selectedType = value!;
                           if (selectedType == CategoryType.income) {
                             selectedBucket = null;
@@ -103,7 +112,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> with SingleTickerPr
                         ],
                         onChanged: (value) {
                           setDialogState(() {
-                            selectedBucket = value;
+                             selectedBucket = value;
                           });
                         },
                       )
@@ -111,12 +120,11 @@ class _CategoriesScreenState extends State<CategoriesScreen> with SingleTickerPr
                 ),
               ),
               actions: [
-                TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Скасувати')),
+                TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Скасувати')),
                 ElevatedButton(
                   onPressed: () async {
                     if (formKey.currentState!.validate()) {
-                      final walletId = Provider.of<WalletProvider>(context, listen: false).currentWallet!.id!;
-                      final newCategory = Category(
+                       final newCategory = Category(
                         id: category?.id,
                         name: nameController.text.trim(),
                         type: selectedType,
@@ -125,12 +133,12 @@ class _CategoriesScreenState extends State<CategoriesScreen> with SingleTickerPr
                       
                       final navigator = Navigator.of(context);
                       if (category == null) {
-                        await _categoryRepository.createCategory(newCategory, walletId);
+                        await walletProvider.categoryRepository.createCategory(newCategory, walletId);
                       } else {
-                        await _categoryRepository.updateCategory(newCategory);
+                        await walletProvider.categoryRepository.updateCategory(newCategory);
                       }
-                      _loadCategories();
-                      if(navigator.canPop()) navigator.pop();
+              
+                      if(navigator.canPop()) navigator.pop(true);
                     }
                   },
                   child: const Text('Зберегти'),
@@ -141,6 +149,10 @@ class _CategoriesScreenState extends State<CategoriesScreen> with SingleTickerPr
         );
       },
     );
+
+    if (result == true && mounted) {
+      _loadCategories();
+    }
   }
 
   @override
@@ -150,6 +162,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> with SingleTickerPr
         title: const Text('Категорії'),
         bottom: TabBar(
           controller: _tabController,
+          indicatorColor: AppPalette.darkAccent,
           tabs: const [
             Tab(text: 'Витрати'),
             Tab(text: 'Доходи'),
@@ -195,14 +208,18 @@ class _CategoriesScreenState extends State<CategoriesScreen> with SingleTickerPr
       return const Center(child: Text('Немає категорій цього типу.'));
     }
     return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(8, 8, 8, 80),
       itemCount: categories.length,
       itemBuilder: (context, index) {
         final category = categories[index];
-        return ListTile(
-          title: Text(category.name),
-          trailing: IconButton(
-            icon: const Icon(Icons.edit_outlined, size: 20),
-            onPressed: () => _showAddEditCategoryDialog(category: category),
+        return Card(
+          margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+          child: ListTile(
+            title: Text(category.name),
+            trailing: IconButton(
+              icon: const Icon(Icons.edit_outlined, size: 20, color: AppPalette.darkSecondaryText),
+              onPressed: () => _showAddEditCategoryDialog(category: category),
+            ),
           ),
         );
       },

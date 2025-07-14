@@ -32,12 +32,16 @@ class AuthService with ChangeNotifier {
     _onAuthStateChanged(_supabase.auth.currentSession);
   }
 
-  void _onAuthStateChanged(Session? session) {
-    final user = session?.user;
-    if (user != null) {
+  Future<void> _onAuthStateChanged(Session? session) async {
+    if (session?.user != null) {
+      final user = session!.user;
+      
+      await _supabase.rpc('ensure_user_has_wallet');
+      
       currentUser = fin_user.User(
         id: user.id,
-        name: user.userMetadata?['user_name'] as String? ?? 'User',
+        name: user.userMetadata?['user_name'] as String? ?? 'Користувач',
+        email: user.email,
       );
     } else {
       currentUser = null;

@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../../core/di/injector.dart';
 import '../../models/currency_model.dart';
 import '../../services/exchange_rate_service.dart';
+import '../../utils/app_palette.dart';
 
 class CurrencyConverterScreen extends StatefulWidget {
   const CurrencyConverterScreen({super.key});
@@ -148,33 +149,23 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
               controller: _amountController,
               decoration: InputDecoration(
                 labelText: 'Сума для конвертації',
-                hintText: 'Введіть суму',
-                border: const OutlineInputBorder(),
                 prefixIcon: _fromCurrency != null ? Padding(padding: const EdgeInsets.all(12.0), child: Text(_fromCurrency!.symbol, style: const TextStyle(fontSize: 18))) : null,
               ),
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
             ),
             const SizedBox(height: 16.0),
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Expanded(
                   child: DropdownButtonFormField<Currency>(
                     value: _fromCurrency,
-                    decoration: const InputDecoration(
-                      labelText: 'З валюти',
-                      border: OutlineInputBorder(),
-                    ),
+                    decoration: const InputDecoration(labelText: 'З валюти'),
                     isExpanded: true,
-                    selectedItemBuilder: (BuildContext context) {
-                      return _availableCurrencies.map<Widget>((Currency item) {
-                        return Text(item.code, overflow: TextOverflow.ellipsis);
-                      }).toList();
-                    },
                     items: _availableCurrencies.map((Currency currency) {
                       return DropdownMenuItem<Currency>(
                         value: currency,
-                        child: Text('${currency.code} (${currency.name})'),
+                        child: Text('${currency.code} - ${currency.name}'),
                       );
                     }).toList(),
                     onChanged: (Currency? newValue) {
@@ -193,27 +184,18 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
                   child: IconButton(
                     icon: const Icon(Icons.swap_horiz, size: 28),
-                    tooltip: 'Поміняти валюти місцями',
                     onPressed: _swapCurrencies,
                   ),
                 ),
                 Expanded(
                   child: DropdownButtonFormField<Currency>(
                     value: _toCurrency,
-                    decoration: const InputDecoration(
-                      labelText: 'В валюту',
-                      border: OutlineInputBorder(),
-                    ),
+                    decoration: const InputDecoration(labelText: 'В валюту'),
                     isExpanded: true,
-                    selectedItemBuilder: (BuildContext context) {
-                      return _availableCurrencies.map<Widget>((Currency item) {
-                        return Text(item.code, overflow: TextOverflow.ellipsis);
-                      }).toList();
-                    },
                     items: _availableCurrencies.map((Currency currency) {
                       return DropdownMenuItem<Currency>(
                         value: currency,
-                        child: Text('${currency.code} (${currency.name})'),
+                        child: Text('${currency.code} - ${currency.name}'),
                       );
                     }).toList(),
                     onChanged: (Currency? newValue) {
@@ -231,51 +213,48 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
               ],
             ),
             const SizedBox(height: 16.0),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Курс на дату: ${DateFormat('dd.MM.yyyy').format(_selectedRateDate)}',
-                    style: Theme.of(context).textTheme.titleSmall,
-                  ),
-                ),
-                TextButton.icon(
-                  icon: const Icon(Icons.calendar_today_outlined),
-                  label: const Text('Змінити дату'),
-                  onPressed: _pickRateDate,
-                ),
-              ],
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text('Курс на дату: ${DateFormat('dd.MM.yyyy').format(_selectedRateDate)}'),
+              trailing: const Icon(Icons.calendar_today_outlined),
+              onTap: _pickRateDate,
             ),
             const SizedBox(height: 24.0),
             if (_isLoading)
               const Center(child: CircularProgressIndicator())
             else if (_convertedAmountStr.isNotEmpty)
-              Column(
-                children: [
-                  Text(
-                    'Результат конвертації:',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _convertedAmountStr,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                    textAlign: TextAlign.center,
-                  ),
-                   if (_rateInfoMessage != null) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      _rateInfoMessage!,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant
+              Card(
+                color: AppPalette.darkPrimary.withAlpha(26),
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    children: [
+                      Text(
+                        'Результат:',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppPalette.darkSecondaryText),
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ]
-                ],
+                      const SizedBox(height: 8),
+                      Text(
+                        _convertedAmountStr,
+                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: AppPalette.darkPrimary,
+                            ),
+                        textAlign: TextAlign.center,
+                      ),
+                      if (_rateInfoMessage != null) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          _rateInfoMessage!,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppPalette.darkSecondaryText
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ]
+                    ],
+                  ),
+                ),
               )
             else if (_errorMessage != null)
               Text(
@@ -283,12 +262,6 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
                 style: TextStyle(color: Theme.of(context).colorScheme.error, fontSize: 16),
                 textAlign: TextAlign.center,
               ),
-            const SizedBox(height: 20),
-            Text(
-              'Курси валют надаються НБУ. Конвертація є орієнтовною.',
-              style: Theme.of(context).textTheme.bodySmall,
-              textAlign: TextAlign.center,
-            ),
           ],
         ),
       ),

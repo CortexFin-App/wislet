@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/theme_provider.dart';
 import 'theme_editor_screen.dart';
+import '../../utils/app_palette.dart';
 
 class ThemeSelectionScreen extends StatelessWidget {
   const ThemeSelectionScreen({super.key});
@@ -27,7 +28,7 @@ class ThemeSelectionScreen extends StatelessWidget {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(profile.borderRadius),
               side: BorderSide(
-                color: isSelected ? Theme.of(context).colorScheme.primary : Colors.transparent,
+                color: isSelected ? AppPalette.darkAccent : Colors.transparent,
                 width: 2,
               ),
             ),
@@ -36,11 +37,12 @@ class ThemeSelectionScreen extends StatelessWidget {
                 backgroundColor: profile.seedColor,
               ),
               title: Text(profile.name),
-              trailing: isDefault ? (isSelected ? const Icon(Icons.check_circle, color: Colors.green) : null) :
-                Row(
+              trailing: isDefault 
+                ? (isSelected ? const Icon(Icons.check_circle, color: AppPalette.darkPositive) : null) 
+                : Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if(isSelected) const Icon(Icons.check_circle, color: Colors.green),
+                    if(isSelected) const Icon(Icons.check_circle, color: AppPalette.darkPositive),
                     IconButton(
                       icon: const Icon(Icons.edit_outlined, size: 20),
                       onPressed: () {

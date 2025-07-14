@@ -3,17 +3,13 @@ import 'package:fpdart/fpdart.dart' hide State;
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
-import '../core/di/injector.dart';
-import '../core/error/failures.dart';
-import '../models/transaction_view_data.dart';
-import '../providers/wallet_provider.dart';
-import '../models/transaction.dart' as fin_transaction;
-import '../models/category.dart' as fin_category;
-import '../models/currency_model.dart';
+import '../../core/error/failures.dart';
+import '../../models/transaction_view_data.dart';
+import '../../providers/wallet_provider.dart';
+import '../../models/transaction.dart' as fin_transaction;
+import '../../models/category.dart' as fin_category;
+import '../../models/currency_model.dart';
 import 'transactions/add_edit_transaction_screen.dart';
-import '../utils/fade_page_route.dart';
-import '../data/repositories/category_repository.dart';
-import '../data/repositories/transaction_repository.dart';
 
 class TransactionsListScreen extends StatefulWidget {
   const TransactionsListScreen({super.key});
@@ -55,7 +51,7 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
     final currentWalletId = walletProvider.currentWallet?.id;
     if (currentWalletId == null) return;
     
-    final categoriesEither = await getIt<CategoryRepository>().getAllCategories(currentWalletId);
+    final categoriesEither = await walletProvider.categoryRepository.getAllCategories(currentWalletId);
     categoriesEither.fold(
       (l) => _allCategoriesForFilter = [], 
       (r) => _allCategoriesForFilter = r
@@ -67,12 +63,11 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
   void _applyFiltersAndLoadTransactions() {
     if (!mounted) return;
     final walletProvider = context.read<WalletProvider>();
-    final transactionRepo = getIt<TransactionRepository>();
     
     if (walletProvider.currentWallet?.id != null) {
       setState(() {
-        _transactionsFuture = transactionRepo.getTransactionsWithDetails(
-          walletId: walletProvider.currentWallet!.id!,
+        _transactionsFuture = walletProvider.transactionRepository.getTransactionsWithDetails(
+           walletId: walletProvider.currentWallet!.id!,
           startDate: _filterStartDate,
           endDate: _filterEndDate,
           filterTransactionType: _filterTransactionType,
@@ -83,7 +78,6 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
     }
   }
 
-  
   void performSearchQuery(String query) {
     if (!mounted) return;
     if (_currentSearchQuery != query.trim()) {
@@ -115,21 +109,20 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
   }
 
   Future<void> _navigateToAddTransaction() async {
-    final result = await Navigator.push(
+    final result = await Navigator.push<bool>(
       context,
-      FadePageRoute(builder: (context) => const AddEditTransactionScreen()),
+      MaterialPageRoute(builder: (context) => const AddEditTransactionScreen()),
     );
     if (result == true && mounted) {
       refreshData();
     }
   }
 
-  
   Future<void> _navigateToEditTransaction(
       TransactionViewData transactionData) async {
-    final result = await Navigator.push(
+    final result = await Navigator.push<bool>(
       context,
-      FadePageRoute(
+      MaterialPageRoute(
         builder: (context) => AddEditTransactionScreen(
           transactionToEdit: transactionData.toTransactionModel(),
         ),
@@ -144,6 +137,7 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
       BuildContext context, TransactionViewData transactionData) async {
     if (!mounted) return;
     final messenger = ScaffoldMessenger.of(context);
+    final walletProvider = context.read<WalletProvider>();
     final currency = appCurrencies.firstWhere(
         (c) => c.code == transactionData.originalCurrencyCode,
         orElse: () => Currency(
@@ -184,12 +178,12 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
       },
     );
     if (confirmDelete == true && mounted) {
-      await getIt<TransactionRepository>().deleteTransaction(transactionData.id);
+      await walletProvider.transactionRepository.deleteTransaction(transactionData.id);
       if (mounted) {
-        messenger.showSnackBar(
-          SnackBar(
+         messenger.showSnackBar(
+         SnackBar(
               content: Text('Транзакцію "${transactionData.categoryName}" видалено')),
-        );
+      );
         refreshData();
       }
     }
@@ -224,7 +218,7 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
                     Row(
                       children: [
                         Expanded(
-                          child: TextButton.icon(
+                            child: TextButton.icon(
                             icon: const Icon(Icons.calendar_today),
                             label: Text(tempStartDate == null
                                 ? 'Дата початку'
@@ -240,7 +234,7 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
                                 setModalState(() => tempStartDate = pickedDate);
                               }
                             },
-                          ),
+                        ),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
@@ -266,13 +260,13 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
                     ),
                     const SizedBox(height: 16),
                     Text('Тип транзакції:',
-                        style: Theme.of(context).textTheme.titleMedium),
+                         style: Theme.of(context).textTheme.titleMedium),
                     DropdownButtonFormField<fin_transaction.TransactionType?>(
-                      value: tempTransactionType,
+                       value: tempTransactionType,
                       hint: const Text('Всі типи'),
                       isExpanded: true,
                       decoration: const InputDecoration(border: OutlineInputBorder()),
-                      items: [
+                        items: [
                         const DropdownMenuItem<fin_transaction.TransactionType?>(
                           value: null,
                           child: Text('Всі типи'),
@@ -281,37 +275,37 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
                           return DropdownMenuItem<fin_transaction.TransactionType?>(
                             value: type,
                             child: Text(type ==
-                                    fin_transaction.TransactionType.income
+                                  fin_transaction.TransactionType.income
                                 ? 'Дохід'
                                 : 'Витрата'),
                           );
-                        }),
-                      ],
-                      onChanged: (value) {
-                        setModalState(() => tempTransactionType = value);
-                      },
+                         }),
+                       ],
+                       onChanged: (value) {
+                         setModalState(() => tempTransactionType = value);
+                       },
                     ),
                     const SizedBox(height: 16),
                     Text('Категорія:', style: Theme.of(context).textTheme.titleMedium),
-                    DropdownButtonFormField<int?>(
+                     DropdownButtonFormField<int?>(
                       value: tempCategoryId,
                       hint: const Text('Всі категорії'),
                       isExpanded: true,
-                      decoration: const InputDecoration(border: OutlineInputBorder()),
-                      items: [
+                       decoration: const InputDecoration(border: OutlineInputBorder()),
+                       items: [
                         const DropdownMenuItem<int?>(
-                          value: null,
-                          child: Text('Всі категорії'),
+                           value: null,
+                           child: Text('Всі категорії'),
                         ),
                         ..._allCategoriesForFilter
                             .map((fin_category.Category category) {
-                          return DropdownMenuItem<int?>(
-                            value: category.id,
+                           return DropdownMenuItem<int?>(
+                             value: category.id,
                             child: Text(category.name),
-                          );
+                           );
                         }),
-                      ],
-                      onChanged: (value) {
+                       ],
+                       onChanged: (value) {
                         setModalState(() => tempCategoryId = value);
                       },
                     ),
@@ -319,26 +313,26 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        TextButton(
+                         TextButton(
                           onPressed: () {
-                            if (mounted) {
-                              setState(() {
+                             if (mounted) {
+                                setState(() {
                                 _filterStartDate = null;
                                 _filterEndDate = null;
                                 _filterTransactionType = null;
                                 _filterCategoryId = null;
                               });
-                            }
+                             }
                             _applyFiltersAndLoadTransactions();
                             Navigator.pop(ctx);
-                          },
+                           },
                           child: const Text('Скинути фільтри'),
                         ),
-                        const SizedBox(width: 8),
-                        ElevatedButton(
+                      const SizedBox(width: 8),
+                         ElevatedButton(
                           onPressed: () {
-                            if (mounted) {
-                              setState(() {
+                             if (mounted) {
+                                setState(() {
                                 _filterStartDate = tempStartDate;
                                 _filterEndDate = tempEndDate;
                                 _filterTransactionType = tempTransactionType;
@@ -348,10 +342,10 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
                             _applyFiltersAndLoadTransactions();
                             Navigator.pop(ctx);
                           },
-                          child: const Text('Застосувати'),
+                           child: const Text('Застосувати'),
                         ),
                       ],
-                    ),
+                     ),
                     const SizedBox(height: 16),
                   ],
                 ),
@@ -370,7 +364,7 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
         : (localAreFiltersActive
             ? 'Транзакцій не знайдено'
             : 'Транзакцій ще немає');
-    String message = localAreFiltersActive
+     String message = localAreFiltersActive
         ? 'Спробуйте змінити параметри фільтрації або пошуковий запит.'
         : 'Додайте свою першу транзакцію, щоб почати відстежувати фінанси.';
     return Center(
@@ -398,40 +392,40 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
             const SizedBox(height: 12),
             Text(
               message,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+               ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
             if (!localAreFiltersActive ||
                 (_currentSearchQuery.isEmpty &&
                     !(_filterStartDate != null ||
-                        _filterEndDate != null ||
-                        _filterTransactionType != null ||
-                        _filterCategoryId != null)))
+                         _filterEndDate != null ||
+                         _filterTransactionType != null ||
+                         _filterCategoryId != null)))
               ElevatedButton.icon(
                 icon: const Icon(Icons.add_circle_outline),
                 label: const Text('Додати транзакцію'),
-                onPressed: _navigateToAddTransaction,
-              ),
+                 onPressed: _navigateToAddTransaction,
+               ),
             if (localAreFiltersActive &&
                 !(_currentSearchQuery.isNotEmpty &&
-                    _filterStartDate == null &&
-                    _filterEndDate == null &&
-                    _filterTransactionType == null &&
+                   _filterStartDate == null &&
+                   _filterEndDate == null &&
+                     _filterTransactionType == null &&
                     _filterCategoryId == null))
               TextButton(
                 onPressed: () {
-                  if (mounted) {
+                   if (mounted) {
                     setState(() {
                       _filterStartDate = null;
                       _filterEndDate = null;
                       _filterTransactionType = null;
                       _filterCategoryId = null;
                     });
-                  }
-                  _applyFiltersAndLoadTransactions();
+                   }
+                   _applyFiltersAndLoadTransactions();
                 },
                 child: const Text('Очистити фільтри'),
               )
@@ -444,53 +438,53 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
   Widget _buildShimmerLoadingList() {
     final Color baseColor =
         Theme.of(context).brightness == Brightness.light
-            ? Colors.grey[300]!
+             ? Colors.grey[300]!
             : Colors.grey[700]!;
     final Color highlightColor =
         Theme.of(context).brightness == Brightness.light
             ? Colors.grey[100]!
             : Colors.grey[500]!;
     return Shimmer.fromColors(
-      baseColor: baseColor,
+       baseColor: baseColor,
       highlightColor: highlightColor,
       child: ListView.builder(
-        itemCount: 7,
+         itemCount: 7,
         itemBuilder: (context, index) {
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
             child: Container(
-              padding: const EdgeInsets.all(12.0),
+               padding: const EdgeInsets.all(12.0),
               decoration: BoxDecoration(
-                color: baseColor,
+                 color: baseColor,
                 borderRadius: BorderRadius.circular(12.0),
               ),
               child: Row(
-                children: [
+                 children: [
                   Container(
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
                       color: Theme.of(context).cardColor,
-                      shape: BoxShape.circle,
+                       shape: BoxShape.circle,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                   const SizedBox(width: 12),
                   Expanded(
-                    child: Column(
+                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
+                       children: [
                         Container(
-                            width: MediaQuery.of(context).size.width * 0.4,
-                            height: 14,
+                             width: MediaQuery.of(context).size.width * 0.4,
+                             height: 14,
                             color: Theme.of(context).cardColor),
-                        const SizedBox(height: 6),
-                        Container(
-                            width: MediaQuery.of(context).size.width * 0.25,
-                            height: 12,
-                            color: Theme.of(context).cardColor),
-                      ],
+                         const SizedBox(height: 6),
+                         Container(
+                              width: MediaQuery.of(context).size.width * 0.25,
+                             height: 12,
+                             color: Theme.of(context).cardColor),
+                       ],
                     ),
-                  ),
+                   ),
                   const SizedBox(width: 12),
                   Container(width: 60, height: 16, color: Theme.of(context).cardColor),
                 ],
@@ -504,130 +498,132 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Either<AppFailure, List<TransactionViewData>>>(
-      future: _transactionsFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting ||
-            _transactionsFuture == null) {
-          return _buildShimmerLoadingList();
-        }
-        
-        return snapshot.data!.fold(
-          (failure) => Center(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                    'Помилка завантаження транзакцій: ${failure.userMessage}\nБудь ласка, спробуйте ще раз.',
-                    textAlign: TextAlign.center),
-              )),
-          (transactions) {
-            if (transactions.isEmpty) {
-              return _buildEmptyState(context);
-            }
-            final TextTheme textTheme = Theme.of(context).textTheme;
-            final ColorScheme colorScheme = Theme.of(context).colorScheme;
-            return SafeArea(
-              child: ListView.builder(
-                padding: const EdgeInsets.all(8.0),
-                itemCount: transactions.length,
-                itemBuilder: (context, index) {
-                  final transaction = transactions[index];
-                  final isIncome =
-                      transaction.type == fin_transaction.TransactionType.income;
-                  final amountColor = isIncome
-                      ? colorScheme.tertiary.withAlpha(230)
-                      : colorScheme.error;
-                  final amountPrefix = isIncome ? '+' : '-';
+    return Scaffold(
+      body: RefreshIndicator(
+        onRefresh: refreshData,
+        child: FutureBuilder<Either<AppFailure, List<TransactionViewData>>>(
+           future: _transactionsFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting ||
+                _transactionsFuture == null) {
+              return _buildShimmerLoadingList();
+             }
+            
+            return snapshot.data!.fold(
+              (failure) => Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Text(
+                        'Помилка завантаження транзакцій: ${failure.userMessage}\nБудь ласка, спробуйте ще раз.',
+                        textAlign: TextAlign.center),
+                  )),
+              (transactions) {
+                if (transactions.isEmpty) {
+                  return _buildEmptyState(context);
+                 }
+                final TextTheme textTheme = Theme.of(context).textTheme;
+                final ColorScheme colorScheme = Theme.of(context).colorScheme;
+                return SafeArea(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(8.0),
+                    itemCount: transactions.length,
+                     itemBuilder: (context, index) {
+                      final transaction = transactions[index];
+                      final isIncome =
+                           transaction.type == fin_transaction.TransactionType.income;
+                      final amountColor = isIncome
+                          ? colorScheme.tertiary.withAlpha(230)
+                          : colorScheme.error;
+                      final amountPrefix = isIncome ? '+' : '-';
 
-                  final currency = appCurrencies.firstWhere(
-                      (c) => c.code == transaction.originalCurrencyCode,
-                      orElse: () => Currency(
-                          code: transaction.originalCurrencyCode,
-                          symbol: transaction.originalCurrencyCode,
-                          name: '',
-                          locale: ''));
-                  final formattedAmount = NumberFormat.currency(
-                          locale: currency.locale,
-                          symbol: currency.symbol,
-                          decimalDigits: 2)
-                      .format(transaction.originalAmount.abs());
-                  String subtitleText =
-                      DateFormat('dd.MM.yyyy, HH:mm').format(transaction.date);
-                  bool hasDescription = transaction.description?.isNotEmpty == true;
-                  if (hasDescription) {
-                    subtitleText =
-                        "${transaction.description!.replaceAll("\n", " ")}\n$subtitleText";
-                  }
+                      final currency = appCurrencies.firstWhere(
+                          (c) => c.code == transaction.originalCurrencyCode,
+                          orElse: () => Currency(
+                             code: transaction.originalCurrencyCode,
+                             symbol: transaction.originalCurrencyCode,
+                             name: '',
+                              locale: ''));
+                      final formattedAmount = NumberFormat.currency(
+                              locale: currency.locale,
+                              symbol: currency.symbol,
+                              decimalDigits: 2)
+                          .format(transaction.originalAmount.abs());
+                      String subtitleText =
+                         DateFormat('dd.MM.yyyy, HH:mm').format(transaction.date);
+                      bool hasDescription = transaction.description?.isNotEmpty == true;
+                      if (hasDescription) {
+                        subtitleText =
+                            "${transaction.description!.replaceAll("\n", " ")}\n$subtitleText";
+                      }
 
-                  return Card(
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: amountColor.withAlpha(26),
-                        child: Icon(
-                          isIncome
-                              ? Icons.arrow_downward_rounded
-                              : Icons.arrow_upward_rounded,
-                          color: amountColor,
-                          size: 20,
+                      return Card(
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: amountColor.withAlpha(26),
+                            child: Icon(
+                                isIncome
+                                  ? Icons.arrow_downward_rounded
+                                  : Icons.arrow_upward_rounded,
+                                  color: amountColor,
+                              size: 20,
+                            ),
+                          ),
+                           title: Text(
+                            transaction.categoryName,
+                            style: textTheme.titleSmall
+                                ?.copyWith(fontWeight: FontWeight.w600),
+                          ),
+                          subtitle: Text(
+                              subtitleText,
+                            style: textTheme.bodySmall,
+                            maxLines: hasDescription ? 2 : 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                           isThreeLine: hasDescription,
+                          trailing: Row(
+                             mainAxisSize: MainAxisSize.min,
+                            children: [
+                               Flexible(
+                                  child: Text(
+                                  '$amountPrefix$formattedAmount',
+                                  style: textTheme.titleMedium?.copyWith(
+                                   fontWeight: FontWeight.bold, color: amountColor),
+                                  textAlign: TextAlign.right,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              PopupMenuButton<String>(
+                                onSelected: (value) {
+                                  if (value == 'edit') {
+                                    _navigateToEditTransaction(transaction);
+                                  } else if (value == 'delete') {
+                                    _confirmDeleteTransaction(context, transaction);
+                                  }
+                                },
+                                itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                                  const PopupMenuItem<String>(
+                                    value: 'edit',
+                                    child: Text('Редагувати'),
+                                  ),
+                                  const PopupMenuItem<String>(
+                                    value: 'delete',
+                                    child: Text('Видалити'),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          onTap: () => _navigateToEditTransaction(transaction),
                         ),
-                      ),
-                      title: Text(
-                        transaction.categoryName,
-                        style: textTheme.titleSmall
-                            ?.copyWith(fontWeight: FontWeight.w600),
-                      ),
-                      subtitle: Text(
-                        subtitleText,
-                        style: textTheme.bodySmall,
-                        maxLines: hasDescription ? 2 : 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      isThreeLine: hasDescription,
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Flexible(
-                            child: Text(
-                              '$amountPrefix$formattedAmount',
-                              style: textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold, color: amountColor),
-                              textAlign: TextAlign.right,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          Tooltip(
-                            message: 'Редагувати',
-                            child: IconButton(
-                              icon: const Icon(Icons.edit_outlined, size: 20),
-                              color: colorScheme.onSurfaceVariant,
-                              padding: const EdgeInsets.only(left: 8),
-                              constraints: const BoxConstraints(),
-                              onPressed: () =>
-                                  _navigateToEditTransaction(transaction),
-                            ),
-                          ),
-                          Tooltip(
-                            message: 'Видалити',
-                            child: IconButton(
-                              icon: const Icon(Icons.delete_outline, size: 20),
-                              color: colorScheme.error.withAlpha(204),
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
-                              onPressed: () =>
-                                  _confirmDeleteTransaction(context, transaction),
-                            ),
-                          ),
-                        ],
-                      ),
-                      onTap: () => _navigateToEditTransaction(transaction),
-                    ),
-                  );
-                },
-              ),
+                    );
+                    },
+                  ),
+                );
+              }
             );
-          }
-        );
-      },
+          },
+        ),
+      ),
     );
   }
 }

@@ -1,18 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:fpdart/fpdart.dart' hide State;
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../core/di/injector.dart';
-import '../../core/error/failures.dart';
 import '../../data/repositories/budget_repository.dart';
 import '../../data/repositories/transaction_repository.dart';
 import '../../models/budget_models.dart';
 import '../../models/transaction.dart' as fin_transaction;
-import '../../models/transaction_view_data.dart';
 import '../../providers/currency_provider.dart';
 import '../../providers/wallet_provider.dart';
-import '../../utils/fade_page_route.dart';
 import 'add_edit_envelope_screen.dart';
+import 'add_edit_budget_screen.dart';
 
 class BudgetDetailScreen extends StatefulWidget {
   final Budget budget;
@@ -22,16 +19,14 @@ class BudgetDetailScreen extends StatefulWidget {
   State<BudgetDetailScreen> createState() => _BudgetDetailScreenState();
 }
 
-class _BudgetDetailScreenState extends State<BudgetDetailScreen> with SingleTickerProviderStateMixin {
+class _BudgetDetailScreenState extends State<BudgetDetailScreen> {
   final BudgetRepository _budgetRepository = getIt<BudgetRepository>();
   final TransactionRepository _transactionRepository = getIt<TransactionRepository>();
-  late TabController _tabController;
   late Future<Map<String, dynamic>> _detailsFuture;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
     _loadDetails();
   }
 
@@ -85,23 +80,22 @@ class _BudgetDetailScreenState extends State<BudgetDetailScreen> with SingleTick
   }
 
   @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.budget.name, style: const TextStyle(overflow: TextOverflow.ellipsis)),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(text: 'Огляд'),
-            Tab(text: 'Транзакції'),
-          ],
-        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit_outlined),
+            onPressed: () async {
+              final navigator = Navigator.of(context);
+              final result = await navigator.push<bool>(MaterialPageRoute(builder: (_) => AddEditBudgetScreen(budgetToEdit: widget.budget)));
+              if (result == true) {
+                navigator.pop(true);
+              }
+            },
+          )
+        ],
       ),
       body: FutureBuilder<Map<String, dynamic>>(
         future: _detailsFuture,
@@ -114,20 +108,14 @@ class _BudgetDetailScreenState extends State<BudgetDetailScreen> with SingleTick
             return const Center(child: Text('Немає даних.'));
           }
           final data = snapshot.data!;
-          return TabBarView(
-            controller: _tabController,
-            children: [
-              _buildOverviewTab(context, data),
-              _buildTransactionsTab(context),
-            ],
-          );
+          return _buildOverviewTab(context, data);
         },
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
           final result = await Navigator.push(
             context,
-            FadePageRoute(builder: (_) => AddEditEnvelopeScreen(budgetId: widget.budget.id!)),
+            MaterialPageRoute(builder: (_) => AddEditEnvelopeScreen(budgetId: widget.budget.id!)),
           );
           if (result == true) {
             _loadDetails();
@@ -140,6 +128,7 @@ class _BudgetDetailScreenState extends State<BudgetDetailScreen> with SingleTick
   }
 
   Widget _buildOverviewTab(BuildContext context, Map<String, dynamic> data) {
+    final theme = Theme.of(context);
     final currencyProvider = Provider.of<CurrencyProvider>(context);
     final NumberFormat currencyFormatter = currencyProvider.currencyFormatter;
     final List<BudgetEnvelope> envelopes = data['envelopes'];
@@ -152,7 +141,7 @@ class _BudgetDetailScreenState extends State<BudgetDetailScreen> with SingleTick
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.fromLTRB(8, 8, 8, 80),
       itemCount: envelopes.length,
       itemBuilder: (context, index) {
         final envelope = envelopes[index];
@@ -164,53 +153,54 @@ class _BudgetDetailScreenState extends State<BudgetDetailScreen> with SingleTick
            progress = (actualSpent / plannedAmount).clamp(0.0, 1.0);
         }
 
-        Color progressColor = Colors.green.shade600;
-        if (progress > 0.8) progressColor = Colors.orange.shade600;
-        if (progress >= 1.0) progressColor = Colors.red.shade700;
-
+        Color progressColor = Colors.green.shade400;
+        if (progress > 0.8) progressColor = Colors.orange.shade400;
+        if (progress >= 1.0) progressColor = theme.colorScheme.error;
+        
         return Card(
+          margin: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 8.0),
           child: Padding(
-            padding: const EdgeInsets.all(12.0),
+            padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   envelope.name,
-                  style: Theme.of(context).textTheme.titleLarge,
+                  style: theme.textTheme.titleLarge,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text('Заплановано:'),
-                    Text(currencyFormatter.format(plannedAmount), style: Theme.of(context).textTheme.bodyLarge),
+                    Text(currencyFormatter.format(plannedAmount), style: const TextStyle(fontWeight: FontWeight.bold)),
                   ],
                 ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text('Витрачено:'),
-                    Text(currencyFormatter.format(actualSpent), style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: progressColor)),
+                    Text(currencyFormatter.format(actualSpent), style: TextStyle(color: progressColor, fontWeight: FontWeight.bold)),
                   ],
                 ),
-                const Divider(),
+                const Divider(height: 20),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text('Залишок:'),
                     Text(
                       currencyFormatter.format(difference),
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: difference >= 0 ? Colors.green.shade800 : Colors.red.shade800,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                            color: difference >= 0 ? Colors.green.shade600 : theme.colorScheme.error,
                             fontWeight: FontWeight.bold,
-                          ),
+                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 LinearProgressIndicator(
                   value: progress,
-                  backgroundColor: progressColor.withAlpha(51),
+                  backgroundColor: progressColor.withAlpha(50),
                   valueColor: AlwaysStoppedAnimation<Color>(progressColor),
                   minHeight: 10,
                   borderRadius: BorderRadius.circular(5),
@@ -218,51 +208,6 @@ class _BudgetDetailScreenState extends State<BudgetDetailScreen> with SingleTick
               ],
             ),
           ),
-        );
-      },
-    );
-  }
-
-  Widget _buildTransactionsTab(BuildContext context) {
-    return FutureBuilder<Either<AppFailure, List<TransactionViewData>>>(
-      future: _transactionRepository.getTransactionsWithDetails(
-        walletId: Provider.of<WalletProvider>(context, listen: false).currentWallet!.id!,
-        startDate: widget.budget.startDate,
-        endDate: widget.budget.endDate,
-        filterTransactionType: fin_transaction.TransactionType.expense,
-      ),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (snapshot.hasError) {
-          return Center(child: Text("Помилка завантаження транзакцій: ${snapshot.error}"));
-        }
-        if (!snapshot.hasData) {
-          return const Center(child: Text('Немає транзакцій за цей період.'));
-        }
-
-        return snapshot.data!.fold(
-          (failure) => Center(child: Text("Помилка: ${failure.userMessage}")),
-          (transactions) {
-            if (transactions.isEmpty) {
-              return const Center(child: Text('Немає транзакцій за цей період.'));
-            }
-            return ListView.builder(
-              itemCount: transactions.length,
-              itemBuilder: (context, index) {
-                final tx = transactions[index];
-                return ListTile(
-                  title: Text(tx.categoryName),
-                  subtitle: Text(tx.description ?? ''),
-                  trailing: Text(
-                    '- ${NumberFormat.currency(symbol: tx.originalCurrencyCode).format(tx.originalAmount)}',
-                    style: TextStyle(color: Theme.of(context).colorScheme.error),
-                  ),
-                );
-              },
-            );
-          }
         );
       },
     );

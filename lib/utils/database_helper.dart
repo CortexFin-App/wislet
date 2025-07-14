@@ -7,24 +7,25 @@ class DatabaseHelper {
   DatabaseHelper._internal();
 
   static const String _dbName = "finance_app.db";
-  static const int _dbVersion = 17;
+  static const int _dbVersion = 1;
 
   static const String tableWallets = "wallets";
   static const String colWalletId = "id";
   static const String colWalletName = "name";
-  static const String colWalletIsDefault = "isDefault";
-  static const String colWalletOwnerUserId = "ownerUserId";
+  static const String colWalletIsDefault = "is_default";
+  static const String colWalletOwnerUserId = "owner_user_id";
   static const String colWalletUpdatedAt = "updated_at";
   static const String colWalletIsDeleted = "is_deleted";
 
   static const String tableUsers = "users";
   static const String colUserId = "id";
-  static const String colUserName = "name";
+  static const String colUserName = "username";
+  static const String colUserEmail = "email";
   static const String colUserUpdatedAt = "updated_at";
 
   static const String tableWalletUsers = "wallet_users";
-  static const String colWalletUsersWalletId = "walletId";
-  static const String colWalletUsersUserId = "userId";
+  static const String colWalletUsersWalletId = "wallet_id";
+  static const String colWalletUsersUserId = "user_id";
   static const String colWalletUsersRole = "role";
 
   static const String tableCategories = "categories";
@@ -32,78 +33,80 @@ class DatabaseHelper {
   static const String colCategoryName = "name";
   static const String colCategoryType = "type";
   static const String colCategoryBucket = "bucket";
-  static const String colCategoryWalletId = "walletId";
+  static const String colCategoryWalletId = "wallet_id";
+  static const String colCategoryUserId = "user_id";
   static const String colCategoryUpdatedAt = "updated_at";
   static const String colCategoryIsDeleted = "is_deleted";
 
   static const String tableTransactions = "transactions";
   static const String colTransactionId = "id";
   static const String colTransactionType = "type";
-  static const String colTransactionOriginalAmount = "originalAmount";
-  static const String colTransactionOriginalCurrencyCode = "originalCurrencyCode";
-  static const String colTransactionAmountInBaseCurrency = "amountInBaseCurrency";
-  static const String colTransactionExchangeRateUsed = "exchangeRateUsed";
-  static const String colTransactionCategoryId = "categoryId";
+  static const String colTransactionOriginalAmount = "original_amount";
+  static const String colTransactionOriginalCurrencyCode = "original_currency_code";
+  static const String colTransactionAmountInBaseCurrency = "amount_in_base_currency";
+  static const String colTransactionExchangeRateUsed = "exchange_rate_used";
+  static const String colTransactionCategoryId = "category_id";
   static const String colTransactionDate = "date";
   static const String colTransactionDescription = "description";
-  static const String colTransactionLinkedGoalId = "linkedGoalId";
-  static const String colTransactionSubscriptionId = "subscriptionId";
-  static const String colTransactionLinkedTransferId = "linkedTransferId";
-  static const String colTransactionWalletId = "walletId";
+  static const String colTransactionLinkedGoalId = "linked_goal_id";
+  static const String colTransactionSubscriptionId = "subscription_id";
+  static const String colTransactionLinkedTransferId = "linked_transfer_id";
+  static const String colTransactionWalletId = "wallet_id";
+  static const String colTransactionUserId = "user_id";
   static const String colTransactionUpdatedAt = "updated_at";
   static const String colTransactionIsDeleted = "is_deleted";
 
   static const String tablePlans = "plans";
   static const String colPlanId = "id";
-  static const String colPlanCategoryId = "categoryId";
-  static const String colPlanOriginalAmount = "originalPlannedAmount";
-  static const String colPlanOriginalCurrencyCode = "originalCurrencyCode";
-  static const String colPlanAmountInBaseCurrency = "plannedAmountInBaseCurrency";
-  static const String colPlanExchangeRateUsed = "exchangeRateUsed";
-  static const String colPlanStartDate = "startDate";
-  static const String colPlanEndDate = "endDate";
-  static const String colPlanWalletId = "walletId";
+  static const String colPlanCategoryId = "category_id";
+  static const String colPlanOriginalAmount = "original_planned_amount";
+  static const String colPlanOriginalCurrencyCode = "original_currency_code";
+  static const String colPlanAmountInBaseCurrency = "planned_amount_in_base_currency";
+  static const String colPlanExchangeRateUsed = "exchange_rate_used";
+  static const String colPlanStartDate = "start_date";
+  static const String colPlanEndDate = "end_date";
+  static const String colPlanWalletId = "wallet_id";
   static const String colPlanUpdatedAt = "updated_at";
   static const String colPlanIsDeleted = "is_deleted";
 
   static const String tableRepeatingTransactions = "repeating_transactions";
   static const String colRtId = "id";
   static const String colRtDescription = "description";
-  static const String colRtOriginalAmount = "originalAmount";
-  static const String colRtOriginalCurrencyCode = "originalCurrencyCode";
-  static const String colRtCategoryId = "categoryId";
+  static const String colRtOriginalAmount = "original_amount";
+  static const String colRtOriginalCurrencyCode = "original_currency_code";
+  static const String colRtCategoryId = "category_id";
   static const String colRtType = "type";
   static const String colRtFrequency = "frequency";
   static const String colRtInterval = "interval";
-  static const String colRtStartDate = "startDate";
-  static const String colRtEndDate = "endDate";
+  static const String colRtStartDate = "start_date";
+  static const String colRtEndDate = "end_date";
   static const String colRtOccurrences = "occurrences";
-  static const String colRtGeneratedOccurrencesCount = "generatedOccurrencesCount";
-  static const String colRtNextDueDate = "nextDueDate";
-  static const String colRtIsActive = "isActive";
-  static const String colRtWeekDays = "weekDays";
-  static const String colRtMonthDay = "monthDay";
-  static const String colRtYearMonth = "yearMonth";
-  static const String colRtYearDay = "yearDay";
-  static const String colRtWalletId = "walletId";
+  static const String colRtGeneratedOccurrencesCount = "generated_occurrences_count";
+  static const String colRtNextDueDate = "next_due_date";
+  static const String colRtIsActive = "is_active";
+  static const String colRtWeekDays = "week_days";
+  static const String colRtMonthDay = "month_day";
+  static const String colRtYearMonth = "year_month";
+  static const String colRtYearDay = "year_day";
+  static const String colRtWalletId = "wallet_id";
   static const String colRtUpdatedAt = "updated_at";
   static const String colRtIsDeleted = "is_deleted";
 
   static const String tableFinancialGoals = "financial_goals";
   static const String colGoalId = "id";
   static const String colGoalName = "name";
-  static const String colGoalOriginalTargetAmount = "originalTargetAmount";
-  static const String colGoalOriginalCurrentAmount = "originalCurrentAmount";
-  static const String colGoalCurrencyCode = "currencyCode";
-  static const String colGoalExchangeRateUsed = "exchangeRateUsed";
-  static const String colGoalTargetAmountInBaseCurrency = "targetAmountInBaseCurrency";
-  static const String colGoalCurrentAmountInBaseCurrency = "currentAmountInBaseCurrency";
-  static const String colGoalTargetDate = "targetDate";
-  static const String colGoalCreationDate = "creationDate";
-  static const String colGoalIconName = "iconName";
+  static const String colGoalOriginalTargetAmount = "original_target_amount";
+  static const String colGoalOriginalCurrentAmount = "original_current_amount";
+  static const String colGoalCurrencyCode = "currency_code";
+  static const String colGoalExchangeRateUsed = "exchange_rate_used";
+  static const String colGoalTargetAmountInBaseCurrency = "target_amount_in_base_currency";
+  static const String colGoalCurrentAmountInBaseCurrency = "current_amount_in_base_currency";
+  static const String colGoalTargetDate = "target_date";
+  static const String colGoalCreationDate = "creation_date";
+  static const String colGoalIconName = "icon_name";
   static const String colGoalNotes = "notes";
-  static const String colGoalIsAchieved = "isAchieved";
-  static const String colGoalWalletId = "walletId";
+  static const String colGoalIsAchieved = "is_achieved";
+  static const String colGoalWalletId = "wallet_id";
   static const String colGoalUpdatedAt = "updated_at";
   static const String colGoalIsDeleted = "is_deleted";
 
@@ -111,56 +114,56 @@ class DatabaseHelper {
   static const String colSubId = "id";
   static const String colSubName = "name";
   static const String colSubAmount = "amount";
-  static const String colSubCurrencyCode = "currencyCode";
-  static const String colSubBillingCycle = "billingCycle";
-  static const String colSubNextPaymentDate = "nextPaymentDate";
-  static const String colSubStartDate = "startDate";
-  static const String colSubCategoryId = "categoryId";
-  static const String colSubPaymentMethod = "paymentMethod";
+  static const String colSubCurrencyCode = "currency_code";
+  static const String colSubBillingCycle = "billing_cycle";
+  static const String colSubNextPaymentDate = "next_payment_date";
+  static const String colSubStartDate = "start_date";
+  static const String colSubCategoryId = "category_id";
+  static const String colSubPaymentMethod = "payment_method";
   static const String colSubNotes = "notes";
-  static const String colSubIsActive = "isActive";
+  static const String colSubIsActive = "is_active";
   static const String colSubWebsite = "website";
-  static const String colSubReminderDaysBefore = "reminderDaysBefore";
-  static const String colSubWalletId = "walletId";
+  static const String colSubReminderDaysBefore = "reminder_days_before";
+  static const String colSubWalletId = "wallet_id";
   static const String colSubUpdatedAt = "updated_at";
   static const String colSubIsDeleted = "is_deleted";
 
   static const String tableBudgets = "budgets";
   static const String colBudgetId = "id";
   static const String colBudgetName = "name";
-  static const String colBudgetStartDate = "startDate";
-  static const String colBudgetEndDate = "endDate";
-  static const String colBudgetStrategyType = "strategyType";
-  static const String colBudgetPlannedIncome = "plannedIncomeInBaseCurrency";
-  static const String colBudgetIsActive = "isActive";
-  static const String colBudgetWalletId = "walletId";
+  static const String colBudgetStartDate = "start_date";
+  static const String colBudgetEndDate = "end_date";
+  static const String colBudgetStrategyType = "strategy_type";
+  static const String colBudgetPlannedIncome = "planned_income_in_base_currency";
+  static const String colBudgetIsActive = "is_active";
+  static const String colBudgetWalletId = "wallet_id";
   static const String colBudgetUpdatedAt = "updated_at";
   static const String colBudgetIsDeleted = "is_deleted";
 
   static const String tableBudgetEnvelopes = "budget_envelopes";
   static const String colEnvelopeId = "id";
-  static const String colEnvelopeBudgetId = "budgetId";
+  static const String colEnvelopeBudgetId = "budget_id";
   static const String colEnvelopeName = "name";
-  static const String colEnvelopeCategoryId = "categoryId";
-  static const String colEnvelopeOriginalAmount = "originalPlannedAmount";
-  static const String colEnvelopeCurrencyCode = "originalCurrencyCode";
-  static const String colEnvelopeAmountInBase = "plannedAmountInBaseCurrency";
-  static const String colEnvelopeExchangeRate = "exchangeRateUsed";
+  static const String colEnvelopeCategoryId = "category_id";
+  static const String colEnvelopeOriginalAmount = "original_planned_amount";
+  static const String colEnvelopeCurrencyCode = "original_currency_code";
+  static const String colEnvelopeAmountInBase = "planned_amount_in_base_currency";
+  static const String colEnvelopeExchangeRate = "exchange_rate_used";
   static const String colEnvelopeUpdatedAt = "updated_at";
   static const String colEnvelopeIsDeleted = "is_deleted";
 
   static const String tableDebtsLoans = "debts_loans";
   static const String colDebtLoanId = "id";
-  static const String colDebtLoanWalletId = "walletId";
+  static const String colDebtLoanWalletId = "wallet_id";
   static const String colDebtLoanType = "type";
-  static const String colDebtLoanPersonName = "personName";
+  static const String colDebtLoanPersonName = "person_name";
   static const String colDebtLoanDescription = "description";
-  static const String colDebtLoanOriginalAmount = "originalAmount";
-  static const String colDebtLoanCurrencyCode = "currencyCode";
-  static const String colDebtLoanAmountInBase = "amountInBaseCurrency";
-  static const String colDebtLoanCreationDate = "creationDate";
-  static const String colDebtLoanDueDate = "dueDate";
-  static const String colDebtLoanIsSettled = "isSettled";
+  static const String colDebtLoanOriginalAmount = "original_amount";
+  static const String colDebtLoanCurrencyCode = "currency_code";
+  static const String colDebtLoanAmountInBase = "amount_in_base_currency";
+  static const String colDebtLoanCreationDate = "creation_date";
+  static const String colDebtLoanDueDate = "due_date";
+  static const String colDebtLoanIsSettled = "is_settled";
   static const String colDebtLoanUpdatedAt = "updated_at";
   static const String colDebtLoanIsDeleted = "is_deleted";
 
@@ -200,7 +203,6 @@ class DatabaseHelper {
     return await openDatabase(
       path,
       version: _dbVersion,
-      onUpgrade: _onUpgrade,
       onCreate: _onCreate,
       onConfigure: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');
@@ -227,21 +229,6 @@ class DatabaseHelper {
     await _createSyncQueueTable(db);
   }
 
-  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    var batch = db.batch();
-    if (oldVersion < 17) {
-      batch.execute('ALTER TABLE $tableWallets ADD COLUMN $colWalletUpdatedAt TEXT;');
-      batch.execute('ALTER TABLE $tableWallets ADD COLUMN $colWalletIsDeleted INTEGER NOT NULL DEFAULT 0;');
-      batch.execute('ALTER TABLE $tableCategories ADD COLUMN $colCategoryUpdatedAt TEXT;');
-      batch.execute('ALTER TABLE $tableCategories ADD COLUMN $colCategoryIsDeleted INTEGER NOT NULL DEFAULT 0;');
-      batch.execute('ALTER TABLE $tableTransactions ADD COLUMN $colTransactionUpdatedAt TEXT;');
-      batch.execute('ALTER TABLE $tableTransactions ADD COLUMN $colTransactionIsDeleted INTEGER NOT NULL DEFAULT 0;');
-      
-      await _createSyncQueueTable(db);
-    }
-    await batch.commit();
-  }
-
   Future<void> _createSyncQueueTable(Database db) async {
     await db.execute('''
       CREATE TABLE IF NOT EXISTS $tableSyncQueue (
@@ -260,7 +247,8 @@ class DatabaseHelper {
     await db.execute('''
       CREATE TABLE $tableUsers (
         $colUserId TEXT PRIMARY KEY,
-        $colUserName TEXT NOT NULL,
+        $colUserName TEXT,
+        $colUserEmail TEXT,
         $colUserUpdatedAt TEXT
       )
     ''');
@@ -298,6 +286,7 @@ class DatabaseHelper {
         $colCategoryType TEXT NOT NULL,
         $colCategoryBucket TEXT,
         $colCategoryWalletId INTEGER,
+        $colCategoryUserId TEXT,
         $colCategoryUpdatedAt TEXT,
         $colCategoryIsDeleted INTEGER NOT NULL DEFAULT 0
       )
@@ -316,10 +305,11 @@ class DatabaseHelper {
         $colTransactionCategoryId INTEGER NOT NULL,
         $colTransactionDate TEXT NOT NULL,
         $colTransactionDescription TEXT,
+        $colTransactionWalletId INTEGER,
+        $colTransactionUserId TEXT,
         $colTransactionLinkedGoalId INTEGER,
         $colTransactionSubscriptionId INTEGER,
         $colTransactionLinkedTransferId INTEGER,
-        $colTransactionWalletId INTEGER,
         $colTransactionUpdatedAt TEXT,
         $colTransactionIsDeleted INTEGER NOT NULL DEFAULT 0
       )
@@ -329,7 +319,7 @@ class DatabaseHelper {
   Future<void> _createPlansTable(Database db) async {
     await db.execute('''
       CREATE TABLE $tablePlans (
-        $colPlanId INTEGER PRIMARY KEY AUTOINCREMENT,
+        $colPlanId INTEGER PRIMARY KEY,
         $colPlanCategoryId INTEGER NOT NULL,
         $colPlanOriginalAmount REAL NOT NULL,
         $colPlanOriginalCurrencyCode TEXT NOT NULL,
@@ -347,7 +337,7 @@ class DatabaseHelper {
   Future<void> _createRepeatingTransactionsTable(Database db) async {
     await db.execute('''
       CREATE TABLE $tableRepeatingTransactions (
-        $colRtId INTEGER PRIMARY KEY AUTOINCREMENT,
+        $colRtId INTEGER PRIMARY KEY,
         $colRtDescription TEXT NOT NULL,
         $colRtOriginalAmount REAL NOT NULL,
         $colRtOriginalCurrencyCode TEXT NOT NULL,
@@ -375,7 +365,7 @@ class DatabaseHelper {
   Future<void> _createFinancialGoalsTable(Database db) async {
     await db.execute('''
       CREATE TABLE $tableFinancialGoals (
-        $colGoalId INTEGER PRIMARY KEY AUTOINCREMENT,
+        $colGoalId INTEGER PRIMARY KEY,
         $colGoalName TEXT NOT NULL,
         $colGoalOriginalTargetAmount REAL NOT NULL,
         $colGoalOriginalCurrentAmount REAL NOT NULL,
@@ -398,7 +388,7 @@ class DatabaseHelper {
   Future<void> _createSubscriptionsTable(Database db) async {
     await db.execute('''
       CREATE TABLE $tableSubscriptions (
-        $colSubId INTEGER PRIMARY KEY AUTOINCREMENT,
+        $colSubId INTEGER PRIMARY KEY,
         $colSubName TEXT NOT NULL,
         $colSubAmount REAL NOT NULL,
         $colSubCurrencyCode TEXT NOT NULL,
@@ -410,7 +400,7 @@ class DatabaseHelper {
         $colSubNotes TEXT,
         $colSubIsActive INTEGER NOT NULL DEFAULT 1,
         $colSubWebsite TEXT,
-        $colSubReminderDaysBefore INTEGER DEFAULT 1,
+        $colSubReminderDaysBefore INTEGER,
         $colSubWalletId INTEGER,
         $colSubUpdatedAt TEXT,
         $colSubIsDeleted INTEGER NOT NULL DEFAULT 0
@@ -421,7 +411,7 @@ class DatabaseHelper {
   Future<void> _createBudgetsTable(Database db) async {
     await db.execute('''
       CREATE TABLE $tableBudgets (
-        $colBudgetId INTEGER PRIMARY KEY AUTOINCREMENT,
+        $colBudgetId INTEGER PRIMARY KEY,
         $colBudgetName TEXT NOT NULL,
         $colBudgetStartDate TEXT NOT NULL,
         $colBudgetEndDate TEXT NOT NULL,
@@ -438,7 +428,7 @@ class DatabaseHelper {
   Future<void> _createBudgetEnvelopesTable(Database db) async {
     await db.execute('''
       CREATE TABLE $tableBudgetEnvelopes (
-        $colEnvelopeId INTEGER PRIMARY KEY AUTOINCREMENT,
+        $colEnvelopeId INTEGER PRIMARY KEY,
         $colEnvelopeBudgetId INTEGER NOT NULL,
         $colEnvelopeName TEXT NOT NULL,
         $colEnvelopeCategoryId INTEGER NOT NULL,
@@ -455,7 +445,7 @@ class DatabaseHelper {
   Future<void> _createDebtsLoansTable(Database db) async {
     await db.execute('''
       CREATE TABLE $tableDebtsLoans (
-        $colDebtLoanId INTEGER PRIMARY KEY AUTOINCREMENT,
+        $colDebtLoanId INTEGER PRIMARY KEY,
         $colDebtLoanWalletId INTEGER NOT NULL,
         $colDebtLoanType TEXT NOT NULL,
         $colDebtLoanPersonName TEXT NOT NULL,
@@ -471,11 +461,11 @@ class DatabaseHelper {
       )
     ''');
   }
-
+  
   Future<void> _createNotificationHistoryTable(Database db) async {
     await db.execute('''
       CREATE TABLE $tableNotificationHistory (
-        $colNotificationId INTEGER PRIMARY KEY AUTOINCREMENT,
+        $colNotificationId INTEGER PRIMARY KEY,
         $colNotificationTitle TEXT NOT NULL,
         $colNotificationBody TEXT NOT NULL,
         $colNotificationPayload TEXT,
@@ -495,13 +485,14 @@ class DatabaseHelper {
       )
     ''');
   }
-  
+
   Future<Map<String, List<Map<String, dynamic>>>> exportDatabaseToJson() async {
     final db = await database;
     final tables = [
       tableUsers, tableWallets, tableWalletUsers, tableCategories, tableTransactions,
       tablePlans, tableRepeatingTransactions, tableFinancialGoals, tableSubscriptions,
-      tableBudgets, tableBudgetEnvelopes, tableDebtsLoans, tableNotificationHistory, tableThemeProfiles
+      tableBudgets, tableBudgetEnvelopes, tableDebtsLoans, tableNotificationHistory,
+      tableThemeProfiles
     ];
     final Map<String, List<Map<String, dynamic>>> jsonData = {};
     for (String tableName in tables) {
@@ -514,79 +505,26 @@ class DatabaseHelper {
     final db = await database;
     await db.transaction((txn) async {
       Batch batch = txn.batch();
-      final tablesInOrder = [
+      final tablesInDeletionOrder = [
         tableBudgetEnvelopes, tableBudgets, tableSubscriptions, tableTransactions,
         tableRepeatingTransactions, tablePlans, tableFinancialGoals, tableDebtsLoans,
         tableCategories, tableWalletUsers, tableWallets, tableUsers, tableNotificationHistory,
         tableThemeProfiles
       ];
-      for (String tableName in tablesInOrder) {
+      final tablesInCreationOrder = tablesInDeletionOrder.reversed.toList();
+
+      for (String tableName in tablesInDeletionOrder) {
         batch.delete(tableName);
       }
-      final List<dynamic> themeProfiles = jsonData[tableThemeProfiles] ?? [];
-      for (var itemMap in themeProfiles) {
-        batch.insert(tableThemeProfiles, Map<String, dynamic>.from(itemMap), conflictAlgorithm: ConflictAlgorithm.replace);
-      }
-      final List<dynamic> users = jsonData[tableUsers] ?? [];
-      for (var itemMap in users) {
-        batch.insert(tableUsers, Map<String, dynamic>.from(itemMap), conflictAlgorithm: ConflictAlgorithm.replace);
-      }
-      final List<dynamic> wallets = jsonData[tableWallets] ?? [];
-      for (var itemMap in wallets) {
-        batch.insert(tableWallets, Map<String, dynamic>.from(itemMap), conflictAlgorithm: ConflictAlgorithm.replace);
-      }
-      final List<dynamic> walletUsers = jsonData[tableWalletUsers] ?? [];
-      for (var itemMap in walletUsers) {
-        batch.insert(tableWalletUsers, Map<String, dynamic>.from(itemMap), conflictAlgorithm: ConflictAlgorithm.replace);
-      }
-      final List<dynamic> categories = jsonData[tableCategories] ?? [];
-      for (var itemMap in categories) {
-        batch.insert(tableCategories, Map<String, dynamic>.from(itemMap), conflictAlgorithm: ConflictAlgorithm.replace);
-      }
-      final List<dynamic> financialGoals = jsonData[tableFinancialGoals] ?? [];
-      for (var itemMap in financialGoals) {
-        batch.insert(tableFinancialGoals, Map<String, dynamic>.from(itemMap), conflictAlgorithm: ConflictAlgorithm.replace);
-      }
-      final List<dynamic> budgets = jsonData[tableBudgets] ?? [];
-      for (var itemMap in budgets) {
-        batch.insert(tableBudgets, Map<String, dynamic>.from(itemMap), conflictAlgorithm: ConflictAlgorithm.replace);
-      }
-      final List<dynamic> budgetEnvelopes = jsonData[tableBudgetEnvelopes] ?? [];
-      for (var itemMap in budgetEnvelopes) {
-        batch.insert(tableBudgetEnvelopes, Map<String, dynamic>.from(itemMap), conflictAlgorithm: ConflictAlgorithm.replace);
-      }
-      final List<dynamic> debtsLoans = jsonData[tableDebtsLoans] ?? [];
-      for (var itemMap in debtsLoans) {
-        batch.insert(tableDebtsLoans, Map<String, dynamic>.from(itemMap), conflictAlgorithm: ConflictAlgorithm.replace);
-      }
-      final List<dynamic> transactions = jsonData[tableTransactions] ?? [];
-      for (var itemMap in transactions) {
-        Map<String, dynamic> typedMap = Map<String, dynamic>.from(itemMap);
-        batch.insert(tableTransactions, typedMap, conflictAlgorithm: ConflictAlgorithm.replace);
-      }
-      final List<dynamic> plans = jsonData[tablePlans] ?? [];
-      for (var itemMap in plans) {
-        batch.insert(tablePlans, Map<String, dynamic>.from(itemMap), conflictAlgorithm: ConflictAlgorithm.replace);
-      }
-      final List<dynamic> repeatingTransactions = jsonData[tableRepeatingTransactions] ?? [];
-      for (var itemMap in repeatingTransactions) {
-        batch.insert(tableRepeatingTransactions, Map<String, dynamic>.from(itemMap), conflictAlgorithm: ConflictAlgorithm.replace);
-      }
-      final List<dynamic> subscriptions = jsonData[tableSubscriptions] ?? [];
-      for (var itemMap in subscriptions) {
-        batch.insert(tableSubscriptions, Map<String, dynamic>.from(itemMap), conflictAlgorithm: ConflictAlgorithm.replace);
-      }
-      final List<dynamic> notificationHistory = jsonData[tableNotificationHistory] ?? [];
-      for (var itemMap in notificationHistory) {
-        batch.insert(tableNotificationHistory, Map<String, dynamic>.from(itemMap), conflictAlgorithm: ConflictAlgorithm.replace);
+
+      for (String tableName in tablesInCreationOrder) {
+        final List<dynamic> tableData = jsonData[tableName] ?? [];
+        for (var itemMap in tableData) {
+          batch.insert(tableName, Map<String, dynamic>.from(itemMap),
+              conflictAlgorithm: ConflictAlgorithm.replace);
+        }
       }
       await batch.commit(noResult: true);
     });
-  }
-
-  Future<void> close() async {
-    final db = await database;
-    db.close();
-    _database = null;
   }
 }

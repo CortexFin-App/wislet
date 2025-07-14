@@ -5,7 +5,8 @@ import '../../providers/wallet_provider.dart';
 
 class AddEditWalletScreen extends StatefulWidget {
   final Wallet? walletToEdit;
-  const AddEditWalletScreen({super.key, this.walletToEdit});
+  final bool isFirstWallet;
+  const AddEditWalletScreen({super.key, this.walletToEdit, this.isFirstWallet = false});
 
   @override
   State<AddEditWalletScreen> createState() => _AddEditWalletScreenState();
@@ -20,7 +21,7 @@ class _AddEditWalletScreenState extends State<AddEditWalletScreen> {
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.walletToEdit?.name ?? '');
+    _nameController = TextEditingController(text: widget.walletToEdit?.name ?? 'Особистий');
   }
 
   @override
@@ -70,63 +71,38 @@ class _AddEditWalletScreenState extends State<AddEditWalletScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(_isEditing ? 'Редагувати гаманець' : 'Новий гаманець'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.save_outlined),
-            onPressed: _isSaving ? null : _saveWallet,
+    return AlertDialog(
+      title: Text(widget.isFirstWallet ? 'Створимо ваш перший гаманець' : (_isEditing ? 'Редагувати гаманець' : 'Новий гаманець')),
+      content: Form(
+        key: _formKey,
+        child: TextFormField(
+          controller: _nameController,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: 'Назва гаманця',
+            prefixIcon: Icon(Icons.account_balance_wallet_outlined),
           ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              children: [
-                TextFormField(
-                  controller: _nameController,
-                  autofocus: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Назва гаманця',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.account_balance_wallet_outlined),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Назва не може бути порожньою';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    icon: _isSaving
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ))
-                        : const Icon(Icons.save),
-                    label: Text(_isEditing ? 'Зберегти зміни' : 'Створити'),
-                    onPressed: _isSaving ? null : _saveWallet,
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'Назва не може бути порожньою';
+            }
+            return null;
+          },
         ),
       ),
+      actions: [
+        if (!widget.isFirstWallet)
+          TextButton(
+            onPressed: _isSaving ? null : () => Navigator.of(context).pop(),
+            child: const Text('Скасувати'),
+          ),
+        ElevatedButton(
+          onPressed: _isSaving ? null : _saveWallet,
+          child: _isSaving
+            ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+            : Text(_isEditing ? 'Зберегти' : (widget.isFirstWallet ? 'Створити' : 'Створити')),
+        ),
+      ],
     );
   }
 }
