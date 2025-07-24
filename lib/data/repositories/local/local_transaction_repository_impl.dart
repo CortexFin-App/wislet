@@ -46,6 +46,12 @@ class LocalTransactionRepositoryImpl implements TransactionRepository {
   }
 
   @override
+  Stream<List<TransactionViewData>> watchTransactionsWithDetails({required int walletId}) {
+    final future = getTransactionsWithDetails(walletId: walletId);
+    return Stream.fromFuture(future).map((either) => either.getOrElse((_) => []));
+  }
+
+  @override
   Future<Either<AppFailure, void>> createTransfer({
     required Wallet fromWallet,
     required Wallet toWallet,
@@ -288,7 +294,7 @@ class LocalTransactionRepositoryImpl implements TransactionRepository {
       return Left(DatabaseFailure(details: e.toString()));
     }
   }
-  
+
   @override
   Future<Either<AppFailure, double>> getOverallBalance(int walletId) async {
     try {

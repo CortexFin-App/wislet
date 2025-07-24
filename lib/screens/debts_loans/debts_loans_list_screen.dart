@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:fpdart/fpdart.dart' hide State;
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../core/di/injector.dart';
-import '../../core/error/failures.dart';
 import '../../models/debt_loan_model.dart';
 import '../../models/currency_model.dart';
 import '../../providers/wallet_provider.dart';
@@ -18,11 +16,11 @@ class DebtsLoansListScreen extends StatefulWidget {
   State<DebtsLoansListScreen> createState() => _DebtsLoansListScreenState();
 }
 
-class _DebtsLoansListScreenState extends State<DebtsLoansListScreen> with SingleTickerProviderStateMixin {
+class _DebtsLoansListScreenState extends State<DebtsLoansListScreen>
+    with SingleTickerProviderStateMixin {
   final DebtLoanRepository _repository = getIt<DebtLoanRepository>();
-  Future<Either<AppFailure, List<DebtLoan>>>? _debtsFuture;
+  Stream<List<DebtLoan>>? _debtsStream;
   late TabController _tabController;
-
   @override
   void initState() {
     super.initState();
@@ -38,12 +36,12 @@ class _DebtsLoansListScreenState extends State<DebtsLoansListScreen> with Single
     super.dispose();
   }
 
-  Future<void> _loadDebts() async {
+  void _loadDebts() {
     if (!mounted) return;
     final walletId = context.read<WalletProvider>().currentWallet?.id;
     if (walletId != null) {
       setState(() {
-        _debtsFuture = _repository.getAllDebtLoans(walletId);
+        _debtsStream = _repository.watchAllDebtLoans(walletId);
       });
     }
   }
@@ -51,17 +49,14 @@ class _DebtsLoansListScreenState extends State<DebtsLoansListScreen> with Single
   Future<void> _toggleSettledStatus(DebtLoan item) async {
     if (item.id == null) return;
     await _repository.markAsSettled(item.id!, !item.isSettled);
-    _loadDebts();
   }
 
   void _navigateToAddEditScreen([DebtLoan? item]) async {
-    final result = await Navigator.push(
+    await Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => AddEditDebtLoanScreen(debtLoanToEdit: item)),
+      MaterialPageRoute(
+          builder: (_) => AddEditDebtLoanScreen(debtLoanToEdit: item)),
     );
-    if (result == true && mounted) {
-      _loadDebts();
-    }
   }
 
   @override
@@ -78,35 +73,35 @@ class _DebtsLoansListScreenState extends State<DebtsLoansListScreen> with Single
           ],
         ),
       ),
-      body: RefreshIndicator(
-        onRefresh: _loadDebts,
-        child: FutureBuilder<Either<AppFailure, List<DebtLoan>>>(
-          future: _debtsFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (!snapshot.hasData) {
-              return _buildEmptyState();
-            }
+      body: StreamBuilder<List<DebtLoan>>(
+        stream: _debtsStream,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting &&
+              !snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(
+                child: Text('Помилка завантаження: ${snapshot.error}'));
+          }
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return _buildEmptyState();
+          }
 
-            return snapshot.data!.fold(
-              (failure) => Center(child: Text('Помилка завантаження: ${failure.userMessage}')),
-              (allItems) {
-                final debts = allItems.where((i) => i.type == DebtLoanType.debt).toList();
-                final loans = allItems.where((i) => i.type == DebtLoanType.loan).toList();
+          final allItems = snapshot.data!;
+          final debts =
+              allItems.where((i) => i.type == DebtLoanType.debt).toList();
+          final loans =
+              allItems.where((i) => i.type == DebtLoanType.loan).toList();
 
-                return TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildList(debts),
-                    _buildList(loans),
-                  ],
-                );
-              }
-            );
-          },
-        ),
+          return TabBarView(
+            controller: _tabController,
+            children: [
+              _buildList(debts),
+              _buildList(loans),
+            ],
+          );
+        },
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _navigateToAddEditScreen(),
@@ -122,7 +117,8 @@ class _DebtsLoansListScreenState extends State<DebtsLoansListScreen> with Single
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.receipt_long_outlined, size: 80, color: Colors.grey.shade400),
+            Icon(Icons.receipt_long_outlined,
+                size: 80, color: Colors.grey.shade400),
             const SizedBox(height: 16),
             const Text(
               'Записів про борги чи кредити немає',
@@ -146,25 +142,45 @@ class _DebtsLoansListScreenState extends State<DebtsLoansListScreen> with Single
         final item = items[index];
         final isDebt = item.type == DebtLoanType.debt;
         final color = isDebt ? AppPalette.darkNegative : AppPalette.darkPositive;
-        final currency = appCurrencies.firstWhere((c) => c.code == item.currencyCode, orElse: () => Currency(code: item.currencyCode, name: '', symbol: item.currencyCode, locale: 'uk_UA'));
-        
+        final currency = appCurrencies.firstWhere(
+            (c) => c.code == item.currencyCode,
+            orElse: () => Currency(
+                code: item.currencyCode,
+                name: '',
+                symbol: item.currencyCode,
+                locale: 'uk_UA'));
+
         return Card(
-          color: item.isSettled ? Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha(128) : null,
+          color: item.isSettled
+              ? Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha(128)
+              : null,
           child: ListTile(
             leading: Icon(
-              isDebt ? Icons.arrow_circle_up_rounded : Icons.arrow_circle_down_rounded,
+              isDebt
+                  ? Icons.arrow_circle_up_rounded
+                  : Icons.arrow_circle_down_rounded,
               color: item.isSettled ? Colors.grey : color,
               size: 32,
             ),
-            title: Text(item.personName, style: TextStyle(decoration: item.isSettled ? TextDecoration.lineThrough : null, fontWeight: FontWeight.bold)),
+            title: Text(item.personName,
+                style: TextStyle(
+                    decoration:
+                        item.isSettled ? TextDecoration.lineThrough : null,
+                    fontWeight: FontWeight.bold)),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(NumberFormat.currency(symbol: currency.symbol, decimalDigits: 2).format(item.originalAmount)),
+                Text(NumberFormat.currency(
+                        symbol: currency.symbol, decimalDigits: 2)
+                    .format(item.originalAmount)),
                 if (item.dueDate != null)
                   Text(
                     'До: ${DateFormat('dd.MM.yyyy').format(item.dueDate!)}',
-                    style: TextStyle(color: !item.isSettled && item.dueDate!.isBefore(DateTime.now()) ? Colors.orange.shade800 : null),
+                    style: TextStyle(
+                        color: !item.isSettled &&
+                                item.dueDate!.isBefore(DateTime.now())
+                            ? Colors.orange.shade800
+                            : null),
                   ),
               ],
             ),

@@ -20,6 +20,7 @@ abstract class TransactionRepository {
   Future<Either<AppFailure, int>> createTransaction(fin_transaction.Transaction transaction, int walletId, String userId);
   Future<Either<AppFailure, int>> updateTransaction(fin_transaction.Transaction transaction, int walletId, String userId);
   Future<Either<AppFailure, int>> deleteTransaction(int transactionId);
+  
   Future<Either<AppFailure, List<TransactionViewData>>> getTransactionsWithDetails({
     required int walletId,
     String? orderBy,
@@ -30,6 +31,9 @@ abstract class TransactionRepository {
     int? limit,
     String? searchQuery,
   });
+
+  Stream<List<TransactionViewData>> watchTransactionsWithDetails({ required int walletId });
+
   Future<Either<AppFailure, double>> getOverallBalance(int walletId);
   Future<Either<AppFailure, double>> getTotalAmount({
     required int walletId,

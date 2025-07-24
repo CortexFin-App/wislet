@@ -5,6 +5,7 @@ import '../../data/repositories/notification_repository.dart';
 import '../../models/notification_history_item.dart';
 import '../../services/navigation_service.dart';
 import '../../screens/financial_goals/financial_goals_list_screen.dart';
+import '../../widgets/scaffold/patterned_scaffold.dart';
 
 class NotificationHistoryScreen extends StatefulWidget {
   const NotificationHistoryScreen({super.key});
@@ -77,7 +78,7 @@ class _NotificationHistoryScreenState extends State<NotificationHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PatternedScaffold(
       appBar: AppBar(
         title: const Text('Історія сповіщень'),
         actions: [

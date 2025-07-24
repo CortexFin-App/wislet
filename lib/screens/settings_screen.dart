@@ -169,7 +169,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
-         title: const Text('Відновити дані?'),
+          title: const Text('Відновити дані?'),
           content: const Text(
               'УВАГА! Поточні дані в додатку будуть повністю замінені даними з резервної копії. Цю дію неможливо буде скасувати. Продовжити?'),
           actions: <Widget>[
@@ -234,9 +234,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final appModeProvider = context.watch<AppModeProvider>();
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Налаштування'),
-      ),
+      backgroundColor: Colors.transparent,
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
         children: <Widget>[
@@ -313,12 +311,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 title: 'Підписки',
                 onTap: () => Navigator.push(context, SlidePageRoute(builder: (_) => const SubscriptionsListScreen())),
               ),
-                _SettingsTile(
+               _SettingsTile(
                 icon: Icons.swap_calls_outlined,
                 title: 'Конвертер валют',
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const CurrencyConverterScreen())),
               ),
-            ],
+          ],
            ),
 
            _SettingsSection(
@@ -332,7 +330,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 secondary: const Icon(Icons.auto_awesome_outlined),
               ),
             ]
-          ),
+           ),
 
           _SettingsSection(
             title: 'Безпека та Дані',
@@ -349,7 +347,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   value: _isPinSet && _isBiometricEnabled,
                   onChanged: _isPinSet ? _toggleBiometricAuth : null,
                   secondary: const Icon(Icons.fingerprint),
-                ),
+              ),
               _SettingsTile(
                 icon: Icons.history_outlined,
                 title: 'Історія сповіщень',

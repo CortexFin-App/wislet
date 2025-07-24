@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../utils/app_palette.dart';
 
 class OnboardingPage extends StatelessWidget {
   final IconData icon;
@@ -26,20 +25,23 @@ class OnboardingPage extends StatelessWidget {
           Icon(
             icon,
             size: 120,
-            color: AppPalette.darkAccent,
+            color: theme.colorScheme.primary,
           ),
           const SizedBox(height: 48),
           Text(
             title,
             textAlign: TextAlign.center,
-            style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+            style: theme.textTheme.headlineMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.onSurface
+            ),
           ),
           const SizedBox(height: 16),
           Text(
             description,
             textAlign: TextAlign.center,
             style: theme.textTheme.titleMedium
-                ?.copyWith(color: AppPalette.darkSecondaryText, height: 1.5),
+                ?.copyWith(color: theme.colorScheme.onSurfaceVariant, height: 1.5),
           ),
           const Spacer(flex: 3),
         ],

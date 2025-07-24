@@ -80,7 +80,7 @@ class SageWalletApp extends StatelessWidget {
               fontFamily: currentProfile.fontFamily,
               colorScheme: colorScheme,
               appBarTheme: AppBarTheme(
-                backgroundColor: colorScheme.surface,
+                backgroundColor: Colors.transparent,
                 foregroundColor: colorScheme.onSurface,
                 elevation: 0,
                 centerTitle: true,
@@ -91,7 +91,7 @@ class SageWalletApp extends StatelessWidget {
                     fontFamily: currentProfile.fontFamily),
               ),
               bottomNavigationBarTheme: BottomNavigationBarThemeData(
-                backgroundColor: colorScheme.surface,
+                backgroundColor: colorScheme.surface.withAlpha(230),
                 selectedItemColor: colorScheme.primary,
                 unselectedItemColor: colorScheme.onSurfaceVariant,
                 elevation: 0,

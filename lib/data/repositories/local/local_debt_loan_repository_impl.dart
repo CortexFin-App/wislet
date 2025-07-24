@@ -12,6 +12,12 @@ class LocalDebtLoanRepositoryImpl implements DebtLoanRepository {
   LocalDebtLoanRepositoryImpl(this._dbHelper);
 
   @override
+  Stream<List<DebtLoan>> watchAllDebtLoans(int walletId) {
+    return Stream.fromFuture(getAllDebtLoans(walletId))
+        .map((either) => either.getOrElse((_) => []));
+  }
+
+  @override
   Future<Either<AppFailure, int>> createDebtLoan(DebtLoan debtLoan, int walletId) async {
     try {
       final db = await _dbHelper.database;

@@ -14,13 +14,25 @@ class ReportsScreen extends StatefulWidget {
 }
 
 class _ReportsScreenState extends State<ReportsScreen> {
-  
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadStories();
+      context.read<WalletProvider>().addListener(_onWalletChanged);
     });
+  }
+
+  @override
+  void dispose() {
+    if (mounted) {
+      context.read<WalletProvider>().removeListener(_onWalletChanged);
+    }
+    super.dispose();
+  }
+
+  void _onWalletChanged() {
+    _loadStories();
   }
 
   Future<void> _loadStories() async {
@@ -28,15 +40,17 @@ class _ReportsScreenState extends State<ReportsScreen> {
     final walletProvider = context.read<WalletProvider>();
     final reportsProvider = context.read<ReportsProvider>();
     if (walletProvider.currentWallet?.id != null) {
-      await reportsProvider.fetchStories(walletId: walletProvider.currentWallet!.id!);
+      await reportsProvider.fetchStories(
+          walletId: walletProvider.currentWallet!.id!);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final reportsProvider = context.watch<ReportsProvider>();
-    
+
     return Scaffold(
+      backgroundColor: Colors.transparent,
       body: RefreshIndicator(
         onRefresh: _loadStories,
         child: Builder(
@@ -44,7 +58,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
             if (reportsProvider.isLoading) {
               return _buildShimmerLoading();
             }
-            
+
             if (reportsProvider.stories.isEmpty) {
               return _buildEmptyState();
             }
@@ -59,7 +73,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   case StoryType.topExpenses:
                     return TopExpenseStoryCard(story: story as TopExpensesStory);
                   case StoryType.comparison:
-                    return ComparisonStoryCard(story: story as ComparisonStory);
+                    return ComparisonStoryCard(
+                        story: story as ComparisonStory);
                   case StoryType.mostExpensiveDay:
                     return MostExpensiveDayStoryCard(
                         story: story as MostExpensiveDayStory);

@@ -10,6 +10,12 @@ class LocalSubscriptionRepositoryImpl implements SubscriptionRepository {
   final DatabaseHelper _dbHelper;
 
   LocalSubscriptionRepositoryImpl(this._dbHelper);
+  
+  @override
+  Stream<List<Subscription>> watchAllSubscriptions(int walletId) {
+    return Stream.fromFuture(getAllSubscriptions(walletId))
+        .map((either) => either.getOrElse((_) => []));
+  }
 
   @override
   Future<Either<AppFailure, int>> createSubscription(Subscription sub, int walletId) async {
@@ -30,7 +36,7 @@ class LocalSubscriptionRepositoryImpl implements SubscriptionRepository {
           DatabaseHelper.colSyncTimestamp: DateTime.now().toIso8601String(),
           DatabaseHelper.colSyncStatus: 'pending'
         });
-      });
+       });
       return Right(newId);
     } catch(e, s) {
       ErrorMonitoringService.capture(e, stackTrace: s);

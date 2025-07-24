@@ -190,6 +190,28 @@ class DatabaseHelper {
   static const String colSyncTimestamp = "timestamp";
   static const String colSyncStatus = "status";
 
+  static const String tableAssets = "assets";
+  static const String colAssetId = "id";
+  static const String colAssetWalletId = "wallet_id";
+  static const String colAssetUserId = "user_id";
+  static const String colAssetName = "name";
+  static const String colAssetType = "type";
+  static const String colAssetValue = "value";
+  static const String colAssetCurrencyCode = "currency_code";
+  static const String colAssetUpdatedAt = "updated_at";
+  static const String colAssetIsDeleted = "is_deleted";
+
+  static const String tableLiabilities = "liabilities";
+  static const String colLiabilityId = "id";
+  static const String colLiabilityWalletId = "wallet_id";
+  static const String colLiabilityUserId = "user_id";
+  static const String colLiabilityName = "name";
+  static const String colLiabilityType = "type";
+  static const String colLiabilityAmount = "amount";
+  static const String colLiabilityCurrencyCode = "currency_code";
+  static const String colLiabilityUpdatedAt = "updated_at";
+  static const String colLiabilityIsDeleted = "is_deleted";
+
   static Database? _database;
 
   Future<Database> get database async {
@@ -227,6 +249,8 @@ class DatabaseHelper {
     await _createNotificationHistoryTable(db);
     await _createThemeProfilesTable(db);
     await _createSyncQueueTable(db);
+    await _createAssetsTable(db);
+    await _createLiabilitiesTable(db);
   }
 
   Future<void> _createSyncQueueTable(Database db) async {
@@ -315,7 +339,7 @@ class DatabaseHelper {
       )
     ''');
   }
-    
+
   Future<void> _createPlansTable(Database db) async {
     await db.execute('''
       CREATE TABLE $tablePlans (
@@ -461,7 +485,7 @@ class DatabaseHelper {
       )
     ''');
   }
-  
+
   Future<void> _createNotificationHistoryTable(Database db) async {
     await db.execute('''
       CREATE TABLE $tableNotificationHistory (
@@ -489,9 +513,19 @@ class DatabaseHelper {
   Future<Map<String, List<Map<String, dynamic>>>> exportDatabaseToJson() async {
     final db = await database;
     final tables = [
-      tableUsers, tableWallets, tableWalletUsers, tableCategories, tableTransactions,
-      tablePlans, tableRepeatingTransactions, tableFinancialGoals, tableSubscriptions,
-      tableBudgets, tableBudgetEnvelopes, tableDebtsLoans, tableNotificationHistory,
+      tableUsers,
+      tableWallets,
+      tableWalletUsers,
+      tableCategories,
+      tableTransactions,
+      tablePlans,
+      tableRepeatingTransactions,
+      tableFinancialGoals,
+      tableSubscriptions,
+      tableBudgets,
+      tableBudgetEnvelopes,
+      tableDebtsLoans,
+      tableNotificationHistory,
       tableThemeProfiles
     ];
     final Map<String, List<Map<String, dynamic>>> jsonData = {};
@@ -506,9 +540,19 @@ class DatabaseHelper {
     await db.transaction((txn) async {
       Batch batch = txn.batch();
       final tablesInDeletionOrder = [
-        tableBudgetEnvelopes, tableBudgets, tableSubscriptions, tableTransactions,
-        tableRepeatingTransactions, tablePlans, tableFinancialGoals, tableDebtsLoans,
-        tableCategories, tableWalletUsers, tableWallets, tableUsers, tableNotificationHistory,
+        tableBudgetEnvelopes,
+        tableBudgets,
+        tableSubscriptions,
+        tableTransactions,
+        tableRepeatingTransactions,
+        tablePlans,
+        tableFinancialGoals,
+        tableDebtsLoans,
+        tableCategories,
+        tableWalletUsers,
+        tableWallets,
+        tableUsers,
+        tableNotificationHistory,
         tableThemeProfiles
       ];
       final tablesInCreationOrder = tablesInDeletionOrder.reversed.toList();
@@ -526,5 +570,37 @@ class DatabaseHelper {
       }
       await batch.commit(noResult: true);
     });
+  }
+
+  Future<void> _createAssetsTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE $tableAssets (
+        $colAssetId INTEGER PRIMARY KEY,
+        $colAssetWalletId INTEGER NOT NULL,
+        $colAssetUserId TEXT NOT NULL,
+        $colAssetName TEXT NOT NULL,
+        $colAssetType TEXT NOT NULL,
+        $colAssetValue REAL NOT NULL,
+        $colAssetCurrencyCode TEXT NOT NULL,
+        $colAssetUpdatedAt TEXT,
+        $colAssetIsDeleted INTEGER NOT NULL DEFAULT 0
+      )
+    ''');
+  }
+
+  Future<void> _createLiabilitiesTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE $tableLiabilities (
+        $colLiabilityId INTEGER PRIMARY KEY,
+        $colLiabilityWalletId INTEGER NOT NULL,
+        $colLiabilityUserId TEXT NOT NULL,
+        $colLiabilityName TEXT NOT NULL,
+        $colLiabilityType TEXT NOT NULL,
+        $colLiabilityAmount REAL NOT NULL,
+        $colLiabilityCurrencyCode TEXT NOT NULL,
+        $colLiabilityUpdatedAt TEXT,
+        $colLiabilityIsDeleted INTEGER NOT NULL DEFAULT 0
+      )
+    ''');
   }
 }

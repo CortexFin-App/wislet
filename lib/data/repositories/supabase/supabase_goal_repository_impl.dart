@@ -8,12 +8,25 @@ import '../goal_repository.dart';
 class SupabaseGoalRepositoryImpl implements GoalRepository {
   final SupabaseClient _client;
   SupabaseGoalRepositoryImpl(this._client);
+  
+  @override
+  Stream<List<FinancialGoal>> watchAllFinancialGoals(int walletId) {
+    return _client
+        .from('financial_goals')
+        .stream(primaryKey: ['id'])
+        .map((listOfMaps) {
+          return listOfMaps
+              .where((item) => item['wallet_id'] == walletId && item['is_deleted'] == false)
+              .map((item) => FinancialGoal.fromMap(item))
+              .toList();
+        });
+  }
 
   @override
   Future<Either<AppFailure, List<FinancialGoal>>> getAllFinancialGoals(int walletId) async {
     try {
       final response = await _client.from('financial_goals').select().eq('wallet_id', walletId).eq('is_deleted', false);
-      final goals = (response as List).map((data) => FinancialGoal.fromMap(data)).toList();
+      final goals = (response).map((data) => FinancialGoal.fromMap(data)).toList();
       return Right(goals);
     } catch(e, s) {
       ErrorMonitoringService.capture(e, stackTrace: s);

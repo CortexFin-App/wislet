@@ -5,6 +5,7 @@ import '../core/error/failures.dart';
 import '../models/category.dart';
 import '../providers/wallet_provider.dart';
 import '../utils/app_palette.dart';
+import '../widgets/scaffold/patterned_scaffold.dart';
 
 class CategoriesScreen extends StatefulWidget {
   const CategoriesScreen({super.key});
@@ -100,7 +101,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> with SingleTickerPr
                       },
                     ),
                     if (selectedType == CategoryType.expense)
-                      DropdownButtonFormField<Bucket?>(
+                       DropdownButtonFormField<Bucket?>(
                         value: selectedBucket,
                         decoration: const InputDecoration(labelText: 'Група (для бюджету 50/30/20)'),
                         hint: const Text('Не вказано'),
@@ -157,7 +158,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> with SingleTickerPr
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PatternedScaffold(
       appBar: AppBar(
         title: const Text('Категорії'),
         bottom: TabBar(

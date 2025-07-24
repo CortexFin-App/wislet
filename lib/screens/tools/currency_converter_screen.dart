@@ -4,6 +4,7 @@ import '../../core/di/injector.dart';
 import '../../models/currency_model.dart';
 import '../../services/exchange_rate_service.dart';
 import '../../utils/app_palette.dart';
+import '../../widgets/scaffold/patterned_scaffold.dart';
 
 class CurrencyConverterScreen extends StatefulWidget {
   const CurrencyConverterScreen({super.key});
@@ -136,7 +137,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PatternedScaffold(
       appBar: AppBar(
         title: const Text('Конвертер валют'),
       ),

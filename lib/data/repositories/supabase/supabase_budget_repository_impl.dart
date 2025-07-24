@@ -11,10 +11,24 @@ class SupabaseBudgetRepositoryImpl implements BudgetRepository {
   SupabaseBudgetRepositoryImpl(this._client);
 
   @override
+  Stream<List<Budget>> watchAllBudgets(int walletId) {
+    return _client
+        .from('budgets')
+        .stream(primaryKey: ['id'])
+        .map((listOfMaps) {
+          return listOfMaps
+              .where((item) => item['wallet_id'] == walletId && item['is_deleted'] == false)
+              .map((item) => Budget.fromMap(item))
+              .toList()
+              ..sort((a, b) => b.startDate.compareTo(a.startDate));
+    });
+  }
+
+  @override
   Future<Either<AppFailure, List<Budget>>> getAllBudgets(int walletId) async {
     try {
-      final response = await _client.from('budgets').select().eq('wallet_id', walletId).eq('is_deleted', false);
-      return Right((response as List).map((data) => Budget.fromMap(data)).toList());
+      final response = await _client.from('budgets').select().eq('wallet_id', walletId).eq('is_deleted', false).order('start_date', ascending: false);
+      return Right((response).map((data) => Budget.fromMap(data)).toList());
     } catch (e, s) {
       ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(NetworkFailure(details: e.toString()));
@@ -129,9 +143,7 @@ class SupabaseBudgetRepositoryImpl implements BudgetRepository {
   Future<Either<AppFailure, List<BudgetEnvelope>>> getEnvelopesForBudget(int budgetId) async {
     try {
       final response = await _client.from('budget_envelopes').select().eq('budget_id', budgetId);
-      return Right((response as List)
-          .map((data) => BudgetEnvelope.fromMap(data))
-          .toList());
+      return Right((response).map((data) => BudgetEnvelope.fromMap(data)).toList());
     } catch (e, s) {
       ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(NetworkFailure(details: e.toString()));

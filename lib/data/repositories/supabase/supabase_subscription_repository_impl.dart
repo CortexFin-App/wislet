@@ -10,6 +10,20 @@ class SupabaseSubscriptionRepositoryImpl implements SubscriptionRepository {
   SupabaseSubscriptionRepositoryImpl(this._client);
 
   @override
+  Stream<List<Subscription>> watchAllSubscriptions(int walletId) {
+    return _client
+        .from('subscriptions')
+        .stream(primaryKey: ['id'])
+        .map((listOfMaps) {
+          return listOfMaps
+              .where((item) => item['wallet_id'] == walletId && item['is_deleted'] == false)
+              .map((item) => Subscription.fromMap(item))
+              .toList()
+              ..sort((a,b) => a.nextPaymentDate.compareTo(b.nextPaymentDate));
+        });
+  }
+
+  @override
   Future<Either<AppFailure, List<Subscription>>> getAllSubscriptions(int walletId) async {
     try {
       final response = await _client
@@ -18,7 +32,7 @@ class SupabaseSubscriptionRepositoryImpl implements SubscriptionRepository {
           .eq('wallet_id', walletId)
           .eq('is_deleted', false)
           .order('next_payment_date', ascending: true);
-      final subscriptions = (response as List).map((data) => Subscription.fromMap(data)).toList();
+      final subscriptions = (response).map((data) => Subscription.fromMap(data)).toList();
       return Right(subscriptions);
     } catch(e, s) {
       ErrorMonitoringService.capture(e, stackTrace: s);

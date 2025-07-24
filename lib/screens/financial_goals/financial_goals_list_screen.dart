@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:fpdart/fpdart.dart' hide State;
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../core/di/injector.dart';
-import '../../core/error/failures.dart';
 import '../../models/financial_goal.dart';
 import '../../models/currency_model.dart';
 import '../../providers/wallet_provider.dart';
@@ -23,7 +21,7 @@ class FinancialGoalsListScreen extends StatefulWidget {
 class FinancialGoalsListScreenState extends State<FinancialGoalsListScreen> {
   final GoalRepository _goalRepository = getIt<GoalRepository>();
   final NotificationService _notificationService = getIt<NotificationService>();
-  Future<Either<AppFailure, List<FinancialGoal>>>? _goalsFuture;
+  Stream<List<FinancialGoal>>? _goalsStream;
   int? _highlightedGoalId;
 
   @override
@@ -45,39 +43,33 @@ class FinancialGoalsListScreenState extends State<FinancialGoalsListScreen> {
     }
   }
 
-  Future<void> refreshData() async {
+  void refreshData() {
     if (!mounted) return;
     final walletProvider = context.read<WalletProvider>();
     final currentWalletId = walletProvider.currentWallet?.id;
     if (currentWalletId == null) {
       setState(() {
-        _goalsFuture = Future.value(const Right([]));
+        _goalsStream = Stream.value([]);
       });
       return;
     }
     setState(() {
-      _goalsFuture = _goalRepository.getAllFinancialGoals(currentWalletId);
+      _goalsStream = _goalRepository.watchAllFinancialGoals(currentWalletId);
     });
   }
 
   void _navigateToAddGoal() async {
-    final result = await Navigator.push<bool>(
+    await Navigator.push<bool>(
       context,
       MaterialPageRoute(builder: (context) => const AddEditFinancialGoalScreen())
     );
-    if (result == true && mounted) {
-      refreshData();
-    }
   }
 
   void _navigateToEditGoal(FinancialGoal goal) async {
-    final result = await Navigator.push<bool>(
+    await Navigator.push<bool>(
       context,
       MaterialPageRoute(builder: (context) => AddEditFinancialGoalScreen(goalToEdit: goal))
     );
-    if (result == true && mounted) {
-      refreshData();
-    }
   }
 
   Future<void> _deleteGoal(FinancialGoal goalToDelete) async {
@@ -109,14 +101,13 @@ class FinancialGoalsListScreenState extends State<FinancialGoalsListScreen> {
     await _notificationService.cancelNotification(goalId * 10000 + 1);
 
     if (mounted && goalId == _highlightedGoalId) {
-        setState(() { _highlightedGoalId = null; });
+      setState(() { _highlightedGoalId = null; });
     }
     messenger.showSnackBar(
       SnackBar(content: Text('Фінансову ціль "${goalToDelete.name}" видалено')),
     );
-    refreshData();
   }
-
+  
   String _getDaysRemainingText(DateTime? targetDate, bool isAchieved) {
     if (targetDate == null || isAchieved) return '';
     final now = DateTime.now();
@@ -136,37 +127,37 @@ class FinancialGoalsListScreenState extends State<FinancialGoalsListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: RefreshIndicator(
-        onRefresh: refreshData,
-        child: FutureBuilder<Either<AppFailure, List<FinancialGoal>>>(
-          future: _goalsFuture,
+      backgroundColor: Colors.transparent,
+      body: StreamBuilder<List<FinancialGoal>>(
+          stream: _goalsStream,
           builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting || _goalsFuture == null) {
+            if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
               return _buildShimmerList();
             }
 
-            return snapshot.data!.fold(
-              (failure) => Center(child: Padding(
+            if (snapshot.hasError) {
+              return Center(child: Padding(
                 padding: const EdgeInsets.all(16.0),
-                child: Text('Помилка завантаження цілей: ${failure.userMessage}'),
-              )),
-              (goals) {
-                if (goals.isEmpty) {
-                  return _buildEmptyState();
-                }
-                return ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 100.0),
-                  itemCount: goals.length,
-                  itemBuilder: (context, index) {
-                    final goal = goals[index];
-                    return _buildGoalCard(goal);
-                  },
-                );
-              }
+                child: Text('Помилка завантаження цілей: ${snapshot.error}'),
+              ));
+            }
+            
+            final goals = snapshot.data ?? [];
+
+            if (goals.isEmpty) {
+              return _buildEmptyState();
+            }
+
+            return ListView.builder(
+              padding: const EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 100.0),
+              itemCount: goals.length,
+              itemBuilder: (context, index) {
+                final goal = goals[index];
+                return _buildGoalCard(goal);
+              },
             );
           },
         ),
-      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _navigateToAddGoal,
         tooltip: 'Додати нову фінансову ціль',

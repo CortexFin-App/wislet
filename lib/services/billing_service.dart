@@ -3,9 +3,18 @@ import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:sage_wallet_reborn/core/di/injector.dart';
+import 'package:sage_wallet_reborn/providers/pro_status_provider.dart';
 import 'package:sage_wallet_reborn/services/api_client.dart';
 
-class BillingService {
+abstract class BillingService {
+  Future<void> init();
+  Future<void> loadProducts();
+  Future<void> buyProSubscription();
+  Future<void> restorePurchases();
+  void dispose();
+}
+
+class AppStoreBillingService implements BillingService {
   static const String _proSubscriptionId = 'pro_monthly_sub';
 
   final InAppPurchase _iap = InAppPurchase.instance;
@@ -15,8 +24,9 @@ class BillingService {
   List<ProductDetails> _products = [];
   List<ProductDetails> get products => _products;
   
-  final ValueNotifier<bool> isProUserNotifier = ValueNotifier(false);
+  final ProStatusProvider _proStatusProvider = getIt<ProStatusProvider>();
 
+  @override
   Future<void> init() async {
     final bool available = await _iap.isAvailable();
     if (!available) {
@@ -35,6 +45,7 @@ class BillingService {
     await loadProducts();
   }
 
+  @override
   Future<void> loadProducts() async {
     try {
       final ProductDetailsResponse response = await _iap.queryProductDetails({_proSubscriptionId});
@@ -49,6 +60,7 @@ class BillingService {
     }
   }
 
+  @override
   Future<void> buyProSubscription() async {
     if (_products.isEmpty) {
       debugPrint("No products to buy. Trying to load them again...");
@@ -61,6 +73,7 @@ class BillingService {
     await _iap.buyNonConsumable(purchaseParam: purchaseParam);
   }
 
+  @override
   Future<void> restorePurchases() async {
     await _iap.restorePurchases();
   }
@@ -80,7 +93,7 @@ class BillingService {
 
     if (isValid) {
       await _iap.completePurchase(purchaseDetails);
-      isProUserNotifier.value = true;
+      _proStatusProvider.setProStatus(true);
       debugPrint("SUCCESS: Purchase completed and verified.");
     } else {
       debugPrint("ERROR: Backend verification failed. Purchase not completed.");
@@ -107,7 +120,42 @@ class BillingService {
     }
   }
 
+  @override
   void dispose() {
     _purchaseStream.cancel();
+  }
+}
+
+class FakeBillingService implements BillingService {
+  final ProStatusProvider _proStatusProvider = getIt<ProStatusProvider>();
+
+  @override
+  Future<void> init() async {
+    debugPrint("FakeBillingService initialized.");
+  }
+
+  @override
+  Future<void> loadProducts() async {
+     debugPrint("FakeBillingService: Loading fake products.");
+  }
+
+  @override
+  Future<void> buyProSubscription() async {
+    debugPrint("FakeBillingService: Simulating Pro subscription purchase...");
+    await Future.delayed(const Duration(seconds: 2));
+    await _proStatusProvider.setProStatus(true);
+    debugPrint("FakeBillingService: Pro status activated.");
+  }
+
+  @override
+  Future<void> restorePurchases() async {
+    debugPrint("FakeBillingService: Simulating purchase restore...");
+    await Future.delayed(const Duration(seconds: 1));
+    await _proStatusProvider.setProStatus(true);
+  }
+
+  @override
+  void dispose() {
+    debugPrint("FakeBillingService disposed.");
   }
 }

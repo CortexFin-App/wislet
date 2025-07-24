@@ -9,6 +9,7 @@ import '../../models/transaction.dart';
 import '../../providers/wallet_provider.dart';
 import '../../data/repositories/repeating_transaction_repository.dart';
 import '../../data/repositories/category_repository.dart';
+import '../../widgets/scaffold/patterned_scaffold.dart';
 import 'add_edit_repeating_transaction_screen.dart';
 import '../../services/notification_service.dart';
 import '../../utils/fade_page_route.dart';
@@ -217,7 +218,7 @@ class _RepeatingTransactionsListScreenState
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PatternedScaffold(
       appBar: AppBar(
         title: const Text('Повторювані транзакції'),
       ),

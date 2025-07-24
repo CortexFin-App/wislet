@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../utils/app_palette.dart';
 import 'onboarding_page_widget.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -18,7 +17,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   static const _onboardingData = [
     {
       'icon': Icons.account_balance_wallet_outlined,
-      'title': 'Ласкаво просимо до Sage Wallet!',
+      'title': 'Ласкаво просимо в Гаманець Мудреця!',
       'description': 'Ваш персональний помічник для легкого та ефективного управління фінансами.',
     },
     {
@@ -40,68 +39,82 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: PageView.builder(
-                controller: _pageController,
-                itemCount: _onboardingData.length,
-                onPageChanged: (int page) {
-                  setState(() {
-                    _currentPage = page;
-                  });
-                },
-                itemBuilder: (context, index) {
-                  return OnboardingPage(
-                    icon: _onboardingData[index]['icon'] as IconData,
-                    title: _onboardingData[index]['title'] as String,
-                    description: _onboardingData[index]['description'] as String,
-                  );
-                },
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              theme.colorScheme.surface,
+              theme.colorScheme.surfaceContainer,
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              Expanded(
+                child: PageView.builder(
+                  controller: _pageController,
+                  itemCount: _onboardingData.length,
+                  onPageChanged: (int page) {
+                    setState(() {
+                      _currentPage = page;
+                    });
+                  },
+                  itemBuilder: (context, index) {
+                    return OnboardingPage(
+                      icon: _onboardingData[index]['icon'] as IconData,
+                      title: _onboardingData[index]['title'] as String,
+                      description: _onboardingData[index]['description'] as String,
+                    );
+                  },
+                ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(
-                        _onboardingData.length,
-                            (index) => buildDot(index, context),
+              Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(
+                          _onboardingData.length,
+                              (index) => buildDot(index, context),
+                      ),
                     ),
-                  ),
-                  _currentPage == _onboardingData.length - 1
-                      ? ElevatedButton(
-                          onPressed: () {
-                             HapticFeedback.heavyImpact();
-                             widget.onFinished();
-                          },
-                          child: const Text('Почати'),
-                        )
-                      : TextButton(
-                          onPressed: () {
-                            HapticFeedback.lightImpact();
-                            _pageController.nextPage(
-                              duration: const Duration(milliseconds: 400),
-                              curve: Curves.easeInOut,
-                            );
-                          },
-                          child: const Text('Далі'),
-                        ),
-                ],
+                    _currentPage == _onboardingData.length - 1
+                        ? ElevatedButton(
+                            onPressed: () {
+                              HapticFeedback.heavyImpact();
+                               widget.onFinished();
+                            },
+                            child: const Text('Почати'),
+                          )
+                        : TextButton(
+                            onPressed: () {
+                              HapticFeedback.lightImpact();
+                              _pageController.nextPage(
+                                duration: const Duration(milliseconds: 400),
+                                curve: Curves.easeInOut,
+                              );
+                            },
+                            child: const Text('Далі'),
+                          ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget buildDot(int index, BuildContext context) {
+    final theme = Theme.of(context);
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeOut,
@@ -109,7 +122,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       height: 8,
       width: _currentPage == index ? 24 : 8,
       decoration: BoxDecoration(
-        color: _currentPage == index ? AppPalette.darkPrimary : AppPalette.darkSurface,
+        color: _currentPage == index ? theme.colorScheme.primary : theme.colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(5),
       ),
     );

@@ -17,6 +17,12 @@ class LocalBudgetRepositoryImpl implements BudgetRepository {
   LocalBudgetRepositoryImpl(this._dbHelper, this._transactionRepository, this._notificationService);
 
   @override
+  Stream<List<Budget>> watchAllBudgets(int walletId) {
+    return Stream.fromFuture(getAllBudgets(walletId))
+        .map((either) => either.getOrElse((_) => []));
+  }
+
+  @override
   Future<Either<AppFailure, int>> createBudget(Budget budget, int walletId) async {
     try {
       final db = await _dbHelper.database;

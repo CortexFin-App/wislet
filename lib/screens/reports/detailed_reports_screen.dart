@@ -1,12 +1,19 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../core/di/injector.dart';
+import '../../data/repositories/transaction_repository.dart';
 import '../../providers/currency_provider.dart';
 import '../../providers/wallet_provider.dart';
 import '../../services/detailed_report_service.dart';
+import '../../services/report_generation_service.dart';
+import '../../widgets/scaffold/patterned_scaffold.dart';
 
 class DetailedReportsScreen extends StatefulWidget {
   const DetailedReportsScreen({super.key});
@@ -17,6 +24,8 @@ class DetailedReportsScreen extends StatefulWidget {
 
 class _DetailedReportsScreenState extends State<DetailedReportsScreen> {
   final DetailedReportService _reportService = getIt<DetailedReportService>();
+  final ReportGenerationService _reportGenerationService = getIt<ReportGenerationService>();
+  final TransactionRepository _transactionRepository = getIt<TransactionRepository>();
 
   DateTime _reportStartDate = DateTime(DateTime.now().year, DateTime.now().month, 1);
   DateTime _reportEndDate = DateTime(DateTime.now().year, DateTime.now().month + 1, 0);
@@ -31,7 +40,7 @@ class _DetailedReportsScreenState extends State<DetailedReportsScreen> {
       _initiateReportGeneration();
     });
   }
-
+  
   void _initiateReportGeneration() {
     if (mounted) {
       final walletProvider = context.read<WalletProvider>();
@@ -68,10 +77,90 @@ class _DetailedReportsScreenState extends State<DetailedReportsScreen> {
     }
   }
 
+  Future<void> _exportReport(String format) async {
+    final walletProvider = context.read<WalletProvider>();
+    final walletId = walletProvider.currentWallet?.id;
+    if (walletId == null) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(const SnackBar(content: Text('Генерація звіту...')));
+
+    try {
+      final transactionsEither = await _transactionRepository.getTransactionsWithDetails(
+        walletId: walletId,
+        startDate: _reportStartDate,
+        endDate: _reportEndDate,
+      );
+
+      await transactionsEither.fold(
+        (failure) => throw Exception(failure.userMessage),
+        (transactions) async {
+          Uint8List fileBytes;
+          String fileName;
+          String mimeType;
+
+          final period = "${DateFormat('dd.MM.yy').format(_reportStartDate)}-${DateFormat('dd.MM.yy').format(_reportEndDate)}";
+
+          if (format == 'pdf') {
+            fileBytes = await _reportGenerationService.generatePdfBytes(transactions, period);
+            fileName = 'SageWallet_Report_$period.pdf';
+            mimeType = 'application/pdf';
+          } else {
+            fileBytes = await _reportGenerationService.generateCsvBytes(transactions);
+            fileName = 'SageWallet_Report_$period.csv';
+            mimeType = 'text/csv';
+          }
+
+          final tempDir = await getTemporaryDirectory();
+          final file = await File('${tempDir.path}/$fileName').writeAsBytes(fileBytes);
+
+          await Share.shareXFiles([XFile(file.path, mimeType: mimeType)], subject: 'Фінансовий звіт');
+        },
+      );
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('Помилка експорту: $e')));
+    }
+  }
+
+  void _showExportDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Експорт звіту'),
+        content: const Text('Оберіть формат файлу для експорту.'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _exportReport('csv');
+            },
+            child: const Text('CSV'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _exportReport('pdf');
+            },
+            child: const Text('PDF'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-        appBar: AppBar(title: const Text("Детальні звіти")),
+    return PatternedScaffold(
+        appBar: AppBar(
+          title: const Text("Детальні звіти"),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.ios_share_outlined),
+              onPressed: _showExportDialog,
+              tooltip: 'Експорт',
+            )
+          ],
+        ),
         body: Column(
       children: [
         Padding(
@@ -115,28 +204,35 @@ class _DetailedReportsScreenState extends State<DetailedReportsScreen> {
                 return const Center(child: Text('Немає даних для побудови звітів.'));
               }
               final data = snapshot.data!;
-              Widget chartsSection = (MediaQuery.of(context).size.width > _tabletBreakpoint)
-                ? Row(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
-                    Expanded(child: _buildPieChartSection(context, data['spendingPieChartData'] as List<ChartDataPointDisplay>)),
-                    const SizedBox(width: 16),
-                    Expanded(child: _buildLineChartSection(context, data['monthlyTrendData'] as List<MonthlyTrendDisplayData>, data['lineChartMaxY'] as double)),
-                  ])
-                : Column(children: <Widget>[
-                    _buildPieChartSection(context, data['spendingPieChartData'] as List<ChartDataPointDisplay>),
-                    const Divider(height: 24, thickness: 1, indent: 16, endIndent: 16),
-                    _buildLineChartSection(context, data['monthlyTrendData'] as List<MonthlyTrendDisplayData>, data['lineChartMaxY'] as double),
-                  ]);
-              return RefreshIndicator(
-                onRefresh: () async => _initiateReportGeneration(),
-                child: ListView(
-                  padding: const EdgeInsets.all(8.0),
-                  children: [
-                    _buildPlanActualSection(context, data['planActualItems'] as List<PlanActualReportItemDisplay>),
-                    const Divider(height: 24, thickness: 1, indent: 16, endIndent: 16),
-                    chartsSection,
-                    const SizedBox(height: 16),
-                  ],
-                ),
+              
+              return LayoutBuilder(
+                builder: (context, constraints) {
+                  final isWideScreen = constraints.maxWidth > _tabletBreakpoint;
+                  Widget chartsSection = isWideScreen
+                    ? Row(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
+                        Expanded(child: _buildPieChartSection(context, data['spendingPieChartData'] as List<ChartDataPointDisplay>)),
+                        const SizedBox(width: 16),
+                        Expanded(child: _buildLineChartSection(context, data['monthlyTrendData'] as List<MonthlyTrendDisplayData>, data['lineChartMaxY'] as double)),
+                      ])
+                    : Column(children: <Widget>[
+                        _buildPieChartSection(context, data['spendingPieChartData'] as List<ChartDataPointDisplay>),
+                        const Divider(height: 24, thickness: 1, indent: 16, endIndent: 16),
+                        _buildLineChartSection(context, data['monthlyTrendData'] as List<MonthlyTrendDisplayData>, data['lineChartMaxY'] as double),
+                      ]);
+
+                  return RefreshIndicator(
+                    onRefresh: () async => _initiateReportGeneration(),
+                    child: ListView(
+                      padding: const EdgeInsets.all(8.0),
+                      children: [
+                        _buildPlanActualSection(context, data['planActualItems'] as List<PlanActualReportItemDisplay>),
+                        const Divider(height: 24, thickness: 1, indent: 16, endIndent: 16),
+                        chartsSection,
+                        const SizedBox(height: 16),
+                      ],
+                    ),
+                  );
+                },
               );
             },
           ),
@@ -183,12 +279,13 @@ class _DetailedReportsScreenState extends State<DetailedReportsScreen> {
   }
 
   Widget _buildPieChartSection(BuildContext context, List<ChartDataPointDisplay> pieData) {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
-          child: Text('Витрати за категоріями', style: Theme.of(context).textTheme.titleLarge),
+          child: Text('Витрати за категоріями', style: theme.textTheme.titleLarge),
         ),
         if (pieData.isEmpty)
         _buildSectionEmptyState(context, Icons.pie_chart_outline, 'Немає даних для діаграми', 'Додайте транзакції витрат за обраний період.')
@@ -253,7 +350,7 @@ class _DetailedReportsScreenState extends State<DetailedReportsScreen> {
                     children: [
                       Container(width: 12, height: 12, color: data.color),
                       const SizedBox(width: 4),
-                      Text('${data.label} (${data.formattedValue})', style: Theme.of(context).textTheme.bodySmall),
+                      Text('${data.label} (${data.formattedValue})', style: theme.textTheme.bodySmall),
                     ],
                   );
                 }).toList(),
@@ -266,12 +363,13 @@ class _DetailedReportsScreenState extends State<DetailedReportsScreen> {
   }
 
   Widget _buildLineChartSection(BuildContext context, List<MonthlyTrendDisplayData> trendData, double lineChartMaxY) {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
-          child: Text('Динаміка (останні 6 міс.)', style: Theme.of(context).textTheme.titleLarge),
+          child: Text('Динаміка (останні 6 міс.)', style: theme.textTheme.titleLarge),
         ),
         if (trendData.isEmpty || (trendData.every((d) => d.incomeForChart == 0 && d.expenseForChart == 0)))
         _buildSectionEmptyState(context, Icons.show_chart, 'Немає даних для графіка', 'Додайте транзакції за кілька місяців.')
@@ -283,7 +381,7 @@ class _DetailedReportsScreenState extends State<DetailedReportsScreen> {
               Expanded(
                 child: LineChart(
                   LineChartData(
-                    gridData: FlGridData(show: true, drawVerticalLine: true, getDrawingHorizontalLine: (value) => FlLine(color: Theme.of(context).colorScheme.outline.withAlpha(50), strokeWidth: 0.5), getDrawingVerticalLine: (value) => FlLine(color: Theme.of(context).colorScheme.outline.withAlpha(50), strokeWidth: 0.5)),
+                    gridData: FlGridData(show: true, drawVerticalLine: true, getDrawingHorizontalLine: (value) => FlLine(color: theme.colorScheme.outline.withAlpha(50), strokeWidth: 0.5), getDrawingVerticalLine: (value) => FlLine(color: theme.colorScheme.outline.withAlpha(50), strokeWidth: 0.5)),
                     titlesData: FlTitlesData(
                       show: true,
                       rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -299,7 +397,7 @@ class _DetailedReportsScreenState extends State<DetailedReportsScreen> {
                               return SideTitleWidget(
                                 axisSide: meta.axisSide,
                                 space: 8.0,
-                                child: Text(DateFormat('MMM', 'uk_UA').format(trendData[index].month), style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                                child: Text(DateFormat('MMM', 'uk_UA').format(trendData[index].month), style: TextStyle(fontSize: 10, color: theme.colorScheme.onSurfaceVariant)),
                               );
                             }
                             return const Text('');
@@ -307,28 +405,28 @@ class _DetailedReportsScreenState extends State<DetailedReportsScreen> {
                         ),
                       ),
                       leftTitles: AxisTitles(
-                          sideTitles: SideTitles(
+                        sideTitles: SideTitles(
                             showTitles: true,
                             reservedSize: 42,
                             getTitlesWidget: (double value, TitleMeta meta) {
                             if(value == 0 && lineChartMaxY == 0) return const Text('');
                               final displayValue = value;
                               if (value == 0 || value == lineChartMaxY || (lineChartMaxY > 2000 && value % (lineChartMaxY / 4).roundToDouble() == 0) || (lineChartMaxY <=2000 && lineChartMaxY > 0 && value % (lineChartMaxY / 2).roundToDouble()==0) ) {
-                                return Text('${(displayValue / 1000).toStringAsFixed(displayValue > 0 && displayValue < 1000 && lineChartMaxY > 0 ? 1:0)}k', style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.onSurfaceVariant));
+                                return Text('${(displayValue / 1000).toStringAsFixed(displayValue > 0 && displayValue < 1000 && lineChartMaxY > 0 ? 1:0)}k', style: TextStyle(fontSize: 10, color: theme.colorScheme.onSurfaceVariant));
                               }
                               return const Text('');
                           },
                         ),
                       ),
                     ),
-                    borderData: FlBorderData(show: true, border: Border.all(color: Theme.of(context).colorScheme.outline.withAlpha(128), width: 1)),
+                    borderData: FlBorderData(show: true, border: Border.all(color: theme.colorScheme.outline.withAlpha(128), width: 1)),
                     minX: 0,
                     maxX: trendData.isEmpty ? 0 : (trendData.length - 1).toDouble(),
                     minY: 0,
                     maxY: lineChartMaxY,
                     lineBarsData: [
-                      LineChartBarData(spots: trendData.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.incomeForChart)).toList(), isCurved: true, color: Theme.of(context).colorScheme.tertiary, barWidth: 3, isStrokeCapRound: true, dotData: const FlDotData(show: false), belowBarData: BarAreaData(show: true, color: Theme.of(context).colorScheme.tertiary.withAlpha(51))),
-                      LineChartBarData(spots: trendData.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.expenseForChart)).toList(), isCurved: true, color: Theme.of(context).colorScheme.error, barWidth: 3, isStrokeCapRound: true, dotData: const FlDotData(show: false), belowBarData: BarAreaData(show: true, color: Theme.of(context).colorScheme.error.withAlpha(51))),
+                      LineChartBarData(spots: trendData.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.incomeForChart)).toList(), isCurved: true, color: theme.colorScheme.tertiary, barWidth: 3, isStrokeCapRound: true, dotData: const FlDotData(show: false), belowBarData: BarAreaData(show: true, color: theme.colorScheme.tertiary.withAlpha(51))),
+                      LineChartBarData(spots: trendData.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.expenseForChart)).toList(), isCurved: true, color: theme.colorScheme.error, barWidth: 3, isStrokeCapRound: true, dotData: const FlDotData(show: false), belowBarData: BarAreaData(show: true, color: theme.colorScheme.error.withAlpha(51))),
                     ],
                     lineTouchData: LineTouchData(
                       touchTooltipData: LineTouchTooltipData(
@@ -341,10 +439,10 @@ class _DetailedReportsScreenState extends State<DetailedReportsScreen> {
                               Color spotColor;
                               if (barSpot.barIndex == 0) {
                                 text = 'Дохід: ${trendDataItem.formattedIncome}';
-                                spotColor = Theme.of(context).colorScheme.tertiary;
+                                spotColor = theme.colorScheme.tertiary;
                               } else {
                                 text = 'Витрати: ${trendDataItem.formattedExpense}';
-                                spotColor = Theme.of(context).colorScheme.error;
+                                spotColor = theme.colorScheme.error;
                               }
                               return LineTooltipItem(text, TextStyle(color: spotColor, fontWeight: FontWeight.bold));
                             }).where((item) => item != null).cast<LineTooltipItem>().toList();
@@ -358,9 +456,9 @@ class _DetailedReportsScreenState extends State<DetailedReportsScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Row(children: [Container(width: 12, height: 12, color: Theme.of(context).colorScheme.tertiary), const SizedBox(width: 4), const Text('Доходи')]),
+                  Row(children: [Container(width: 12, height: 12, color: theme.colorScheme.tertiary), const SizedBox(width: 4), const Text('Доходи')]),
                   const SizedBox(width: 16),
-                  Row(children: [Container(width: 12, height: 12, color: Theme.of(context).colorScheme.error), const SizedBox(width: 4), const Text('Витрати')]),
+                  Row(children: [Container(width: 12, height: 12, color: theme.colorScheme.error), const SizedBox(width: 4), const Text('Витрати')]),
                 ],
               )
             ],
@@ -371,16 +469,17 @@ class _DetailedReportsScreenState extends State<DetailedReportsScreen> {
   }
 
   Widget _buildSectionEmptyState(BuildContext context, IconData icon, String title, String message) {
+    final theme = Theme.of(context);
     return Card(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 48),
         child: Column(
           children: [
-            Icon(icon, size: 48, color: Theme.of(context).colorScheme.onSurfaceVariant.withAlpha(128)),
+            Icon(icon, size: 48, color: theme.colorScheme.onSurfaceVariant.withAlpha(128)),
             const SizedBox(height: 16),
-            Text(title, style: Theme.of(context).textTheme.titleMedium, textAlign: TextAlign.center),
+            Text(title, style: theme.textTheme.titleMedium, textAlign: TextAlign.center),
             const SizedBox(height: 8),
-            Text(message, style: Theme.of(context).textTheme.bodySmall, textAlign: TextAlign.center),
+            Text(message, style: theme.textTheme.bodySmall, textAlign: TextAlign.center),
           ],
         ),
       ),
@@ -388,9 +487,10 @@ class _DetailedReportsScreenState extends State<DetailedReportsScreen> {
   }
 
   Widget _buildShimmerLoadingReport() {
+    final theme = Theme.of(context);
     return Shimmer.fromColors(
-      baseColor: Theme.of(context).colorScheme.surfaceContainer,
-      highlightColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+      baseColor: theme.colorScheme.surfaceContainer,
+      highlightColor: theme.colorScheme.surfaceContainerHighest,
       child: ListView(
         padding: const EdgeInsets.all(8.0),
         children: [

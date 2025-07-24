@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../models/financial_story.dart';
-import '../../../utils/app_colors.dart';
 
 class TopExpenseStoryCard extends StatelessWidget {
   final TopExpensesStory story;
@@ -8,11 +7,12 @@ class TopExpenseStoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return _StoryCardBase(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Куди пішли гроші ${story.period}?", style: Theme.of(context).textTheme.titleLarge?.copyWith(color: AppColors.primaryText, fontWeight: FontWeight.bold)),
+          Text("Куди пішли гроші ${story.period}?", style: theme.textTheme.titleLarge?.copyWith(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
           ...story.topExpenses.map((item) => _ExpenseBar(item: item)),
         ],
@@ -27,6 +27,7 @@ class _ExpenseBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
@@ -37,13 +38,13 @@ class _ExpenseBar extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(item.categoryName, style: const TextStyle(color: AppColors.primaryText)),
+                Text(item.categoryName, style: TextStyle(color: theme.colorScheme.onSurface)),
                 const SizedBox(height: 4),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(10),
                   child: LinearProgressIndicator(
                     value: item.percentage / 100,
-                    backgroundColor: AppColors.background,
+                    backgroundColor: theme.colorScheme.surfaceContainer,
                     valueColor: AlwaysStoppedAnimation<Color>(item.color),
                     minHeight: 8,
                   ),
@@ -66,16 +67,17 @@ class ComparisonStoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = story.isPositiveChange ? AppColors.sphereGreen : AppColors.sphereRed;
+    final theme = Theme.of(context);
+    final color = story.isPositiveChange ? Colors.green : theme.colorScheme.error;
     final icon = story.isPositiveChange ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded;
     
     return _StoryCardBase(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(story.title, style: Theme.of(context).textTheme.titleLarge?.copyWith(color: AppColors.primaryText, fontWeight: FontWeight.bold)),
+          Text(story.title, style: theme.textTheme.titleLarge?.copyWith(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
-          Text(story.comparisonText, style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppColors.secondaryText)),
+          Text(story.comparisonText, style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
           const SizedBox(height: 8),
           Row(
             children: [
@@ -83,10 +85,10 @@ class ComparisonStoryCard extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 "(${story.changePercentage.toStringAsFixed(0)}%)",
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: color, fontWeight: FontWeight.bold),
+                style: theme.textTheme.headlineSmall?.copyWith(color: color, fontWeight: FontWeight.bold),
               ),
               const Spacer(),
-              const Text("Чудова робота! 💪", style: TextStyle(color: AppColors.primaryText)),
+              Text("Чудова робота! 💪", style: TextStyle(color: theme.colorScheme.onSurface)),
             ],
           )
         ],
@@ -101,19 +103,20 @@ class AiTipStoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return _StoryCardBase(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
            Row(
              children: [
-               const Icon(Icons.lightbulb_outline, color: AppColors.sphereYellow),
+               Icon(Icons.lightbulb_outline, color: Colors.amber.shade600),
                const SizedBox(width: 8),
-               Text(story.title, style: Theme.of(context).textTheme.titleLarge?.copyWith(color: AppColors.primaryText, fontWeight: FontWeight.bold)),
+               Text(story.title, style: theme.textTheme.titleLarge?.copyWith(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold)),
              ],
            ),
           const SizedBox(height: 16),
-          Text(story.content, style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppColors.secondaryText, height: 1.5)),
+          Text(story.content, style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant, height: 1.5)),
         ],
       ),
     );
@@ -126,13 +129,14 @@ class MostExpensiveDayStoryCard extends StatelessWidget {
     
     @override
     Widget build(BuildContext context) {
+        final theme = Theme.of(context);
         return _StoryCardBase(
             child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                    Text(story.title, style: Theme.of(context).textTheme.titleLarge?.copyWith(color: AppColors.primaryText, fontWeight: FontWeight.bold)),
+                    Text(story.title, style: theme.textTheme.titleLarge?.copyWith(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 16),
-                    Text(story.content, style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppColors.secondaryText, height: 1.5)),
+                    Text(story.content, style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant, height: 1.5)),
                 ],
             ),
         );
@@ -146,11 +150,12 @@ class _StoryCardBase extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
       ),
       child: child,

@@ -17,6 +17,7 @@ class InteractiveOnboardingScreen extends StatefulWidget {
 class _InteractiveOnboardingScreenState extends State<InteractiveOnboardingScreen> {
   OnboardingStep _currentStep = OnboardingStep.createWallet;
   fin_transaction.Transaction? _createdTransaction;
+  bool _isIncomeTransaction = false;
 
   @override
   void initState() {
@@ -46,18 +47,19 @@ class _InteractiveOnboardingScreenState extends State<InteractiveOnboardingScree
         }
         break;
       case OnboardingStep.addTransaction:
-        final createdTransaction = await Navigator.push<fin_transaction.Transaction>(
+        final result = await Navigator.push<Map<String, dynamic>>(
           context,
-          MaterialPageRoute(builder: (_) => const AddEditTransactionScreen(isFirstTransaction: true)),
+          MaterialPageRoute(builder: (_) => const AddEditTransactionScreen(isFirstTransaction: true, isTransferAllowed: false)),
         );
-        if (createdTransaction != null && mounted) {
-          _createdTransaction = createdTransaction;
+        if (result != null && result['transaction'] is fin_transaction.Transaction && mounted) {
+          _createdTransaction = result['transaction'];
+          _isIncomeTransaction = result['isIncome'] ?? false;
           _updateStep(OnboardingStep.createBudget);
         }
         break;
       case OnboardingStep.createBudget:
         final categoryId = _createdTransaction?.categoryId;
-        if (categoryId != null) {
+        if (categoryId != null && !_isIncomeTransaction) {
           final budgetCreated = await showDialog<bool>(
             context: context,
             barrierDismissible: false,
@@ -66,6 +68,8 @@ class _InteractiveOnboardingScreenState extends State<InteractiveOnboardingScree
           if (budgetCreated == true && mounted) {
             _updateStep(OnboardingStep.finished);
           }
+        } else {
+           _updateStep(OnboardingStep.finished);
         }
         break;
       case OnboardingStep.finished:
@@ -74,11 +78,46 @@ class _InteractiveOnboardingScreenState extends State<InteractiveOnboardingScree
     }
   }
 
+  Widget _buildStepOverlay(String title, String description) {
+    return Container(
+      color: Colors.black.withAlpha(178),
+      child: Center(
+        child: Card(
+          margin: const EdgeInsets.all(24),
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(title, style: Theme.of(context).textTheme.headlineSmall, textAlign: TextAlign.center),
+                const SizedBox(height: 16),
+                Text(description, textAlign: TextAlign.center),
+                const SizedBox(height: 24),
+                const CircularProgressIndicator(),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: CircularProgressIndicator(),
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        body: Stack(
+          children: [
+            Container(color: Theme.of(context).scaffoldBackgroundColor), 
+            if (_currentStep == OnboardingStep.createWallet)
+              _buildStepOverlay('Крок 1: Гаманець', 'Давайте створимо ваш перший гаманець для обліку фінансів.'),
+            if (_currentStep == OnboardingStep.addTransaction)
+              _buildStepOverlay('Крок 2: Перша транзакція', 'Тепер додайте вашу першу транзакцію – дохід або витрату.'),
+            if (_currentStep == OnboardingStep.createBudget)
+              _buildStepOverlay('Крок 3: Бюджет', 'Чудово! На основі вашої витрати, давайте створимо перший бюджет, щоб контролювати ліміти.'),
+          ],
+        ),
       ),
     );
   }

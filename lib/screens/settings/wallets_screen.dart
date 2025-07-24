@@ -7,6 +7,7 @@ import '../../models/wallet.dart';
 import '../../data/repositories/invitation_repository.dart';
 import '../../core/di/injector.dart';
 import '../../services/auth_service.dart';
+import '../../widgets/scaffold/patterned_scaffold.dart';
 import 'add_edit_wallet_screen.dart';
 
 class WalletsScreen extends StatefulWidget {
@@ -64,7 +65,7 @@ class _WalletsScreenState extends State<WalletsScreen> {
     final authService = context.watch<AuthService>();
     final currentUserId = authService.currentUser?.id;
 
-    return Scaffold(
+    return PatternedScaffold(
       appBar: AppBar(
         title: const Text('Управління гаманцями'),
         actions: [

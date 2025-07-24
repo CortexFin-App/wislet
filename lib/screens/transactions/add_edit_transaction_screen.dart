@@ -25,14 +25,27 @@ import '../../data/repositories/category_repository.dart';
 import '../../data/repositories/goal_repository.dart';
 import '../../data/repositories/budget_repository.dart';
 import '../../services/auth_service.dart';
+import '../../widgets/scaffold/patterned_scaffold.dart';
 import 'qr_scanner_screen.dart';
+import 'create_transfer_screen.dart';
+
+enum _TransactionScreenMode { expense, income, transfer }
 
 class AddEditTransactionScreen extends StatefulWidget {
   final fin_transaction.Transaction? transactionToEdit;
   final bool isFirstTransaction;
-  const AddEditTransactionScreen({super.key, this.transactionToEdit, this.isFirstTransaction = false});
+  final bool isTransferAllowed;
+
+  const AddEditTransactionScreen({
+    super.key,
+    this.transactionToEdit,
+    this.isFirstTransaction = false,
+    this.isTransferAllowed = true,
+  });
+
   @override
-  State<AddEditTransactionScreen> createState() => _AddEditTransactionScreenState();
+  State<AddEditTransactionScreen> createState() =>
+      _AddEditTransactionScreenState();
 }
 
 class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
@@ -41,16 +54,19 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
   final CategoryRepository _categoryRepo = getIt<CategoryRepository>();
   final GoalRepository _goalRepo = getIt<GoalRepository>();
   final BudgetRepository _budgetRepo = getIt<BudgetRepository>();
-  final AICategorizationService _aiCategorizationService = getIt<AICategorizationService>();
+  final AICategorizationService _aiCategorizationService =
+      getIt<AICategorizationService>();
   final OcrService _ocrService = getIt<OcrService>();
   final ReceiptParser _receiptParser = getIt<ReceiptParser>();
   final AnalyticsService _analyticsService = getIt<AnalyticsService>();
-  final ExchangeRateService _exchangeRateService = getIt<ExchangeRateService>();
+  final ExchangeRateService _exchangeRateService =
+      getIt<ExchangeRateService>();
 
   Timer? _debounce;
   bool _showDetails = false;
+  bool _userHasManuallySelectedCategory = false;
 
-  fin_transaction.TransactionType _selectedTransactionType = fin_transaction.TransactionType.expense;
+  _TransactionScreenMode _selectedMode = _TransactionScreenMode.expense;
   final TextEditingController _amountController = TextEditingController();
   Category? _selectedCategory;
   DateTime _selectedDate = DateTime.now();
@@ -82,29 +98,39 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
     if (_isEditing) {
       final transaction = widget.transactionToEdit!;
       _originalLinkedGoalIdBeforeEdit = transaction.linkedGoalId;
-      _selectedTransactionType = transaction.type;
-      _amountController.text = transaction.originalAmount.toStringAsFixed(2).replaceAll('.', ',');
+      _selectedMode =
+          transaction.type == fin_transaction.TransactionType.expense
+              ? _TransactionScreenMode.expense
+              : _TransactionScreenMode.income;
+      _amountController.text =
+          transaction.originalAmount.toStringAsFixed(2).replaceAll('.', ',');
       _selectedDate = transaction.date;
       _descriptionController.text = transaction.description ?? '';
       _selectedInputCurrency = appCurrencies.firstWhereOrNull(
-        (c) => c.code == transaction.originalCurrencyCode,
-      ) ?? appCurrencies.firstWhere((curr) => curr.code == _baseCurrencyCode);
-
-      if (transaction.exchangeRateUsed != null && transaction.originalCurrencyCode != _baseCurrencyCode) {
-          _currentRateInfo = ConversionRateInfo(
+            (c) => c.code == transaction.originalCurrencyCode,
+          ) ??
+          appCurrencies.firstWhere((curr) => curr.code == _baseCurrencyCode);
+      if (transaction.exchangeRateUsed != null &&
+          transaction.originalCurrencyCode != _baseCurrencyCode) {
+        _currentRateInfo = ConversionRateInfo(
             rate: transaction.exchangeRateUsed!,
             effectiveRateDate: transaction.date,
-            isRateStale: true
-        );
+            isRateStale: true);
       } else {
-        _fetchAndSetExchangeRate(date: _selectedDate, currency: _selectedInputCurrency);
+        _fetchAndSetExchangeRate(
+            date: _selectedDate, currency: _selectedInputCurrency);
       }
     } else {
       _selectedInputCurrency = context.read<CurrencyProvider>().selectedCurrency;
-      _fetchAndSetExchangeRate(date: _selectedDate, currency: _selectedInputCurrency);
+      _fetchAndSetExchangeRate(
+          date: _selectedDate, currency: _selectedInputCurrency);
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadCategoriesForType(_selectedTransactionType, initialCategoryId: widget.transactionToEdit?.categoryId);
+      _loadCategoriesForType(
+          _selectedMode == _TransactionScreenMode.income
+              ? fin_transaction.TransactionType.income
+              : fin_transaction.TransactionType.expense,
+          initialCategoryId: widget.transactionToEdit?.categoryId);
       _loadAvailableGoals();
     });
   }
@@ -120,11 +146,14 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
   }
 
   void _onDescriptionChanged() async {
+    if (_userHasManuallySelectedCategory) return;
+
     final prefs = await SharedPreferences.getInstance();
-    final bool isAiEnabled = prefs.getBool(AppConstants.prefsKeyAiCategorization) ?? true;
+    final bool isAiEnabled =
+        prefs.getBool(AppConstants.prefsKeyAiCategorization) ?? true;
     if (!mounted || !isAiEnabled) return;
     final proStatus = context.read<ProStatusProvider>();
-    if(!proStatus.isPro) return;
+    if (!proStatus.isPro) return;
 
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 700), () async {
@@ -133,96 +162,117 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
       if (walletId == null || _descriptionController.text.trim().length < 3) {
         return;
       }
-      final suggestedCategory = await _aiCategorizationService.suggestCategory(
+      final suggestedCategory =
+          await _aiCategorizationService.suggestCategory(
         description: _descriptionController.text,
-        walletId: walletId
+        walletId: walletId,
       );
 
-      if (mounted && suggestedCategory != null && _selectedCategory?.id != suggestedCategory.id) {
-          setState(() => _selectedCategory = suggestedCategory);
+      if (mounted &&
+          suggestedCategory != null &&
+          _selectedCategory?.id != suggestedCategory.id &&
+          !_userHasManuallySelectedCategory) {
+        setState(() => _selectedCategory = suggestedCategory);
       }
     });
   }
-  
+
   Future<void> _saveTransaction() async {
     final walletProvider = context.read<WalletProvider>();
     final authService = context.read<AuthService>();
     final appModeProvider = context.read<AppModeProvider>();
-    
+
     if (!_formKey.currentState!.validate() || _isSaving) return;
 
     final currentWalletId = walletProvider.currentWallet?.id;
-    final currentUserId = appModeProvider.isOnline ? authService.currentUser?.id : '1';
-    
+    final currentUserId =
+        appModeProvider.isOnline ? authService.currentUser?.id : '1';
+
     if (currentWalletId == null || currentUserId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Помилка: не вдалося визначити гаманець або користувача. Спробуйте перезайти.'))
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text(
+              'Помилка: не вдалося визначити гаманець або користувача. Спробуйте перезайти.')));
       return;
     }
 
     final amountString = _amountController.text.replaceAll(',', '.');
     final originalAmount = double.tryParse(amountString);
-    if (originalAmount == null || _selectedCategory == null || _selectedInputCurrency == null) return;
-    
-    if (_selectedCategory!.id != null && _descriptionController.text.trim().isNotEmpty) {
-        await _aiCategorizationService.rememberUserChoice(_descriptionController.text.trim(), _selectedCategory!);
+    if (originalAmount == null ||
+        _selectedCategory == null ||
+        _selectedInputCurrency == null) return;
+
+    if (_selectedCategory!.id != null &&
+        _descriptionController.text.trim().isNotEmpty) {
+      await _aiCategorizationService.rememberUserChoice(
+          _descriptionController.text.trim(), _selectedCategory!);
     }
-    
+
     double finalExchangeRate = _currentRateInfo?.rate ?? 1.0;
-    
+
     setState(() => _isSaving = true);
     double amountInBase = originalAmount * finalExchangeRate;
     final int? newLinkedGoalId = _selectedLinkedGoal?.id;
-    
+
     fin_transaction.Transaction transactionToSave = fin_transaction.Transaction(
-        id: widget.transactionToEdit?.id,
-        type: _selectedTransactionType,
-        originalAmount: originalAmount,
-        originalCurrencyCode: _selectedInputCurrency!.code,
-        amountInBaseCurrency: amountInBase,
-        exchangeRateUsed: finalExchangeRate,
-        categoryId: _selectedCategory!.id!,
-        date: _selectedDate,
-        description: _descriptionController.text.trim(),
-        linkedGoalId: newLinkedGoalId,
+      id: widget.transactionToEdit?.id,
+      type: _selectedMode == _TransactionScreenMode.income
+          ? fin_transaction.TransactionType.income
+          : fin_transaction.TransactionType.expense,
+      originalAmount: originalAmount,
+      originalCurrencyCode: _selectedInputCurrency!.code,
+      amountInBaseCurrency: amountInBase,
+      exchangeRateUsed: finalExchangeRate,
+      categoryId: _selectedCategory!.id!,
+      date: _selectedDate,
+      description: _descriptionController.text.trim(),
+      linkedGoalId: newLinkedGoalId,
     );
 
     final result = _isEditing
-      ? await _transactionRepo.updateTransaction(transactionToSave, currentWalletId, currentUserId)
-      : await _transactionRepo.createTransaction(transactionToSave, currentWalletId, currentUserId);
+        ? await _transactionRepo.updateTransaction(
+            transactionToSave, currentWalletId, currentUserId)
+        : await _transactionRepo.createTransaction(
+            transactionToSave, currentWalletId, currentUserId);
 
     if (!mounted) return;
 
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
 
-    result.fold(
-      (failure) {
-        messenger.showSnackBar(SnackBar(content: Text('Помилка: ${failure.userMessage}')));
-        if(mounted) setState(() => _isSaving = false);
-      },
-      (savedId) async {
-        final finalTransaction = fin_transaction.Transaction.fromMap(transactionToSave.toMap()..['id'] = savedId);
-        
-        try {
-          if (_isEditing && _originalLinkedGoalIdBeforeEdit != null && _originalLinkedGoalIdBeforeEdit != newLinkedGoalId) {
-              await _goalRepo.updateFinancialGoalProgress(_originalLinkedGoalIdBeforeEdit!);
-          }
-          await _runPostSaveChecks(finalTransaction, currentWalletId);
-          if (mounted) {
-            navigator.pop(widget.isFirstTransaction ? finalTransaction : true);
-          }
-        } catch (e) {
-            if(mounted) {
-              messenger.showSnackBar(SnackBar(content: Text('Транзакцію збережено, але сталася помилка: $e')));
-              if (navigator.canPop()) navigator.pop(true);
-            }
-        } finally {
-            if (mounted) setState(() => _isSaving = false);
+    result.fold((failure) {
+      messenger
+          .showSnackBar(SnackBar(content: Text('Помилка: ${failure.userMessage}')));
+      if (mounted) setState(() => _isSaving = false);
+    }, (savedId) async {
+      final finalTransaction = fin_transaction.Transaction.fromMap(
+          transactionToSave.toMap()..['id'] = savedId);
+
+      try {
+        if (_isEditing &&
+            _originalLinkedGoalIdBeforeEdit != null &&
+            _originalLinkedGoalIdBeforeEdit != newLinkedGoalId) {
+          await _goalRepo
+              .updateFinancialGoalProgress(_originalLinkedGoalIdBeforeEdit!);
         }
+        await _runPostSaveChecks(finalTransaction, currentWalletId);
+        if (mounted) {
+          final returnData = {
+            'transaction': finalTransaction,
+            'isIncome': _selectedMode == _TransactionScreenMode.income,
+          };
+          navigator.pop(widget.isFirstTransaction ? returnData : true);
+        }
+      } catch (e) {
+        if (mounted) {
+          messenger.showSnackBar(SnackBar(
+              content:
+                  Text('Транзакцію збережено, але сталася помилка: $e')));
+          if (navigator.canPop()) navigator.pop(true);
+        }
+      } finally {
+        if (mounted) setState(() => _isSaving = false);
       }
-    );
+    });
   }
 
   Future<void> _scanReceipt() async {
@@ -231,7 +281,8 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
     if (!mounted) return;
 
     if (!proStatusProvider.isPro) {
-      messenger.showSnackBar(const SnackBar(content: Text('Сканування чеків доступне лише у Pro-версії.')));
+      messenger.showSnackBar(
+          const SnackBar(content: Text('Сканування чеків доступне лише у Pro-версії.')));
       return;
     }
     final ImagePicker picker = ImagePicker();
@@ -244,20 +295,23 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
         final result = _receiptParser.parseFromText(recognizedText);
         setState(() {
           if (result.totalAmount != null) {
-            _amountController.text = result.totalAmount!.toStringAsFixed(2).replaceAll('.', ',');
-           }
-           if (result.date != null) {
+            _amountController.text =
+                result.totalAmount!.toStringAsFixed(2).replaceAll('.', ',');
+          }
+          if (result.date != null) {
             _selectedDate = result.date!;
           }
         });
-        messenger.showSnackBar(const SnackBar(content: Text('Дані з чека заповнено!')));
+        messenger
+            .showSnackBar(const SnackBar(content: Text('Дані з чека заповнено!')));
       } else {
-        messenger.showSnackBar(const SnackBar(content: Text('Не вдалося розпізнати текст на зображенні.')));
+        messenger.showSnackBar(const SnackBar(
+            content: Text('Не вдалося розпізнати текст на зображенні.')));
       }
     } catch (e) {
-       messenger.showSnackBar(SnackBar(content: Text('Помилка сканування: $e')));
+      messenger.showSnackBar(SnackBar(content: Text('Помилка сканування: $e')));
     } finally {
-      if(mounted) setState(() => _isScanning = false);
+      if (mounted) setState(() => _isScanning = false);
     }
   }
 
@@ -267,11 +321,12 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
 
-     if (!proStatusProvider.isPro) {
-       messenger.showSnackBar(const SnackBar(content: Text('Сканування QR доступне лише у Pro-версії.')));
+    if (!proStatusProvider.isPro) {
+      messenger.showSnackBar(
+          const SnackBar(content: Text('Сканування QR доступне лише у Pro-версії.')));
       return;
     }
-    
+
     final result = await navigator.push<String>(
       MaterialPageRoute(builder: (context) => const QrScannerScreen()),
     );
@@ -279,16 +334,18 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
       final parsedData = _receiptParser.parseQrCode(result);
       setState(() {
         if (parsedData.totalAmount != null) {
-          _amountController.text = parsedData.totalAmount!.toStringAsFixed(2).replaceAll('.', ',');
+          _amountController.text =
+              parsedData.totalAmount!.toStringAsFixed(2).replaceAll('.', ',');
         }
         if (parsedData.date != null) {
-           _selectedDate = parsedData.date!;
-         }
-        if(parsedData.merchantName != null){
+          _selectedDate = parsedData.date!;
+        }
+        if (parsedData.merchantName != null) {
           _descriptionController.text = parsedData.merchantName!;
         }
       });
-      messenger.showSnackBar(const SnackBar(content: Text('Дані з QR-коду заповнено!')));
+      messenger
+          .showSnackBar(const SnackBar(content: Text('Дані з QR-коду заповнено!')));
     }
   }
 
@@ -300,26 +357,27 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
     final allGoalsEither = await _goalRepo.getAllFinancialGoals(walletId);
     if (!mounted) return;
 
-    allGoalsEither.fold(
-      (failure) => _availableGoals = [],
-      (allGoals) {
-        _availableGoals = allGoals.where((goal) => !goal.isAchieved).toList();
-        if (_isEditing && widget.transactionToEdit?.linkedGoalId != null) {
-             _selectedLinkedGoal = _availableGoals.firstWhereOrNull(
-              (goal) => goal.id == widget.transactionToEdit!.linkedGoalId,
-          );
-        }
+    allGoalsEither.fold((failure) => _availableGoals = [], (allGoals) {
+      _availableGoals = allGoals.where((goal) => !goal.isAchieved).toList();
+      if (_isEditing && widget.transactionToEdit?.linkedGoalId != null) {
+        _selectedLinkedGoal = _availableGoals.firstWhereOrNull(
+          (goal) => goal.id == widget.transactionToEdit!.linkedGoalId,
+        );
       }
-    );
-    if(mounted) setState(() {});
+    });
+    if (mounted) setState(() {});
   }
 
-  Future<void> _fetchAndSetExchangeRate({DateTime? date, Currency? currency}) async {
+  Future<void> _fetchAndSetExchangeRate(
+      {DateTime? date, Currency? currency}) async {
     final targetDate = date ?? _selectedDate;
     final targetCurrency = currency ?? _selectedInputCurrency;
-    
+
     if (targetCurrency == null || targetCurrency.code == _baseCurrencyCode) {
-      if (mounted) setState(() => _currentRateInfo = ConversionRateInfo(rate: 1.0, effectiveRateDate: targetDate, isRateStale: false));
+      if (mounted) {
+        setState(() => _currentRateInfo = ConversionRateInfo(
+            rate: 1.0, effectiveRateDate: targetDate, isRateStale: false));
+      }
       return;
     }
 
@@ -346,17 +404,17 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
           _currentRateInfo = null;
           _isLoadingRate = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Не вдалося отримати курс для ${targetCurrency.code}'))
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Не вдалося отримати курс для ${targetCurrency.code}')));
       }
     }
   }
-  
-  Future<void> _loadCategoriesForType(fin_transaction.TransactionType type, {int? initialCategoryId}) async {
+
+  Future<void> _loadCategoriesForType(fin_transaction.TransactionType type,
+      {int? initialCategoryId}) async {
     if (!mounted) return;
     final walletId = context.read<WalletProvider>().currentWallet?.id;
-    if(walletId == null) return;
+    if (walletId == null) return;
 
     setState(() {
       _isLoadingCategories = true;
@@ -364,8 +422,12 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
       _availableCategories = [];
     });
 
-    final categoryTypeToLoad = (type == fin_transaction.TransactionType.income) ? CategoryType.income : CategoryType.expense;
-    var categoriesEither = await _categoryRepo.getCategoriesByType(walletId, categoryTypeToLoad);
+    final categoryTypeToLoad =
+        (type == fin_transaction.TransactionType.income)
+            ? CategoryType.income
+            : CategoryType.expense;
+    var categoriesEither =
+        await _categoryRepo.getCategoriesByType(walletId, categoryTypeToLoad);
 
     var categories = categoriesEither.getOrElse((_) => []);
 
@@ -373,12 +435,13 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
       final prefs = await SharedPreferences.getInstance();
       final flagKey = 'default_categories_created_for_wallet_$walletId';
       final bool alreadyCreated = prefs.getBool(flagKey) ?? false;
-      
+
       if (!alreadyCreated) {
         await _categoryRepo.addDefaultCategories(walletId);
         await prefs.setBool(flagKey, true);
-        
-        categoriesEither = await _categoryRepo.getCategoriesByType(walletId, categoryTypeToLoad);
+
+        categoriesEither = await _categoryRepo.getCategoriesByType(
+            walletId, categoryTypeToLoad);
         categories = categoriesEither.getOrElse((_) => []);
       }
     }
@@ -387,7 +450,8 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
       setState(() {
         _availableCategories = categories;
         if (initialCategoryId != null) {
-          _selectedCategory = categories.firstWhereOrNull((cat) => cat.id == initialCategoryId);
+          _selectedCategory =
+              categories.firstWhereOrNull((cat) => cat.id == initialCategoryId);
         }
         _isLoadingCategories = false;
       });
@@ -400,19 +464,26 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
     final walletProvider = context.watch<WalletProvider>();
     final authService = context.watch<AuthService>();
     final appModeProvider = context.watch<AppModeProvider>();
-    
-    final bool isUserAvailable = appModeProvider.isOnline ? authService.currentUser != null : true;
-    final bool isRateReady = _selectedInputCurrency?.code == _baseCurrencyCode || (_currentRateInfo != null && !_isLoadingRate);
-    final bool canSave = !_isSaving && 
-                         _amountController.text.isNotEmpty && 
-                         _selectedCategory != null &&
-                         walletProvider.currentWallet != null &&
-                         isUserAvailable &&
-                         isRateReady;
 
-    return Scaffold(
+    final bool isUserAvailable =
+        appModeProvider.isOnline ? authService.currentUser != null : true;
+    final bool isRateReady = _selectedInputCurrency?.code == _baseCurrencyCode ||
+        (_currentRateInfo != null && !_isLoadingRate);
+    final bool canSave = !_isSaving &&
+        _amountController.text.isNotEmpty &&
+        _selectedCategory != null &&
+        walletProvider.currentWallet != null &&
+        isUserAvailable &&
+        isRateReady;
+    
+    String titleText = _isEditing ? 'Редагувати транзакцію' : 'Нова транзакція';
+    if(widget.isFirstTransaction) {
+      titleText = _selectedMode == _TransactionScreenMode.income ? 'Ваш перший дохід' : 'Ваша перша витрата';
+    }
+
+    return PatternedScaffold(
       appBar: AppBar(
-        title: Text(widget.isFirstTransaction ? 'Ваша перша витрата' : (_isEditing ? 'Редагувати транзакцію' : 'Нова транзакція')),
+        title: Text(titleText),
         actions: [
           if (!widget.isFirstTransaction) ...[
             IconButton(
@@ -435,83 +506,161 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
             child: ListView(
               padding: const EdgeInsets.all(16.0),
               children: <Widget>[
-                SegmentedButton<fin_transaction.TransactionType>(
+                SegmentedButton<_TransactionScreenMode>(
                   style: theme.segmentedButtonTheme.style,
-                  segments: const <ButtonSegment<fin_transaction.TransactionType>>[
-                     ButtonSegment(value: fin_transaction.TransactionType.expense, label: Text('Витрата'), icon: Icon(Icons.arrow_upward)),
-                    ButtonSegment(value: fin_transaction.TransactionType.income, label: Text('Дохід'), icon: Icon(Icons.arrow_downward)),
+                  segments: <ButtonSegment<_TransactionScreenMode>>[
+                    const ButtonSegment(
+                        value: _TransactionScreenMode.expense,
+                        label: Text('Витрата'),
+                        icon: Icon(Icons.arrow_upward)),
+                    const ButtonSegment(
+                        value: _TransactionScreenMode.income,
+                        label: Text('Дохід'),
+                        icon: Icon(Icons.arrow_downward)),
+                    if (widget.isTransferAllowed)
+                      const ButtonSegment(
+                          value: _TransactionScreenMode.transfer,
+                          label: Text('Переказ'),
+                          icon: Icon(Icons.swap_horiz)),
                   ],
-                  selected: <fin_transaction.TransactionType>{_selectedTransactionType},
-                   onSelectionChanged: (Set<fin_transaction.TransactionType> newSelection) {
+                  selected: <_TransactionScreenMode>{_selectedMode},
+                  onSelectionChanged:
+                      (Set<_TransactionScreenMode> newSelection) async {
                     if (mounted) {
-                      setState(() {
-                        _selectedTransactionType = newSelection.first;
-                        _loadCategoriesForType(_selectedTransactionType);
-                      });
+                      if (newSelection.first ==
+                          _TransactionScreenMode.transfer) {
+                        final result = await Navigator.push<bool>(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) =>
+                                    const CreateTransferScreen()));
+                        if (result == true) {
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            if (mounted) {
+                              Navigator.of(context).pop(true);
+                            }
+                          });
+                        }
+                      } else {
+                        setState(() {
+                          _selectedMode = newSelection.first;
+                          _loadCategoriesForType(
+                              _selectedMode == _TransactionScreenMode.income
+                                  ? fin_transaction.TransactionType.income
+                                  : fin_transaction.TransactionType.expense);
+                        });
+                      }
                     }
-                   },
+                  },
                 ),
                 const SizedBox(height: 20),
                 TextFormField(
                   controller: _amountController,
-                   decoration: InputDecoration(
-                    labelText: 'Сума',
-                    prefixIcon: _selectedInputCurrency != null ? Padding(padding: const EdgeInsets.all(14.0) , child: Text(_selectedInputCurrency!.symbol, style: TextStyle(fontSize: 16, color: theme.colorScheme.onSurfaceVariant))) : null
-                  ),
-                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  validator: (value) { if (value == null || value.isEmpty) return 'Введіть суму'; final cleanValue = value.replaceAll(',', '.'); if (double.tryParse(cleanValue) == null) return 'Коректне число'; if (double.parse(cleanValue) <= 0) return 'Більше нуля'; return null; },
+                  decoration: InputDecoration(
+                      labelText: 'Сума',
+                      prefixIcon: _selectedInputCurrency != null
+                          ? Padding(
+                              padding: const EdgeInsets.all(14.0),
+                              child: Text(_selectedInputCurrency!.symbol,
+                                  style: TextStyle(
+                                      fontSize: 16,
+                                      color: theme
+                                          .colorScheme.onSurfaceVariant)))
+                          : null),
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Введіть суму';
+                    }
+                    final cleanValue = value.replaceAll(',', '.');
+                    if (double.tryParse(cleanValue) == null) {
+                      return 'Коректне число';
+                    }
+                    if (double.parse(cleanValue) <= 0) {
+                      return 'Більше нуля';
+                    }
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 16),
                 if (_isLoadingCategories)
-                  const Center(child: Padding(padding: EdgeInsets.all(8.0), child: CircularProgressIndicator()))
+                  const Center(
+                      child: Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: CircularProgressIndicator()))
                 else if (_availableCategories.isEmpty)
                   Card(
-                     color: theme.colorScheme.surfaceContainerHighest,
+                    color: theme.colorScheme.surfaceContainerHighest,
                     child: Padding(
                       padding: const EdgeInsets.all(12.0),
                       child: Text(
-                         'Спочатку створіть категорії для "${_selectedTransactionType == fin_transaction.TransactionType.expense ? 'витрат' : 'доходів'}" в налаштуваннях.',
+                        'Спочатку створіть категорії для "${_selectedMode == _TransactionScreenMode.expense ? 'витрат' : 'доходів'}" в налаштуваннях.',
                         textAlign: TextAlign.center,
                       ),
-                   ),
+                    ),
                   )
                 else
                   DropdownButtonFormField<Category>(
                     value: _selectedCategory,
-                     decoration: const InputDecoration(labelText: 'Категорія', prefixIcon: Icon(Icons.category_outlined)),
+                    decoration: const InputDecoration(
+                        labelText: 'Категорія',
+                        prefixIcon: Icon(Icons.category_outlined)),
                     hint: const Text('Оберіть категорію'),
                     isExpanded: true,
-                    items: _availableCategories.map((Category category) => DropdownMenuItem<Category>(value: category, child: Text(category.name))).toList(),
-                     onChanged: (Category? newValue) => setState(() => _selectedCategory = newValue),
-                    validator: (value) => value == null ? 'Оберіть категорію' : null,
+                    items: _availableCategories
+                        .map((Category category) => DropdownMenuItem<Category>(
+                            value: category, child: Text(category.name)))
+                        .toList(),
+                    onChanged: (Category? newValue) {
+                      setState(() {
+                        _selectedCategory = newValue;
+                        _userHasManuallySelectedCategory = true;
+                      });
+                    },
+                    validator: (value) =>
+                        value == null ? 'Оберіть категорію' : null,
                   ),
                 const SizedBox(height: 16),
-                 TextFormField(
+                TextFormField(
                   controller: _descriptionController,
-                  decoration: const InputDecoration(labelText: 'Опис (опціонально)', prefixIcon: Icon(Icons.description_outlined)),
+                  decoration: const InputDecoration(
+                      labelText: 'Опис (опціонально)',
+                      prefixIcon: Icon(Icons.description_outlined)),
                   maxLines: 3,
                 ),
                 const SizedBox(height: 8),
                 AnimatedSize(
                   duration: const Duration(milliseconds: 300),
                   curve: Curves.easeInOut,
-                  child: _showDetails ? _buildDetailsSection() : const SizedBox.shrink(),
+                  child: _showDetails
+                      ? _buildDetailsSection()
+                      : const SizedBox.shrink(),
                 ),
                 const SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     TextButton(
-                      onPressed: () => setState(() => _showDetails = !_showDetails),
-                      child: Text(_showDetails ? 'Сховати деталі' : 'Показати деталі'),
-                   ),
+                      onPressed: () =>
+                          setState(() => _showDetails = !_showDetails),
+                      child: Text(_showDetails
+                          ? 'Сховати деталі'
+                          : 'Показати деталі'),
+                    ),
                     ElevatedButton(
                       onPressed: canSave ? _saveTransaction : null,
-                      style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12)),
-                       child: _isSaving
-                         ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 32, vertical: 12)),
+                      child: _isSaving
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                  color: Colors.white, strokeWidth: 2))
                           : Text(_isEditing ? 'Зберегти' : 'Додати'),
-                     ),
+                    ),
                   ],
                 )
               ],
@@ -523,10 +672,11 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
               child: const Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
-                   children: [
+                  children: [
                     CircularProgressIndicator(),
                     SizedBox(height: 16),
-                    Text('Обробка зображення...', style: TextStyle(color: Colors.white, fontSize: 16)),
+                    Text('Обробка зображення...',
+                        style: TextStyle(color: Colors.white, fontSize: 16)),
                   ],
                 ),
               ),
@@ -541,18 +691,33 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Divider(height: 24),
-        Text("Додаткові параметри", style: Theme.of(context).textTheme.titleMedium),
+        Text("Додаткові параметри",
+            style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 16),
         DropdownButtonFormField<Currency>(
-            decoration: const InputDecoration(labelText: 'Валюта', prefixIcon: Icon(Icons.currency_exchange_outlined)),
-            value: _selectedInputCurrency,
-            items: appCurrencies.map((Currency currency) => DropdownMenuItem<Currency>(value: currency, child: Text('${currency.code} - ${currency.name}'))).toList(),
-            onChanged: (Currency? newValue) { if (mounted && newValue != null) { setState(() => _selectedInputCurrency = newValue); _fetchAndSetExchangeRate(currency: newValue);}},
-            validator: (value) => value == null ? 'Оберіть валюту' : null,
+          decoration: const InputDecoration(
+              labelText: 'Валюта',
+              prefixIcon: Icon(Icons.currency_exchange_outlined)),
+          value: _selectedInputCurrency,
+          items: appCurrencies
+              .map((Currency currency) => DropdownMenuItem<Currency>(
+                  value: currency,
+                  child: Text('${currency.code} - ${currency.name}')))
+              .toList(),
+          onChanged: (Currency? newValue) {
+            if (mounted && newValue != null) {
+              setState(() => _selectedInputCurrency = newValue);
+              _fetchAndSetExchangeRate(currency: newValue);
+            }
+          },
+          validator: (value) => value == null ? 'Оберіть валюту' : null,
         ),
         if (_isLoadingRate)
-          const Padding(padding: EdgeInsets.symmetric(vertical: 8.0), child: Center(child: CircularProgressIndicator()))
-        else if (_currentRateInfo != null && _selectedInputCurrency?.code != _baseCurrencyCode)
+          const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8.0),
+              child: Center(child: CircularProgressIndicator()))
+        else if (_currentRateInfo != null &&
+            _selectedInputCurrency?.code != _baseCurrencyCode)
           Padding(
             padding: const EdgeInsets.only(top: 8.0),
             child: Text(
@@ -563,56 +728,81 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
           ),
         const SizedBox(height: 16),
         ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.calendar_today_outlined),
-            title: Text("Дата: ${DateFormat('dd.MM.yyyy, HH:mm').format(_selectedDate)}"),
-            trailing: const Icon(Icons.edit_outlined),
-            onTap: () async {
-                final pickedDate = await showDatePicker(context: context, initialDate: _selectedDate, firstDate: DateTime(2000), lastDate: DateTime(2101));
-                if (pickedDate != null && mounted) {
-                final pickedTime = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(_selectedDate));
-                if (mounted) {
-                     setState(() {
-                      _selectedDate = DateTime(pickedDate.year, pickedDate.month, pickedDate.day, pickedTime?.hour ?? _selectedDate.hour, pickedTime?.minute ?? _selectedDate.minute);
-                    });
-                    _fetchAndSetExchangeRate(date: _selectedDate, currency: _selectedInputCurrency);
-                }
-                }
-             },
+          contentPadding: EdgeInsets.zero,
+          leading: const Icon(Icons.calendar_today_outlined),
+          title: Text(
+              "Дата: ${DateFormat('dd.MM.yyyy, HH:mm').format(_selectedDate)}"),
+          trailing: const Icon(Icons.edit_outlined),
+          onTap: () async {
+            final pickedDate = await showDatePicker(
+                context: context,
+                initialDate: _selectedDate,
+                firstDate: DateTime(2000),
+                lastDate: DateTime(2101));
+            if (pickedDate != null && mounted) {
+              final pickedTime = await showTimePicker(
+                  context: context,
+                  initialTime: TimeOfDay.fromDateTime(_selectedDate));
+              if (mounted) {
+                setState(() {
+                  _selectedDate = DateTime(
+                      pickedDate.year,
+                      pickedDate.month,
+                      pickedDate.day,
+                      pickedTime?.hour ?? _selectedDate.hour,
+                      pickedTime?.minute ?? _selectedDate.minute);
+                });
+                _fetchAndSetExchangeRate(
+                    date: _selectedDate, currency: _selectedInputCurrency);
+              }
+            }
+          },
         ),
         const SizedBox(height: 16),
         if (_availableGoals.isNotEmpty)
           DropdownButtonFormField<FinancialGoal?>(
-              value: _selectedLinkedGoal,
-              decoration: InputDecoration(
-                labelText: 'Прив\'язати до цілі',
-                border: const OutlineInputBorder(),
-                prefixIcon: const Icon(Icons.flag_outlined),
-                suffixIcon: _selectedLinkedGoal != null ? IconButton(icon: const Icon(Icons.clear, size: 20), onPressed: () => setState(() => _selectedLinkedGoal = null)) : null,
-              ),
-              isExpanded: true,
-              hint: const Text('Не прив\'язувати'),
-              items: [
-                const DropdownMenuItem<FinancialGoal?>(value: null, child: Text('Не прив\'язувати до цілі')),
-                ..._availableGoals.map((FinancialGoal goal) {
-                   return DropdownMenuItem<FinancialGoal?>(value: goal, child: Text(goal.name, overflow: TextOverflow.ellipsis));
-                }),
-              ],
-              onChanged: (FinancialGoal? newValue) => setState(() => _selectedLinkedGoal = newValue),
+            value: _selectedLinkedGoal,
+            decoration: InputDecoration(
+              labelText: 'Прив\'язати до цілі',
+              border: const OutlineInputBorder(),
+              prefixIcon: const Icon(Icons.flag_outlined),
+              suffixIcon: _selectedLinkedGoal != null
+                  ? IconButton(
+                      icon: const Icon(Icons.clear, size: 20),
+                      onPressed: () =>
+                          setState(() => _selectedLinkedGoal = null))
+                  : null,
+            ),
+            isExpanded: true,
+            hint: const Text('Не прив\'язувати'),
+            items: [
+              const DropdownMenuItem<FinancialGoal?>(
+                  value: null, child: Text('Не прив\'язувати до цілі')),
+              ..._availableGoals.map((FinancialGoal goal) {
+                return DropdownMenuItem<FinancialGoal?>(
+                    value: goal,
+                    child:
+                        Text(goal.name, overflow: TextOverflow.ellipsis));
+              }),
+            ],
+            onChanged: (FinancialGoal? newValue) =>
+                setState(() => _selectedLinkedGoal = newValue),
           ),
       ],
     );
   }
 
-  Future<void> _runPostSaveChecks(fin_transaction.Transaction transaction, int walletId) async {
+  Future<void> _runPostSaveChecks(
+      fin_transaction.Transaction transaction, int walletId) async {
     await _budgetRepo.checkAndNotifyEnvelopeLimits(transaction, walletId);
     if (transaction.linkedGoalId != null) {
-       await _goalRepo.updateFinancialGoalProgress(transaction.linkedGoalId!);
+      await _goalRepo.updateFinancialGoalProgress(transaction.linkedGoalId!);
     }
-    if(mounted) {
+    if (mounted) {
       final proStatus = context.read<ProStatusProvider>();
       if (proStatus.isPro) {
-        await _analyticsService.analyzeAndNotifyOnNewTransaction(transaction, walletId);
+        await _analyticsService.analyzeAndNotifyOnNewTransaction(
+            transaction, walletId);
       }
     }
   }

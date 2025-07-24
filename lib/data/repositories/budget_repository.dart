@@ -8,6 +8,7 @@ abstract class BudgetRepository {
   Future<Either<AppFailure, int>> updateBudget(Budget budget);
   Future<Either<AppFailure, int>> deleteBudget(int budgetId);
   Future<Either<AppFailure, List<Budget>>> getAllBudgets(int walletId);
+  Stream<List<Budget>> watchAllBudgets(int walletId);
   Future<Either<AppFailure, Budget?>> getActiveBudgetForDate(int walletId, DateTime date);
   Future<Either<AppFailure, int>> createBudgetEnvelope(BudgetEnvelope envelope);
   Future<Either<AppFailure, int>> updateBudgetEnvelope(BudgetEnvelope envelope);

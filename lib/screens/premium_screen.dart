@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../../core/di/injector.dart';
 import '../../providers/pro_status_provider.dart';
 import '../../services/billing_service.dart';
-import '../../utils/app_palette.dart';
+import '../../widgets/scaffold/patterned_scaffold.dart';
 
 class PremiumScreen extends StatelessWidget {
   const PremiumScreen({super.key});
@@ -11,13 +11,14 @@ class PremiumScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final proStatusProvider = Provider.of<ProStatusProvider>(context);
-    final textTheme = Theme.of(context).textTheme;
-    return Scaffold(
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
+
+    return PatternedScaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      extendBodyBehindAppBar: true,
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -27,8 +28,8 @@ class PremiumScreen extends StatelessWidget {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    AppPalette.darkPrimary,
-                    AppPalette.darkPrimaryVariant..withAlpha(204)
+                    theme.colorScheme.primary,
+                    theme.colorScheme.primaryContainer,
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -36,21 +37,20 @@ class PremiumScreen extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  const Icon(Icons.workspace_premium_rounded,
-                      size: 80, color: AppPalette.darkAccent),
+                  Icon(Icons.workspace_premium_rounded, size: 80, color: theme.colorScheme.onPrimary),
                   const SizedBox(height: 16),
                   Text(
                     'Розблокуйте Повний Потенціал',
                     textAlign: TextAlign.center,
                     style: textTheme.headlineMedium
-                        ?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
+                        ?.copyWith(color: theme.colorScheme.onPrimary, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Отримайте доступ до ексклюзивних функцій, щоб досягти фінансової майстерності.',
                     textAlign: TextAlign.center,
                     style: textTheme.bodyLarge
-                        ?.copyWith(color: Colors.white.withAlpha(204)),
+                        ?.copyWith(color: theme.colorScheme.onPrimary.withAlpha(204)),
                   ),
                 ],
               ),
@@ -92,11 +92,6 @@ class PremiumScreen extends StatelessWidget {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        backgroundColor: AppPalette.darkAccent,
-                        foregroundColor: AppPalette.darkBackground,
-                      ),
                       onPressed: proStatusProvider.isPro
                           ? null
                           : () async {
@@ -122,12 +117,13 @@ class PremiumScreen extends StatelessWidget {
       {required IconData icon,
       required String title,
       required String subtitle}) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 32, color: AppPalette.darkAccent),
+          Icon(icon, size: 32, color: theme.colorScheme.tertiary),
           const SizedBox(width: 20),
           Expanded(
             child: Column(
@@ -135,16 +131,14 @@ class PremiumScreen extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleMedium
+                  style: theme.textTheme.titleMedium
                       ?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant),
                 ),
               ],
             ),

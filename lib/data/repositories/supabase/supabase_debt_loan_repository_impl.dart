@@ -10,19 +10,35 @@ class SupabaseDebtLoanRepositoryImpl implements DebtLoanRepository {
   SupabaseDebtLoanRepositoryImpl(this._client);
 
   @override
-  Future<Either<AppFailure, List<DebtLoan>>> getAllDebtLoans(int walletId) async {
-   try {
-     final response = await _client
+  Stream<List<DebtLoan>> watchAllDebtLoans(int walletId) {
+    return _client
         .from('debts_loans')
-        .select()
-        .eq('wallet_id', walletId)
-        .eq('is_deleted', false)
-        .order('creation_date', ascending: false);
-    return Right((response as List).map((data) => DebtLoan.fromMap(data)).toList());
-   } catch(e, s) {
+        .stream(primaryKey: ['id'])
+        .map((listOfMaps) {
+          return listOfMaps
+              .map((item) => DebtLoan.fromMap(item))
+              .where((debt) => debt.isDeleted == false && debt.walletId == walletId)
+              .toList()
+              ..sort((a,b) => b.creationDate.compareTo(a.creationDate));
+        });
+  }
+
+  @override
+  Future<Either<AppFailure, List<DebtLoan>>> getAllDebtLoans(
+      int walletId) async {
+    try {
+      final response = await _client
+          .from('debts_loans')
+          .select()
+          .eq('wallet_id', walletId)
+          .eq('is_deleted', false)
+          .order('creation_date', ascending: false);
+      return Right(
+          (response).map((data) => DebtLoan.fromMap(data)).toList());
+    } catch (e, s) {
       ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(NetworkFailure(details: e.toString()));
-   }
+    }
   }
 
   @override
@@ -32,21 +48,22 @@ class SupabaseDebtLoanRepositoryImpl implements DebtLoanRepository {
           await _client.from('debts_loans').select().eq('id', id).maybeSingle();
       if (response == null) return const Right(null);
       return Right(DebtLoan.fromMap(response));
-    } catch(e, s) {
+    } catch (e, s) {
       ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(NetworkFailure(details: e.toString()));
     }
   }
 
   @override
-  Future<Either<AppFailure, int>> createDebtLoan(DebtLoan debtLoan, int walletId) async {
+  Future<Either<AppFailure, int>> createDebtLoan(
+      DebtLoan debtLoan, int walletId) async {
     try {
       final map = debtLoan.toMap();
       map['wallet_id'] = walletId;
       final response =
           await _client.from('debts_loans').insert(map).select().single();
       return Right(response['id'] as int);
-    } catch(e, s) {
+    } catch (e, s) {
       ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(NetworkFailure(details: e.toString()));
     }
@@ -62,7 +79,7 @@ class SupabaseDebtLoanRepositoryImpl implements DebtLoanRepository {
           .select()
           .single();
       return Right(response['id'] as int);
-    } catch(e, s) {
+    } catch (e, s) {
       ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(NetworkFailure(details: e.toString()));
     }
@@ -71,9 +88,12 @@ class SupabaseDebtLoanRepositoryImpl implements DebtLoanRepository {
   @override
   Future<Either<AppFailure, int>> deleteDebtLoan(int id) async {
     try {
-       await _client.from('debts_loans').update({'is_deleted': true, 'updated_at': DateTime.now().toIso8601String()}).eq('id', id);
+      await _client.from('debts_loans').update({
+        'is_deleted': true,
+        'updated_at': DateTime.now().toIso8601String()
+      }).eq('id', id);
       return Right(id);
-    } catch(e, s) {
+    } catch (e, s) {
       ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(NetworkFailure(details: e.toString()));
     }
@@ -89,7 +109,7 @@ class SupabaseDebtLoanRepositoryImpl implements DebtLoanRepository {
           .select()
           .single();
       return Right(response['id'] as int);
-    } catch(e, s) {
+    } catch (e, s) {
       ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(NetworkFailure(details: e.toString()));
     }

@@ -9,6 +9,7 @@ import '../models/transaction.dart' as fin_transaction;
 import '../providers/currency_provider.dart';
 import '../providers/wallet_provider.dart';
 import '../utils/fade_page_route.dart';
+import '../widgets/scaffold/patterned_scaffold.dart';
 import 'planning/add_edit_plan_screen.dart';
 
 class PlanningScreen extends StatefulWidget {
@@ -61,7 +62,7 @@ class _PlanningScreenState extends State<PlanningScreen> {
               transactionType: fin_transaction.TransactionType.expense,
               categoryId: planData.categoryId,
             );
-            
+
             final actualAmount = actualAmountEither.getOrElse((l) => 0.0);
 
             result.add({
@@ -92,7 +93,7 @@ class _PlanningScreenState extends State<PlanningScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PatternedScaffold(
       appBar: AppBar(
         title: const Text('Планування'),
         actions: [

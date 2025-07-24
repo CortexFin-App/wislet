@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:fpdart/fpdart.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/error/failures.dart';
@@ -10,34 +11,6 @@ import '../transaction_repository.dart';
 class SupabaseTransactionRepositoryImpl implements TransactionRepository {
   final SupabaseClient _client;
   SupabaseTransactionRepositoryImpl(this._client);
-
-  @override
-  Future<Either<AppFailure, int>> createTransaction(fin_transaction_model.Transaction transaction, int walletId, String userId) async {
-    try {
-      final map = transaction.toMap();
-      map['wallet_id'] = walletId;
-      map['user_id'] = userId;
-      final response = await _client.from('transactions').insert(map).select().single();
-      return Right(response['id'] as int);
-    } catch(e,s) {
-      ErrorMonitoringService.capture(e, stackTrace: s);
-      return Left(NetworkFailure(details: e.toString()));
-    }
-  }
-
-  @override
-  Future<Either<AppFailure, int>> updateTransaction(fin_transaction_model.Transaction transaction, int walletId, String userId) async {
-    try {
-      final map = transaction.toMap();
-      map['wallet_id'] = walletId;
-      map['user_id'] = userId;
-      final response = await _client.from('transactions').update(map).eq('id', transaction.id!).select().single();
-      return Right(response['id'] as int);
-    } catch(e,s) {
-      ErrorMonitoringService.capture(e, stackTrace: s);
-      return Left(NetworkFailure(details: e.toString()));
-    }
-  }
   
   @override
   Future<Either<AppFailure, List<TransactionViewData>>> getTransactionsWithDetails({
@@ -77,6 +50,47 @@ class SupabaseTransactionRepositoryImpl implements TransactionRepository {
     }
   }
 
+  @override
+  Stream<List<TransactionViewData>> watchTransactionsWithDetails({required int walletId}) {
+     var query = _client
+        .from('transactions')
+        .stream(primaryKey: ['id'])
+        .eq('wallet_id', walletId)
+        .order('date', ascending: false);
+    
+    return query.map((data) {
+      return data.map((item) => TransactionViewData.fromMap(item)).toList();
+    });
+  }
+  
+  @override
+  Future<Either<AppFailure, int>> createTransaction(fin_transaction_model.Transaction transaction, int walletId, String userId) async {
+    try {
+      final map = transaction.toMap();
+      map['wallet_id'] = walletId;
+      map['user_id'] = userId;
+      final response = await _client.from('transactions').insert(map).select().single();
+      return Right(response['id'] as int);
+    } catch(e,s) {
+      ErrorMonitoringService.capture(e, stackTrace: s);
+      return Left(NetworkFailure(details: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<AppFailure, int>> updateTransaction(fin_transaction_model.Transaction transaction, int walletId, String userId) async {
+    try {
+      final map = transaction.toMap();
+      map['wallet_id'] = walletId;
+      map['user_id'] = userId;
+      final response = await _client.from('transactions').update(map).eq('id', transaction.id!).select().single();
+      return Right(response['id'] as int);
+    } catch(e,s) {
+      ErrorMonitoringService.capture(e, stackTrace: s);
+      return Left(NetworkFailure(details: e.toString()));
+    }
+  }
+  
   @override
   Future<Either<AppFailure, fin_transaction_model.Transaction?>> getTransaction(int transactionId) async {
     try {

@@ -7,6 +7,7 @@ import '../../models/forecast_data_point.dart';
 import '../../providers/currency_provider.dart';
 import '../../providers/wallet_provider.dart';
 import '../../services/cashflow_forecast_service.dart';
+import '../../widgets/scaffold/patterned_scaffold.dart';
 
 class ForecastScreen extends StatefulWidget {
   const ForecastScreen({super.key});
@@ -43,7 +44,7 @@ class _ForecastScreenState extends State<ForecastScreen> {
     final currencyProvider = context.watch<CurrencyProvider>();
     final currencyFormatter = currencyProvider.currencyFormatter;
 
-    return Scaffold(
+    return PatternedScaffold(
       appBar: AppBar(
         title: const Text('Прогноз Грошового Потоку'),
       ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/theme_provider.dart';
+import '../../widgets/scaffold/patterned_scaffold.dart';
 import 'theme_editor_screen.dart';
 import '../../utils/app_palette.dart';
 
@@ -11,7 +12,7 @@ class ThemeSelectionScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final themeProvider = context.watch<ThemeProvider>();
     
-    return Scaffold(
+    return PatternedScaffold(
       appBar: AppBar(
         title: const Text('Вибір теми'),
       ),

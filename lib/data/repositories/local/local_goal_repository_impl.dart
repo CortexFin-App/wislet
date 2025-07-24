@@ -16,6 +16,12 @@ class LocalGoalRepositoryImpl implements GoalRepository {
   LocalGoalRepositoryImpl(this._dbHelper, this._transactionRepository, this._notificationService);
 
   @override
+  Stream<List<FinancialGoal>> watchAllFinancialGoals(int walletId) {
+    return Stream.fromFuture(getAllFinancialGoals(walletId))
+        .map((either) => either.getOrElse((_) => []));
+  }
+
+  @override
   Future<Either<AppFailure, int>> createFinancialGoal(FinancialGoal goal, int walletId) async {
     try {
       final db = await _dbHelper.database;
@@ -59,7 +65,7 @@ class LocalGoalRepositoryImpl implements GoalRepository {
       return Left(DatabaseFailure(details: e.toString()));
     }
   }
-
+  
   @override
   Future<Either<AppFailure, List<FinancialGoal>>> getAllFinancialGoals(int walletId) async {
     try {

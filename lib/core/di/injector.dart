@@ -1,6 +1,7 @@
 import 'package:get_it/get_it.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:local_auth/local_auth.dart';
+import 'package:sage_wallet_reborn/services/billing_service.dart';
 import 'package:sage_wallet_reborn/services/financial_report_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/repositories/budget_repository.dart';
@@ -49,7 +50,6 @@ import '../../services/ai_categorization_service.dart';
 import '../../services/ai_insight_service.dart';
 import '../../services/analytics_service.dart';
 import '../../services/auth_service.dart';
-import '../../services/billing_service.dart';
 import '../../services/cashflow_forecast_service.dart';
 import '../../services/exchange_rate_service.dart';
 import '../../services/navigation_service.dart';
@@ -67,50 +67,40 @@ import '../../services/api_client.dart';
 final getIt = GetIt.instance;
 
 Future<void> configureDependencies() async {
+  // 1. Core Components
   getIt.registerLazySingleton<SupabaseClient>(() => Supabase.instance.client);
   getIt.registerLazySingleton<DatabaseHelper>(() => DatabaseHelper.instance);
-  getIt.registerLazySingleton<FlutterLocalNotificationsPlugin>(
-      () => FlutterLocalNotificationsPlugin());
+  getIt.registerLazySingleton<FlutterLocalNotificationsPlugin>(() => FlutterLocalNotificationsPlugin());
   getIt.registerLazySingleton<LocalAuthentication>(() => LocalAuthentication());
   getIt.registerLazySingleton<TokenStorageService>(() => TokenStorageService());
   getIt.registerLazySingleton<ApiClient>(() => ApiClient());
-
-  getIt.registerLazySingleton<AuthService>(() => AuthService(getIt(), getIt()));
-
-  getIt.registerLazySingleton<ExchangeRateService>(() => ExchangeRateService());
-  getIt.registerLazySingleton<ReceiptParser>(() => ReceiptParser());
-  getIt.registerLazySingleton<ReportGenerationService>(
-      () => ReportGenerationService());
-  getIt.registerLazySingleton<BillingService>(() => BillingService());
-  getIt.registerLazySingleton<OcrService>(() => OcrService(getIt()));
-  getIt.registerLazySingleton<FinancialReportService>(() => FinancialReportService());
-
-  _registerLocalRepositories();
-  _registerSupabaseRepositories();
-
-  getIt.registerLazySingleton<AppModeProvider>(() => AppModeProvider(getIt()));
-  getIt.registerLazySingleton<ThemeProvider>(
-      () => ThemeProvider(getIt<ThemeRepository>()));
-  getIt.registerLazySingleton<CurrencyProvider>(() => CurrencyProvider());
-  getIt.registerLazySingleton<ProStatusProvider>(() => ProStatusProvider());
   getIt.registerLazySingleton<NavigationService>(() => NavigationService());
 
+  // 2. Repositories
+  _registerLocalRepositories();
+  _registerSupabaseRepositories();
   _registerActiveRepositoryFactories();
+  
+  // 3. Services
+  getIt.registerLazySingleton<AuthService>(() => AuthService(getIt(), getIt()));
+  getIt.registerLazySingleton<ExchangeRateService>(() => ExchangeRateService());
+  getIt.registerLazySingleton<ReceiptParser>(() => ReceiptParser());
+  getIt.registerLazySingleton<ReportGenerationService>(() => ReportGenerationService());
+  getIt.registerLazySingleton<OcrService>(() => OcrService(getIt()));
+  getIt.registerLazySingleton<FinancialReportService>(() => FinancialReportService());
+  
+  // Для тестування використовуємо FakeBillingService.
+  // Для релізу закоментуй наступний рядок і розкоментуй AppStoreBillingService.
+  getIt.registerLazySingleton<BillingService>(() => FakeBillingService());
+  // getIt.registerLazySingleton<BillingService>(() => AppStoreBillingService());
 
-  getIt.registerLazySingleton<NotificationService>(
-      () => NotificationService(getIt(), getIt(instanceName: 'local')));
+  getIt.registerLazySingleton<NotificationService>(() => NotificationService(getIt(), getIt(instanceName: 'local')));
   getIt.registerLazySingleton<AiInsightService>(() => AiInsightService());
-  getIt.registerLazySingleton<AICategorizationService>(
-      () => AICategorizationService(getIt()));
-  getIt.registerLazySingleton<AnalyticsService>(
-      () => AnalyticsService(getIt(), getIt(), getIt()));
-  getIt.registerLazySingleton<CashflowForecastService>(
-      () => CashflowForecastService(getIt(), getIt(), getIt()));
-  getIt.registerLazySingleton<RepeatingTransactionService>(
-      () => RepeatingTransactionService(getIt(), getIt(), getIt()));
-  getIt.registerLazySingleton<SubscriptionService>(
-      () => SubscriptionService(getIt(), getIt(), getIt(), getIt()));
-
+  getIt.registerLazySingleton<AICategorizationService>(() => AICategorizationService(getIt()));
+  getIt.registerLazySingleton<AnalyticsService>(() => AnalyticsService(getIt(), getIt(), getIt()));
+  getIt.registerLazySingleton<CashflowForecastService>(() => CashflowForecastService(getIt(), getIt(), getIt()));
+  getIt.registerLazySingleton<RepeatingTransactionService>(() => RepeatingTransactionService(getIt(), getIt(), getIt()));
+  getIt.registerLazySingleton<SubscriptionService>(() => SubscriptionService(getIt(), getIt(), getIt(), getIt()));
   getIt.registerLazySingleton<SyncService>(() => SyncService(
       getIt(),
       getIt(instanceName: 'local'),
@@ -123,6 +113,12 @@ Future<void> configureDependencies() async {
       getIt(instanceName: 'supabase'),
       getIt(instanceName: 'supabase'),
       getIt(instanceName: 'supabase')));
+
+  // 4. Providers (as singletons for GetIt, they will be provided to the widget tree in main.dart)
+  getIt.registerLazySingleton<AppModeProvider>(() => AppModeProvider(getIt()));
+  getIt.registerLazySingleton<ThemeProvider>(() => ThemeProvider(getIt<ThemeRepository>()));
+  getIt.registerLazySingleton<CurrencyProvider>(() => CurrencyProvider());
+  getIt.registerLazySingleton<ProStatusProvider>(() => ProStatusProvider());
 }
 
 void _registerLocalRepositories() {
