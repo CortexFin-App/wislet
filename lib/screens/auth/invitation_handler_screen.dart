@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../core/di/injector.dart';
-import '../../data/repositories/invitation_repository.dart';
-import '../../providers/wallet_provider.dart';
-import '../../services/auth_service.dart';
-import 'login_register_screen.dart';
+import 'package:sage_wallet_reborn/core/di/injector.dart';
+import 'package:sage_wallet_reborn/data/repositories/invitation_repository.dart';
+import 'package:sage_wallet_reborn/providers/wallet_provider.dart';
+import 'package:sage_wallet_reborn/screens/auth/login_register_screen.dart';
+import 'package:sage_wallet_reborn/services/auth_service.dart';
 
 class InvitationHandlerScreen extends StatefulWidget {
+  const InvitationHandlerScreen({required this.invitationToken, super.key});
   final String invitationToken;
-  const InvitationHandlerScreen({super.key, required this.invitationToken});
 
   @override
-  State<InvitationHandlerScreen> createState() => _InvitationHandlerScreenState();
+  State<InvitationHandlerScreen> createState() =>
+      _InvitationHandlerScreenState();
 }
 
 class _InvitationHandlerScreenState extends State<InvitationHandlerScreen> {
@@ -29,20 +30,26 @@ class _InvitationHandlerScreenState extends State<InvitationHandlerScreen> {
       try {
         await _invitationRepo.acceptInvitation(widget.invitationToken);
         await walletProvider.loadWallets();
-        messenger.showSnackBar(const SnackBar(content: Text('Запрошення прийнято!')));
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('Р—Р°РїСЂРѕС€РµРЅРЅСЏ РїСЂРёР№РЅСЏС‚Рѕ!'),
+          ),
+        );
         navigator.pop();
-      } catch (e) {
-        messenger.showSnackBar(SnackBar(content: Text('Помилка: $e')));
+      } on Exception catch (e) {
+        messenger.showSnackBar(SnackBar(content: Text('РџРѕРјРёР»РєР°: $e')));
       }
     } else {
-      navigator.pushReplacement(MaterialPageRoute(
-        builder: (_) => LoginRegisterScreen(
-          invitationToken: widget.invitationToken,
+      await navigator.pushReplacement(
+        MaterialPageRoute<void>(
+          builder: (_) => LoginRegisterScreen(
+            invitationToken: widget.invitationToken,
+          ),
         ),
-      ));
+      );
     }
 
-    if(mounted) {
+    if (mounted) {
       setState(() => _isLoading = false);
     }
   }
@@ -51,24 +58,24 @@ class _InvitationHandlerScreenState extends State<InvitationHandlerScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Запрошення до гаманця'),
+        title: const Text('Р—Р°РїСЂРѕС€РµРЅРЅСЏ РґРѕ РіР°РјР°РЅС†СЏ'),
       ),
       body: Center(
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Icon(Icons.mail_outline, size: 80, color: Colors.grey),
               const SizedBox(height: 24),
               Text(
-                'Вас запросили до спільного гаманця',
+                'Р’Р°СЃ Р·Р°РїСЂРѕСЃРёР»Рё РґРѕ СЃРїС–Р»СЊРЅРѕРіРѕ РіР°РјР°РЅС†СЏ',
                 style: Theme.of(context).textTheme.headlineSmall,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
               const Text(
-                'Прийміть запрошення, щоб отримати доступ, або відхиліть, якщо ви не очікували на це.',
+                'РџСЂРёР№РјС–С‚СЊ Р·Р°РїСЂРѕС€РµРЅРЅСЏ, С‰РѕР± РѕС‚СЂРёРјР°С‚Рё РґРѕСЃС‚СѓРї, Р°Р±Рѕ РІС–РґС…РёР»С–С‚СЊ, СЏРєС‰Рѕ РІРё РЅРµ РѕС‡С–РєСѓРІР°Р»Рё РЅР° С†Рµ.',
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 40),
@@ -79,13 +86,13 @@ class _InvitationHandlerScreenState extends State<InvitationHandlerScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     OutlinedButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Відхилити'),
+                      onPressed: Navigator.of(context).pop,
+                      child: const Text('Р’С–РґС…РёР»РёС‚Рё'),
                     ),
                     const SizedBox(width: 16),
                     ElevatedButton(
                       onPressed: _handleInvitation,
-                      child: const Text('Прийняти'),
+                      child: const Text('РџСЂРёР№РЅСЏС‚Рё'),
                     ),
                   ],
                 ),

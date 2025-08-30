@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Підтримати розробку • CortexFin</title>
+  <meta name="description" content="Підтримайте розробку Wislet невеликою донатом або переказом через monobank чи IBAN."/>
+  <link rel="canonical" href="https://cortexfinapp.com/support" />
+  <meta property="og:title" content="Підтримати розробку • CortexFin" />
+  <meta property="og:description" content="Якщо не купуєте картку — можна просто підтримати розробку. Дякуємо!" />
+  <meta property="og:url" content="https://cortexfinapp.com/support" />
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet"/>
+  <style>
+    :root { --bg:#0b1220; --text:#e2e8f0; }
+    html,body{background:var(--bg); color:var(--text); font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial; overflow-x:hidden;}
+    a{color:#7dd3fc}
+    .glass{backdrop-filter:blur(8px); background:rgba(15,23,42,.6); border:1px solid rgba(255,255,255,.08);}
+    @media (max-width: 640px){
+      .glass{backdrop-filter:none; background:rgba(15,23,42,.85);}
+    }
+    .btn{display:inline-block; padding:10px 16px; border-radius:12px; background:#e2e8f0; color:#000; font-weight:600; text-decoration:none}
+    .btn:hover{background:#fff}
+    .input{padding:10px 12px; border-radius:10px; border:1px solid #334155; background:#0f172a; color:#e2e8f0; width:100%}
+    .pill{background:rgba(14,165,233,.15); color:#7dd3fc; padding:4px 10px; border-radius:999px; font-size:12px; display:inline-block}
+    .kbd{padding:2px 6px; border-radius:6px; background:#0f172a; border:1px solid #334155; font-size:12px}
+  </style>
+
+  <!-- GA4 -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-SYFYY8CH3F"></script>
+  <script>
+    var DNT=(navigator.doNotTrack=="1"||window.doNotTrack=="1"||navigator.msDoNotTrack=="1");
+    window.dataLayer=window.dataLayer||[];
+    function gtag(){dataLayer.push(arguments);}
+    if(!DNT){
+      gtag('consent','default',{ad_user_data:'denied',ad_personalization:'denied',ad_storage:'denied',analytics_storage:'granted'});
+      gtag('js',new Date()); gtag('config','G-SYFYY8CH3F',{send_page_view:true});
+    }
+  </script>
+</head>
+<body>
+  <header class="max-w-3xl mx-auto px-4 py-6 flex items-center justify-between">
+    <a href="/" class="opacity-80 hover:opacity-100">&larr; Назад</a>
+    <div class="pill">Дякуємо за підтримку 💙</div>
+  </header>
+
+  <main class="max-w-3xl mx-auto px-4 pb-16">
+    <h1 class="text-3xl md:text-4xl font-extrabold mb-2">Підтримати розробку</h1>
+    <p class="opacity-80 mb-6">Не хочете купувати картку — можна просто задонатити. Будь-яка сума = швидший реліз Wislet.</p>
+
+    <section class="glass rounded-2xl p-5 md:p-8 mb-6">
+      <h2 class="text-xl font-extrabold mb-2">Швидка підтримка через monobank</h2>
+      <p class="opacity-80 mb-3 text-sm">Публічна банка monobank — відкриється у застосунку або в браузері.</p>
+      <div class="flex flex-wrap gap-3 items-center">
+        <a id="monoJarBtn" class="btn" href="#" target="_blank" rel="noopener">Відкрити банку</a>
+        <div class="flex items-center gap-2">
+          <label for="amount" class="opacity-80 text-sm">Сума, ₴</label>
+          <input id="amount" class="input" type="number" min="10" step="10" placeholder="100" style="max-width:120px">
+          <button id="quick50" class="kbd">50</button>
+          <button id="quick100" class="kbd">100</button>
+          <button id="quick250" class="kbd">250</button>
+        </div>
+      </div>
+      <p class="opacity-70 text-xs mt-3">Порада: якщо застосунок не підхоплює суму — просто відправте вручну.</p>
+    </section>
+
+    <section class="glass rounded-2xl p-5 md:p-8 mb-6">
+      <h2 class="text-xl font-extrabold mb-2">Переказ на IBAN</h2>
+      <div class="grid md:grid-cols-2 gap-4">
+        <div>
+          <div class="opacity-80 text-sm mb-1">IBAN (UA)</div>
+          <div class="flex items-center gap-2">
+            <input id="iban" class="input" value="UA00XXXX000000000000000000000" readonly>
+            <button id="copyIBAN" class="kbd">копіювати</button>
+          </div>
+          <div class="opacity-80 text-sm mt-3 mb-1">Отримувач</div>
+          <input class="input" value="ТОВ «CortexFin»" readonly>
+          <div class="opacity-80 text-sm mt-3 mb-1">Призначення платежу (необов’язково)</div>
+          <input id="purpose" class="input" placeholder="Підтримка розробки Wislet">
+        </div>
+        <div class="flex flex-col items-center justify-center gap-2">
+          <img src="assets/qr-monobank.svg" alt="QR код monobank" style="max-width:220px; width:100%; height:auto"/>
+          <div class="opacity-70 text-xs">Відскануйте в monobank</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="glass rounded-2xl p-5 md:p-8">
+      <h2 class="text-xl font-extrabold mb-2">Дякуємо!</h2>
+      <p class="opacity-80">Ми прозоро звітуємо в <a href="/#hall">Залі Засновників</a> і телеметрії продажів/донатів. Кожна гривня пришвидшує функції: офлайн-режим, спільні гаманці, інвайти.</p>
+    </section>
+  </main>
+
+  <script>
+    // TODO: вставте посилання на вашу Банку monobank
+    const MONO_JAR_URL = "https://send.monobank.ua/jar/XXXXXXXXXXXX";
+    const btn = document.getElementById('monoJarBtn');
+    const amt = document.getElementById('amount');
+    const addAmt = (v)=>{ amt.value = v; };
+    document.getElementById('quick50').onclick = ()=>addAmt(50);
+    document.getElementById('quick100').onclick = ()=>addAmt(100);
+    document.getElementById('quick250').onclick = ()=>addAmt(250);
+    const buildUrl = ()=>{
+      const v = parseInt(amt.value,10);
+      if (isFinite(v) && v>0) return MONO_JAR_URL + "?amount=" + v;
+      return MONO_JAR_URL;
+    };
+    const refreshHref = ()=>{ btn.href = buildUrl(); };
+    amt.addEventListener('input', refreshHref);
+    refreshHref();
+
+    // Копіювання IBAN + GA івенти
+    document.getElementById('copyIBAN').onclick = async ()=>{
+      try{
+        const el = document.getElementById('iban');
+        await navigator.clipboard.writeText(el.value);
+        alert('IBAN скопійовано');
+        try{ gtag && gtag('event','copy_iban'); }catch(e){}
+      }catch(_){}
+    };
+
+    btn.addEventListener('click', ()=>{ try{ gtag && gtag('event','donation_click',{method:'monobank'});}catch(e){} });
+  </script>
+</body>
+</html>

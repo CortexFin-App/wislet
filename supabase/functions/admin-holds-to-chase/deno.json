@@ -1,0 +1,6 @@
+{
+  "tasks": {
+    "start": "deno run -A --no-check index.ts"
+  },
+  "compilerOptions": { "lib": ["deno.window","dom"] }
+}

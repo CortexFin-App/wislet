@@ -1,10 +1,11 @@
+import 'package:sage_wallet_reborn/data/repositories/invitation_repository.dart';
+import 'package:sage_wallet_reborn/models/invitation_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../models/invitation_model.dart';
-import '../invitation_repository.dart';
 
 class SupabaseInvitationRepositoryImpl implements InvitationRepository {
-  final SupabaseClient _client;
   SupabaseInvitationRepositoryImpl(this._client);
+
+  final SupabaseClient _client;
 
   @override
   Future<String> generateInvitation(int walletId) async {
@@ -13,23 +14,27 @@ class SupabaseInvitationRepositoryImpl implements InvitationRepository {
       body: {'wallet_id': walletId},
     );
     if (response.status != 200) {
-      throw Exception(response.data['error'] ?? 'Failed to create invite token');
+      final map = response.data as Map<String, dynamic>?;
+      throw Exception(map?['error'] ?? 'Failed to create invite token');
     }
-    return response.data['invite_token'] as String;
+    final map = response.data as Map<String, dynamic>?;
+    final token = (map?['token'] ?? map?['invite_token']) as String?;
+    if (token == null || token.isEmpty) {
+      throw Exception('No invite token');
+    }
+    return token;
   }
 
   @override
   Future<void> acceptInvitation(String token) async {
-    try {
-      await _client.functions.invoke(
-        'accept-invite',
-        body: {'token': token},
-      );
-    } catch (e) {
-      if (e.toString().contains('23505') || e.toString().contains('duplicate key')) {
-        return;
-      }
-      rethrow;
+    final response = await _client.functions.invoke(
+      'accept-invite',
+      body: {'token': token},
+    );
+    if (response.status != 200) {
+      final err = response.data?.toString() ?? 'accept failed';
+      if (err.contains('duplicate key') || err.contains('23505')) return;
+      throw Exception(err);
     }
   }
 
@@ -40,7 +45,11 @@ class SupabaseInvitationRepositoryImpl implements InvitationRepository {
 
   @override
   Future<void> respondToInvitation(
-      String invitationId, InvitationStatus status) async {
-    throw UnimplementedError('respondToInvitation has not been implemented yet.');
+    String invitationId,
+    InvitationStatus status,
+  ) async {
+    throw UnimplementedError(
+      'respondToInvitation has not been implemented yet.',
+    );
   }
 }

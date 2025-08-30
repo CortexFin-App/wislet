@@ -1,29 +1,30 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
+
+import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
-import 'package:crypto/crypto.dart';
+import 'package:sage_wallet_reborn/core/constants/app_constants.dart';
+import 'package:sage_wallet_reborn/models/user.dart' as fin_user;
+import 'package:sage_wallet_reborn/services/token_storage_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:sage_wallet_reborn/models/user.dart' as fin_user;
-import '../core/constants/app_constants.dart';
-import 'token_storage_service.dart';
 
 enum RegistrationResult { success, needsConfirmation, failure }
 
 class AuthService with ChangeNotifier {
+  AuthService(this._localAuth, this._tokenStorage) {
+    _initialize();
+  }
+
   final SupabaseClient _supabase = Supabase.instance.client;
   final LocalAuthentication _localAuth;
   final TokenStorageService _tokenStorage;
 
   fin_user.User? currentUser;
   StreamSubscription<AuthState>? _authStateSubscription;
-
-  AuthService(this._localAuth, this._tokenStorage) {
-    _initialize();
-  }
 
   void _initialize() {
     _authStateSubscription = _supabase.auth.onAuthStateChange.listen((data) {
@@ -35,12 +36,13 @@ class AuthService with ChangeNotifier {
   Future<void> _onAuthStateChanged(Session? session) async {
     if (session?.user != null) {
       final user = session!.user;
-      
-      await _supabase.rpc('ensure_user_has_wallet');
-      
+
+      await _supabase.rpc<void>('ensure_user_has_wallet');
+
       currentUser = fin_user.User(
         id: user.id,
-        name: user.userMetadata?['user_name'] as String? ?? 'Користувач',
+        name: user.userMetadata?['user_name'] as String? ??
+            'РљРѕСЂРёСЃС‚СѓРІР°С‡',
         email: user.email,
       );
     } else {
@@ -82,8 +84,8 @@ class AuthService with ChangeNotifier {
 
   Future<bool> canUseBiometrics() async {
     try {
-      final bool canCheckBiometrics = await _localAuth.canCheckBiometrics;
-      final bool isDeviceSupported = await _localAuth.isDeviceSupported();
+      final canCheckBiometrics = await _localAuth.canCheckBiometrics;
+      final isDeviceSupported = await _localAuth.isDeviceSupported();
       return canCheckBiometrics || isDeviceSupported;
     } on PlatformException {
       return false;
@@ -95,11 +97,11 @@ class AuthService with ChangeNotifier {
       if (!await canUseBiometrics()) {
         return false;
       }
-      return await _localAuth.authenticate(
-        localizedReason: 'Підтвердіть свою особу для входу в додаток',
+      return _localAuth.authenticate(
+        localizedReason:
+            'РџС–РґС‚РІРµСЂРґС–С‚СЊ СЃРІРѕСЋ РѕСЃРѕР±Сѓ РґР»СЏ РІС…РѕРґСѓ РІ РґРѕРґР°С‚РѕРє',
         options: const AuthenticationOptions(
           stickyAuth: true,
-          biometricOnly: false,
         ),
       );
     } on PlatformException {

@@ -1,27 +1,28 @@
 import 'package:flutter/foundation.dart';
-import '../services/auth_service.dart';
+import 'package:sage_wallet_reborn/services/auth_service.dart';
 
 enum AppMode { local, online }
 
 class AppModeProvider with ChangeNotifier {
-  final AuthService _authService;
-  AppMode _mode = AppMode.local;
-
   AppModeProvider(this._authService) {
     _updateMode();
     _authService.addListener(_updateMode);
   }
 
+  final AuthService _authService;
+  AppMode _mode = AppMode.local;
+
+  AppMode get mode => _mode;
+  bool get isOnline => _mode == AppMode.online;
+
   void _updateMode() {
-    final newMode = _authService.currentUser != null ? AppMode.online : AppMode.local;
+    final newMode =
+        _authService.currentUser != null ? AppMode.online : AppMode.local;
     if (_mode != newMode) {
       _mode = newMode;
       notifyListeners();
     }
   }
-
-  AppMode get mode => _mode;
-  bool get isOnline => _mode == AppMode.online;
 
   @override
   void dispose() {

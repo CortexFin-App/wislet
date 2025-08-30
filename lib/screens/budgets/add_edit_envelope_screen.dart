@@ -1,19 +1,23 @@
-import 'package:flutter/material.dart';
 import 'package:collection/collection.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../core/di/injector.dart';
-import '../../data/repositories/budget_repository.dart';
-import '../../data/repositories/category_repository.dart';
-import '../../models/budget_models.dart';
-import '../../models/category.dart';
-import '../../models/currency_model.dart';
-import '../../providers/currency_provider.dart';
-import '../../providers/wallet_provider.dart';
+import 'package:sage_wallet_reborn/core/di/injector.dart';
+import 'package:sage_wallet_reborn/data/repositories/budget_repository.dart';
+import 'package:sage_wallet_reborn/data/repositories/category_repository.dart';
+import 'package:sage_wallet_reborn/models/budget_models.dart';
+import 'package:sage_wallet_reborn/models/category.dart';
+import 'package:sage_wallet_reborn/models/currency_model.dart';
+import 'package:sage_wallet_reborn/providers/currency_provider.dart';
+import 'package:sage_wallet_reborn/providers/wallet_provider.dart';
 
 class AddEditEnvelopeScreen extends StatefulWidget {
+  const AddEditEnvelopeScreen({
+    required this.budgetId,
+    this.envelopeToEdit,
+    super.key,
+  });
   final int budgetId;
   final BudgetEnvelope? envelopeToEdit;
-  const AddEditEnvelopeScreen({super.key, required this.budgetId, this.envelopeToEdit});
 
   @override
   State<AddEditEnvelopeScreen> createState() => _AddEditEnvelopeScreenState();
@@ -41,8 +45,13 @@ class _AddEditEnvelopeScreenState extends State<AddEditEnvelopeScreen> {
     if (_isEditing) {
       final envelope = widget.envelopeToEdit!;
       _nameController = TextEditingController(text: envelope.name);
-      _amountController = TextEditingController(text: envelope.originalPlannedAmount.toStringAsFixed(2).replaceAll('.', ','));
-      _selectedCurrency = appCurrencies.firstWhereOrNull((c) => c.code == envelope.originalCurrencyCode);
+      _amountController = TextEditingController(
+        text: envelope.originalPlannedAmount
+            .toStringAsFixed(2)
+            .replaceAll('.', ','),
+      );
+      _selectedCurrency = appCurrencies
+          .firstWhereOrNull((c) => c.code == envelope.originalCurrencyCode);
     } else {
       _nameController = TextEditingController();
       _amountController = TextEditingController();
@@ -50,10 +59,21 @@ class _AddEditEnvelopeScreenState extends State<AddEditEnvelopeScreen> {
     }
   }
 
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _amountController.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadCategories() async {
     final walletId = context.read<WalletProvider>().currentWallet!.id!;
-    final categoriesEither = await _categoryRepository.getCategoriesByType(walletId, CategoryType.expense);
-    final assignedEnvelopesEither = await _budgetRepository.getEnvelopesForBudget(widget.budgetId);
+    final categoriesEither = await _categoryRepository.getCategoriesByType(
+      walletId,
+      CategoryType.expense,
+    );
+    final assignedEnvelopesEither =
+        await _budgetRepository.getEnvelopesForBudget(widget.budgetId);
 
     assignedEnvelopesEither.fold(
       (failure) {
@@ -62,34 +82,44 @@ class _AddEditEnvelopeScreenState extends State<AddEditEnvelopeScreen> {
       (assignedEnvelopes) {
         categoriesEither.fold(
           (failure) {
-             if (mounted) setState(() => _isLoadingCategories = false);
+            if (mounted) setState(() => _isLoadingCategories = false);
           },
           (categories) {
             if (mounted) {
-              final assignedCategoryIds = assignedEnvelopes.map((e) => e.categoryId).toSet();
+              final assignedCategoryIds =
+                  assignedEnvelopes.map((e) => e.categoryId).toSet();
               setState(() {
                 _availableCategories = categories.where((cat) {
-                  if (_isEditing && cat.id == widget.envelopeToEdit!.categoryId) {
+                  if (_isEditing &&
+                      cat.id == widget.envelopeToEdit!.categoryId) {
                     return true;
                   }
                   return !assignedCategoryIds.contains(cat.id);
                 }).toList();
                 if (_isEditing) {
-                  _selectedCategory = _availableCategories.firstWhereOrNull((cat) => cat.id == widget.envelopeToEdit!.categoryId);
+                  _selectedCategory = _availableCategories.firstWhereOrNull(
+                    (cat) => cat.id == widget.envelopeToEdit!.categoryId,
+                  );
                 }
                 _isLoadingCategories = false;
               });
             }
-          }
+          },
         );
-      }
+      },
     );
   }
 
   Future<void> _saveEnvelope() async {
     if (!_formKey.currentState!.validate() || _isSaving) return;
     if (_selectedCategory == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Будь ласка, оберіть категорію.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Р‘СѓРґСЊ Р»Р°СЃРєР°, РѕР±РµСЂС–С‚СЊ РєР°С‚РµРіРѕСЂС–СЋ.',
+          ),
+        ),
+      );
       return;
     }
 
@@ -105,7 +135,7 @@ class _AddEditEnvelopeScreenState extends State<AddEditEnvelopeScreen> {
       originalPlannedAmount: amount,
       originalCurrencyCode: _selectedCurrency!.code,
       plannedAmountInBaseCurrency: amount,
-      exchangeRateUsed: 1.0,
+      exchangeRateUsed: 1,
     );
 
     try {
@@ -117,34 +147,33 @@ class _AddEditEnvelopeScreenState extends State<AddEditEnvelopeScreen> {
       if (mounted) {
         Navigator.of(context).pop(true);
       }
-    } catch (e) {
+    } on Exception catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Помилка збереження: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('РџРѕРјРёР»РєР° Р·Р±РµСЂРµР¶РµРЅРЅСЏ: $e')),
+        );
       }
     } finally {
-      if(mounted) {
+      if (mounted) {
         setState(() => _isSaving = false);
       }
     }
   }
 
   @override
-  void dispose() {
-    _nameController.dispose();
-    _amountController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isEditing ? 'Редагувати Конверт' : 'Новий Конверт'),
+        title: Text(
+          _isEditing
+              ? 'Р РµРґР°РіСѓРІР°С‚Рё РљРѕРЅРІРµСЂС‚'
+              : 'РќРѕРІРёР№ РљРѕРЅРІРµСЂС‚',
+        ),
       ),
       body: _isLoadingCategories
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(16),
               child: Form(
                 key: _formKey,
                 child: Column(
@@ -152,16 +181,33 @@ class _AddEditEnvelopeScreenState extends State<AddEditEnvelopeScreen> {
                   children: [
                     TextFormField(
                       controller: _nameController,
-                      decoration: const InputDecoration(labelText: 'Назва конверта'),
-                      validator: (value) => value == null || value.trim().isEmpty ? 'Введіть назву' : null,
+                      decoration: const InputDecoration(
+                        labelText: 'РќР°Р·РІР° РєРѕРЅРІРµСЂС‚Р°',
+                      ),
+                      validator: (value) =>
+                          value == null || value.trim().isEmpty
+                              ? 'Р’РІРµРґС–С‚СЊ РЅР°Р·РІСѓ'
+                              : null,
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<Category>(
                       value: _selectedCategory,
-                      decoration: const InputDecoration(labelText: 'Категорія витрат'),
-                      items: _availableCategories.map((cat) => DropdownMenuItem(value: cat, child: Text(cat.name))).toList(),
-                      onChanged: (cat) => setState(() => _selectedCategory = cat),
-                      validator: (value) => value == null ? 'Оберіть категорію' : null,
+                      decoration: const InputDecoration(
+                        labelText: 'РљР°С‚РµРіРѕСЂС–СЏ РІРёС‚СЂР°С‚',
+                      ),
+                      items: _availableCategories
+                          .map(
+                            (cat) => DropdownMenuItem(
+                              value: cat,
+                              child: Text(cat.name),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (cat) =>
+                          setState(() => _selectedCategory = cat),
+                      validator: (value) => value == null
+                          ? 'РћР±РµСЂС–С‚СЊ РєР°С‚РµРіРѕСЂС–СЋ'
+                          : null,
                     ),
                     const SizedBox(height: 16),
                     Row(
@@ -170,11 +216,20 @@ class _AddEditEnvelopeScreenState extends State<AddEditEnvelopeScreen> {
                         Expanded(
                           child: TextFormField(
                             controller: _amountController,
-                            decoration: const InputDecoration(labelText: 'Запланована сума'),
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            decoration: const InputDecoration(
+                              labelText: 'Р—Р°РїР»Р°РЅРѕРІР°РЅР° СЃСѓРјР°',
+                            ),
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
                             validator: (value) {
-                              if (value == null || value.isEmpty) return 'Введіть суму';
-                              if (double.tryParse(value.replaceAll(',', '.')) == null) return 'Невірне число';
+                              if (value == null || value.isEmpty) {
+                                return 'Р’РІРµРґС–С‚СЊ СЃСѓРјСѓ';
+                              }
+                              if (double.tryParse(value.replaceAll(',', '.')) ==
+                                  null) {
+                                return 'РќРµРІС–СЂРЅРµ С‡РёСЃР»Рѕ';
+                              }
                               return null;
                             },
                           ),
@@ -183,9 +238,19 @@ class _AddEditEnvelopeScreenState extends State<AddEditEnvelopeScreen> {
                         Expanded(
                           child: DropdownButtonFormField<Currency>(
                             value: _selectedCurrency,
-                            decoration: const InputDecoration(labelText: 'Валюта'),
-                            items: appCurrencies.map((c) => DropdownMenuItem(value: c, child: Text(c.code))).toList(),
-                            onChanged: (val) => setState(() => _selectedCurrency = val),
+                            decoration: const InputDecoration(
+                              labelText: 'Р’Р°Р»СЋС‚Р°',
+                            ),
+                            items: appCurrencies
+                                .map(
+                                  (c) => DropdownMenuItem(
+                                    value: c,
+                                    child: Text(c.code),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: (val) =>
+                                setState(() => _selectedCurrency = val),
                           ),
                         ),
                       ],
@@ -193,8 +258,14 @@ class _AddEditEnvelopeScreenState extends State<AddEditEnvelopeScreen> {
                     const SizedBox(height: 24),
                     ElevatedButton(
                       onPressed: _isSaving ? null : _saveEnvelope,
-                      child: _isSaving ? const CircularProgressIndicator(color: Colors.white) : Text(_isEditing ? 'Зберегти Конверт' : 'Створити Конверт'),
-                    )
+                      child: _isSaving
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : Text(
+                              _isEditing
+                                  ? 'Р—Р±РµСЂРµРіС‚Рё РљРѕРЅРІРµСЂС‚'
+                                  : 'РЎС‚РІРѕСЂРёС‚Рё РљРѕРЅРІРµСЂС‚',
+                            ),
+                    ),
                   ],
                 ),
               ),

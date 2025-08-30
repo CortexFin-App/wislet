@@ -1,20 +1,24 @@
 import 'package:fpdart/fpdart.dart';
+import 'package:sage_wallet_reborn/core/error/failures.dart';
+import 'package:sage_wallet_reborn/data/repositories/budget_repository.dart';
+import 'package:sage_wallet_reborn/data/repositories/transaction_repository.dart';
+import 'package:sage_wallet_reborn/models/budget_models.dart';
+import 'package:sage_wallet_reborn/models/transaction.dart' as fin_transaction;
+import 'package:sage_wallet_reborn/services/error_monitoring_service.dart';
+import 'package:sage_wallet_reborn/services/notification_service.dart';
+import 'package:sage_wallet_reborn/utils/database_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../core/error/failures.dart';
-import '../../../models/budget_models.dart';
-import '../../../models/transaction.dart' as fin_transaction;
-import '../../../services/error_monitoring_service.dart';
-import '../../../services/notification_service.dart';
-import '../../../utils/database_helper.dart';
-import '../budget_repository.dart';
-import '../transaction_repository.dart';
 
 class LocalBudgetRepositoryImpl implements BudgetRepository {
+  LocalBudgetRepositoryImpl(
+    this._dbHelper,
+    this._transactionRepository,
+    this._notificationService,
+  );
+
   final DatabaseHelper _dbHelper;
   final TransactionRepository _transactionRepository;
   final NotificationService _notificationService;
-
-  LocalBudgetRepositoryImpl(this._dbHelper, this._transactionRepository, this._notificationService);
 
   @override
   Stream<List<Budget>> watchAllBudgets(int walletId) {
@@ -23,18 +27,21 @@ class LocalBudgetRepositoryImpl implements BudgetRepository {
   }
 
   @override
-  Future<Either<AppFailure, int>> createBudget(Budget budget, int walletId) async {
+  Future<Either<AppFailure, int>> createBudget(
+    Budget budget,
+    int walletId,
+  ) async {
     try {
       final db = await _dbHelper.database;
-      int newId = -1;
+      var newId = -1;
       await db.transaction((txn) async {
         final map = budget.toMap();
         map[DatabaseHelper.colBudgetWalletId] = walletId;
         newId = await txn.insert(DatabaseHelper.tableBudgets, map);
       });
       return Right(newId);
-    } catch(e, s) {
-      ErrorMonitoringService.capture(e, stackTrace: s);
+    } on Exception catch (e, s) {
+      await ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(DatabaseFailure(details: e.toString()));
     }
   }
@@ -43,7 +50,7 @@ class LocalBudgetRepositoryImpl implements BudgetRepository {
   Future<Either<AppFailure, int>> updateBudget(Budget budget) async {
     try {
       final db = await _dbHelper.database;
-      int updatedRows = 0;
+      var updatedRows = 0;
       await db.transaction((txn) async {
         final map = budget.toMap();
         updatedRows = await txn.update(
@@ -54,8 +61,8 @@ class LocalBudgetRepositoryImpl implements BudgetRepository {
         );
       });
       return Right(updatedRows);
-    } catch(e, s) {
-      ErrorMonitoringService.capture(e, stackTrace: s);
+    } on Exception catch (e, s) {
+      await ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(DatabaseFailure(details: e.toString()));
     }
   }
@@ -64,19 +71,22 @@ class LocalBudgetRepositoryImpl implements BudgetRepository {
   Future<Either<AppFailure, int>> deleteBudget(int budgetId) async {
     try {
       final db = await _dbHelper.database;
-      int deletedRows = 0;
+      var deletedRows = 0;
       await db.transaction((txn) async {
-          final now = DateTime.now().toIso8601String();
-          deletedRows = await txn.update(
-            DatabaseHelper.tableBudgets,
-            { DatabaseHelper.colBudgetIsDeleted: 1, DatabaseHelper.colBudgetUpdatedAt: now },
-            where: '${DatabaseHelper.colBudgetId} = ?',
-            whereArgs: [budgetId],
-          );
-       });
+        final now = DateTime.now().toIso8601String();
+        deletedRows = await txn.update(
+          DatabaseHelper.tableBudgets,
+          {
+            DatabaseHelper.colBudgetIsDeleted: 1,
+            DatabaseHelper.colBudgetUpdatedAt: now,
+          },
+          where: '${DatabaseHelper.colBudgetId} = ?',
+          whereArgs: [budgetId],
+        );
+      });
       return Right(deletedRows);
-    } catch(e, s) {
-      ErrorMonitoringService.capture(e, stackTrace: s);
+    } on Exception catch (e, s) {
+      await ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(DatabaseFailure(details: e.toString()));
     }
   }
@@ -87,25 +97,30 @@ class LocalBudgetRepositoryImpl implements BudgetRepository {
       final db = await _dbHelper.database;
       final maps = await db.query(
         DatabaseHelper.tableBudgets,
-        where: '${DatabaseHelper.colBudgetWalletId} = ? AND ${DatabaseHelper.colBudgetIsDeleted} = 0',
+        where:
+            '${DatabaseHelper.colBudgetWalletId} = ? AND ${DatabaseHelper.colBudgetIsDeleted} = 0',
         whereArgs: [walletId],
         orderBy: '${DatabaseHelper.colBudgetStartDate} DESC',
       );
-      return Right(maps.map((map) => Budget.fromMap(map)).toList());
-    } catch (e, s) {
-      ErrorMonitoringService.capture(e, stackTrace: s);
+      return Right(maps.map(Budget.fromMap).toList());
+    } on Exception catch (e, s) {
+      await ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(DatabaseFailure(details: e.toString()));
     }
   }
 
   @override
-  Future<Either<AppFailure, Budget?>> getActiveBudgetForDate(int walletId, DateTime date) async {
+  Future<Either<AppFailure, Budget?>> getActiveBudgetForDate(
+    int walletId,
+    DateTime date,
+  ) async {
     try {
       final db = await _dbHelper.database;
       final dateString = date.toIso8601String().substring(0, 10);
-      final List<Map<String, dynamic>> maps = await db.query(
+      final maps = await db.query(
         DatabaseHelper.tableBudgets,
-        where: '${DatabaseHelper.colBudgetWalletId} = ? AND ${DatabaseHelper.colBudgetIsActive} = 1 AND date(${DatabaseHelper.colBudgetStartDate}) <= ? AND date(${DatabaseHelper.colBudgetEndDate}) >= ? AND ${DatabaseHelper.colBudgetIsDeleted} = 0',
+        where:
+            '${DatabaseHelper.colBudgetWalletId} = ? AND ${DatabaseHelper.colBudgetIsActive} = 1 AND date(${DatabaseHelper.colBudgetStartDate}) <= ? AND date(${DatabaseHelper.colBudgetEndDate}) >= ? AND ${DatabaseHelper.colBudgetIsDeleted} = 0',
         whereArgs: [walletId, dateString, dateString],
         limit: 1,
       );
@@ -113,26 +128,33 @@ class LocalBudgetRepositoryImpl implements BudgetRepository {
         return Right(Budget.fromMap(maps.first));
       }
       return const Right(null);
-    } catch (e, s) {
-      ErrorMonitoringService.capture(e, stackTrace: s);
+    } on Exception catch (e, s) {
+      await ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(DatabaseFailure(details: e.toString()));
     }
   }
 
   @override
-  Future<Either<AppFailure, int>> createBudgetEnvelope(BudgetEnvelope envelope) async {
+  Future<Either<AppFailure, int>> createBudgetEnvelope(
+    BudgetEnvelope envelope,
+  ) async {
     try {
       final db = await _dbHelper.database;
-      final id = await db.insert(DatabaseHelper.tableBudgetEnvelopes, envelope.toMap());
+      final id = await db.insert(
+        DatabaseHelper.tableBudgetEnvelopes,
+        envelope.toMap(),
+      );
       return Right(id);
-    } catch (e, s) {
-      ErrorMonitoringService.capture(e, stackTrace: s);
+    } on Exception catch (e, s) {
+      await ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(DatabaseFailure(details: e.toString()));
     }
   }
 
   @override
-  Future<Either<AppFailure, int>> updateBudgetEnvelope(BudgetEnvelope envelope) async {
+  Future<Either<AppFailure, int>> updateBudgetEnvelope(
+    BudgetEnvelope envelope,
+  ) async {
     try {
       final db = await _dbHelper.database;
       final id = await db.update(
@@ -142,8 +164,8 @@ class LocalBudgetRepositoryImpl implements BudgetRepository {
         whereArgs: [envelope.id],
       );
       return Right(id);
-    } catch (e, s) {
-      ErrorMonitoringService.capture(e, stackTrace: s);
+    } on Exception catch (e, s) {
+      await ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(DatabaseFailure(details: e.toString()));
     }
   }
@@ -158,14 +180,16 @@ class LocalBudgetRepositoryImpl implements BudgetRepository {
         whereArgs: [id],
       );
       return Right(resultId);
-    } catch (e, s) {
-      ErrorMonitoringService.capture(e, stackTrace: s);
+    } on Exception catch (e, s) {
+      await ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(DatabaseFailure(details: e.toString()));
     }
   }
 
   @override
-  Future<Either<AppFailure, List<BudgetEnvelope>>> getEnvelopesForBudget(int budgetId) async {
+  Future<Either<AppFailure, List<BudgetEnvelope>>> getEnvelopesForBudget(
+    int budgetId,
+  ) async {
     try {
       final db = await _dbHelper.database;
       final maps = await db.query(
@@ -173,20 +197,24 @@ class LocalBudgetRepositoryImpl implements BudgetRepository {
         where: '${DatabaseHelper.colEnvelopeBudgetId} = ?',
         whereArgs: [budgetId],
       );
-      return Right(maps.map((map) => BudgetEnvelope.fromMap(map)).toList());
-    } catch (e, s) {
-      ErrorMonitoringService.capture(e, stackTrace: s);
+      return Right(maps.map(BudgetEnvelope.fromMap).toList());
+    } on Exception catch (e, s) {
+      await ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(DatabaseFailure(details: e.toString()));
     }
   }
 
   @override
-  Future<Either<AppFailure, BudgetEnvelope?>> getEnvelopeForCategory(int budgetId, int categoryId) async {
+  Future<Either<AppFailure, BudgetEnvelope?>> getEnvelopeForCategory(
+    int budgetId,
+    int categoryId,
+  ) async {
     try {
       final db = await _dbHelper.database;
-      final List<Map<String, dynamic>> maps = await db.query(
+      final maps = await db.query(
         DatabaseHelper.tableBudgetEnvelopes,
-        where: '${DatabaseHelper.colEnvelopeBudgetId} = ? AND ${DatabaseHelper.colEnvelopeCategoryId} = ?',
+        where:
+            '${DatabaseHelper.colEnvelopeBudgetId} = ? AND ${DatabaseHelper.colEnvelopeCategoryId} = ?',
         whereArgs: [budgetId, categoryId],
         limit: 1,
       );
@@ -194,33 +222,49 @@ class LocalBudgetRepositoryImpl implements BudgetRepository {
         return Right(BudgetEnvelope.fromMap(maps.first));
       }
       return const Right(null);
-    } catch (e, s) {
-      ErrorMonitoringService.capture(e, stackTrace: s);
+    } on Exception catch (e, s) {
+      await ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(DatabaseFailure(details: e.toString()));
     }
   }
 
   @override
-  Future<Either<AppFailure, void>> checkAndNotifyEnvelopeLimits(fin_transaction.Transaction transaction, int walletId) async {
+  Future<Either<AppFailure, void>> checkAndNotifyEnvelopeLimits(
+    fin_transaction.Transaction transaction,
+    int walletId,
+  ) async {
     try {
-      if (transaction.type != fin_transaction.TransactionType.expense || transaction.categoryId < 1) return const Right(null);
+      if (transaction.type != fin_transaction.TransactionType.expense ||
+          transaction.categoryId < 1) {
+        return const Right(null);
+      }
 
-      final activeBudgetResult = await getActiveBudgetForDate(walletId, transaction.date);
-      activeBudgetResult.fold(
-        (l) => null,
+      final activeBudgetResult =
+          await getActiveBudgetForDate(walletId, transaction.date);
+      await activeBudgetResult.fold(
+        (l) async => null,
         (activeBudget) async {
-          if (activeBudget == null || (activeBudget.strategyType != BudgetStrategyType.envelope && activeBudget.strategyType != BudgetStrategyType.zeroBased)) {
+          if (activeBudget == null ||
+              (activeBudget.strategyType != BudgetStrategyType.envelope &&
+                  activeBudget.strategyType != BudgetStrategyType.zeroBased)) {
             return;
           }
 
-          final envelopeResult = await getEnvelopeForCategory(activeBudget.id!, transaction.categoryId);
-          envelopeResult.fold(
-            (l) => null,
+          final envelopeResult = await getEnvelopeForCategory(
+            activeBudget.id!,
+            transaction.categoryId,
+          );
+          await envelopeResult.fold(
+            (l) async => null,
             (envelope) async {
-              if (envelope == null || envelope.plannedAmountInBaseCurrency <= 0) return;
+              if (envelope == null ||
+                  envelope.plannedAmountInBaseCurrency <= 0) {
+                return;
+              }
 
               final prefs = await SharedPreferences.getInstance();
-              final totalSpentResult = await _transactionRepository.getTotalAmount(
+              final totalSpentResult =
+                  await _transactionRepository.getTotalAmount(
                 walletId: walletId,
                 startDate: activeBudget.startDate,
                 endDate: activeBudget.endDate,
@@ -228,39 +272,57 @@ class LocalBudgetRepositoryImpl implements BudgetRepository {
                 categoryId: envelope.categoryId,
               );
 
-              totalSpentResult.fold(
-                (l) => null,
+              await totalSpentResult.fold(
+                (l) async => null,
                 (totalSpentInBase) async {
-                  final percentageSpent = (totalSpentInBase / envelope.plannedAmountInBaseCurrency) * 100;
+                  final percentageSpent = (totalSpentInBase /
+                          envelope.plannedAmountInBaseCurrency) *
+                      100;
 
-                  const double warningThreshold = 90.0;
-                  const double exceededThreshold = 100.0;
-                  String warningKey = 'envelope_notif_${envelope.id}_warn_sent';
-                  String exceededKey = 'envelope_notif_${envelope.id}_exceed_sent';
-                  bool warningSent = prefs.getBool(warningKey) ?? false;
-                  bool exceededSent = prefs.getBool(exceededKey) ?? false;
-                  int notificationIdBase = envelope.id! * 30000;
+                  const double warningThreshold = 90;
+                  const double exceededThreshold = 100;
+                  final warningKey = 'envelope_notif_${envelope.id}_warn_sent';
+                  final exceededKey =
+                      'envelope_notif_${envelope.id}_exceed_sent';
+                  final warningSent = prefs.getBool(warningKey) ?? false;
+                  final exceededSent = prefs.getBool(exceededKey) ?? false;
+                  final notificationIdBase = envelope.id! * 30000;
 
                   if (percentageSpent >= exceededThreshold && !exceededSent) {
-                    await _notificationService.showNotification(notificationIdBase + 2, "Бюджет Конверта Перевищено!", "Витрати в конверті \"${envelope.name}\" перевищили запланований ліміт.", payload: 'budget/${activeBudget.id}');
+                    await _notificationService.showNotification(
+                      id: notificationIdBase + 2,
+                      title: 'Бюджет конверта перевищено!',
+                      body:
+                          'Витрати в конверті "${envelope.name}" перевищили запланований ліміт.',
+                      payload: 'budget/${activeBudget.id}',
+                    );
                     await prefs.setBool(exceededKey, true);
                     await prefs.setBool(warningKey, true);
-                  } else if (percentageSpent >= warningThreshold && !warningSent && !exceededSent) {
-                    await _notificationService.showNotification(notificationIdBase + 1, "Увага: Бюджет Конверта", "Витрати в конверті \"${envelope.name}\" досягли ${percentageSpent.toStringAsFixed(0)}% від ліміту.", payload: 'budget/${activeBudget.id}');
+                  } else if (percentageSpent >= warningThreshold &&
+                      !warningSent &&
+                      !exceededSent) {
+                    await _notificationService.showNotification(
+                      id: notificationIdBase + 1,
+                      title: 'Увага: Бюджет конверта',
+                      body:
+                          'Витрати в конверті "${envelope.name}" досягли ${percentageSpent.toStringAsFixed(0)}% від ліміту.',
+                      payload: 'budget/${activeBudget.id}',
+                    );
                     await prefs.setBool(warningKey, true);
-                  } else if (percentageSpent < warningThreshold && (warningSent || exceededSent)) {
+                  } else if (percentageSpent < warningThreshold &&
+                      (warningSent || exceededSent)) {
                     await prefs.setBool(warningKey, false);
                     await prefs.setBool(exceededKey, false);
                   }
-                }
+                },
               );
-            }
+            },
           );
-        }
+        },
       );
       return const Right(null);
-    } catch (e, s) {
-      ErrorMonitoringService.capture(e, stackTrace: s);
+    } on Exception catch (e, s) {
+      await ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(DatabaseFailure(details: e.toString()));
     }
   }

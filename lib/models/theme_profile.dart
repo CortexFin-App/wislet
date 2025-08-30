@@ -1,17 +1,26 @@
 import 'package:flutter/material.dart';
 
+@immutable
 class ThemeProfile {
-  final String name;
-  final Color seedColor;
-  final String fontFamily;
-  final double borderRadius;
-
   const ThemeProfile({
     required this.name,
     required this.seedColor,
     this.fontFamily = 'NotoSans',
     this.borderRadius = 12.0,
   });
+
+  factory ThemeProfile.fromMap(Map<String, dynamic> map) {
+    return ThemeProfile(
+      name: map['name'] as String,
+      seedColor: Color(map['seedColor'] as int),
+      fontFamily: map['fontFamily'] as String,
+      borderRadius: map['borderRadius'] as double,
+    );
+  }
+  final String name;
+  final Color seedColor;
+  final String fontFamily;
+  final double borderRadius;
 
   Map<String, dynamic> toMap() {
     return {
@@ -20,14 +29,5 @@ class ThemeProfile {
       'fontFamily': fontFamily,
       'borderRadius': borderRadius,
     };
-  }
-
-  factory ThemeProfile.fromMap(Map<String, dynamic> map) {
-    return ThemeProfile(
-      name: map['name'],
-      seedColor: Color(map['seedColor']),
-      fontFamily: map['fontFamily'],
-      borderRadius: map['borderRadius'],
-    );
   }
 }

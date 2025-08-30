@@ -1,0 +1,14 @@
+{
+  "name": "Wislet — CortexFin",
+  "short_name": "Wislet",
+  "description": "Wislet — гаманець мудреця. Офлайн-режим, спільні гаманці та інвайти.",
+  "lang": "uk",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0b1220",
+  "theme_color": "#0ea5e9",
+  "icons": [
+    { "src": "/assets/app-icon.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

@@ -10,10 +10,7 @@ class QrScannerScreen extends StatefulWidget {
 }
 
 class _QrScannerScreenState extends State<QrScannerScreen> {
-  final MobileScannerController _scannerController = MobileScannerController(
-    detectionSpeed: DetectionSpeed.normal,
-    facing: CameraFacing.back,
-  );
+  final MobileScannerController _scannerController = MobileScannerController();
   final ValueNotifier<bool> _isTorchOn = ValueNotifier(false);
   bool _isProcessing = false;
 
@@ -27,15 +24,15 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
   void _handleDetection(BarcodeCapture capture) {
     if (_isProcessing || !mounted) return;
 
-    final Barcode? barcode = capture.barcodes.firstOrNull;
-    final String? code = barcode?.rawValue;
+    final barcode = capture.barcodes.firstOrNull;
+    final code = barcode?.rawValue;
 
     if (code != null && code.isNotEmpty) {
       setState(() {
         _isProcessing = true;
       });
       HapticFeedback.lightImpact();
-      
+
       _scannerController.stop().then((_) {
         if (mounted && Navigator.canPop(context)) {
           Navigator.of(context).pop(code);
@@ -54,14 +51,14 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Наведіть на QR-код'),
+        title: const Text('РќР°РІРµРґС–С‚СЊ РЅР° QR-РєРѕРґ'),
         actions: [
           ValueListenableBuilder<bool>(
             valueListenable: _isTorchOn,
             builder: (context, isTorchOn, child) {
               return IconButton(
                 icon: Icon(isTorchOn ? Icons.flash_on : Icons.flash_off),
-                tooltip: 'Ліхтарик',
+                tooltip: 'Р›С–С…С‚Р°СЂРёРє',
                 onPressed: () async {
                   await _scannerController.toggleTorch();
                   _isTorchOn.value = !_isTorchOn.value;
@@ -89,14 +86,17 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
 }
 
 class ScannerOverlayPainter extends CustomPainter {
-  final Rect scanWindow;
-
   ScannerOverlayPainter(this.scanWindow);
+  final Rect scanWindow;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final backgroundPath = Path()..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
-    final cutoutPath = Path()..addRRect(RRect.fromRectAndRadius(scanWindow, const Radius.circular(12)));
+    final backgroundPath = Path()
+      ..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
+    final cutoutPath = Path()
+      ..addRRect(
+        RRect.fromRectAndRadius(scanWindow, const Radius.circular(12)),
+      );
     final backgroundPaint = Paint()..color = Colors.black.withAlpha(128);
 
     final backgroundPathWithoutCutout = Path.combine(
@@ -110,7 +110,10 @@ class ScannerOverlayPainter extends CustomPainter {
       ..color = Colors.white
       ..style = PaintingStyle.stroke
       ..strokeWidth = 3.0;
-    canvas.drawRRect(RRect.fromRectAndRadius(scanWindow, const Radius.circular(12)), borderPaint);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(scanWindow, const Radius.circular(12)),
+      borderPaint,
+    );
   }
 
   @override

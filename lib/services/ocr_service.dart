@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class OcrService {
-  final SupabaseClient _supabase;
-
   OcrService(this._supabase);
+  final SupabaseClient _supabase;
 
   Future<String?> processImage(String imagePath) async {
     final imageBytes = await File(imagePath).readAsBytes();
@@ -15,15 +15,20 @@ class OcrService {
       'ocr',
       body: {'image': imageBase64},
     );
-    
+
     if (response.status != 200) {
-      throw Exception(response.data?['error'] ?? 'OCR function failed with status ${response.status}');
+      final responseData = response.data as Map<String, dynamic>?;
+      throw Exception(
+        responseData?['error'] ??
+            'OCR function failed with status ${response.status}',
+      );
     }
 
-    if (response.data != null && response.data['text'] is String) {
-      return response.data['text'] as String;
+    final responseData = response.data as Map<String, dynamic>?;
+    if (responseData != null && responseData['text'] is String) {
+      return responseData['text'] as String;
     }
-    
+
     return null;
   }
 }

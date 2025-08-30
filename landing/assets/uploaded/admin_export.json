@@ -1,0 +1,65 @@
+﻿{
+    "value":  [
+                  {
+                      "hold_id":  14,
+                      "email":  "vladkuhar27@gmail.com",
+                      "hold_status":  "converted",
+                      "paid_at":  null,
+                      "order_id":  6,
+                      "provider":  "stripe",
+                      "tx_id":  "legacy-6",
+                      "amount_cents":  75000,
+                      "currency":  "usd",
+                      "card_id":  5,
+                      "tier":  "GF",
+                      "founder_id":  8,
+                      "issued_at":  "2025-08-21T08:07:02.506407+00:00"
+                  },
+                  {
+                      "hold_id":  13,
+                      "email":  "vladkuhar27@gmail.com",
+                      "hold_status":  "converted",
+                      "paid_at":  null,
+                      "order_id":  5,
+                      "provider":  "stripe",
+                      "tx_id":  "legacy-5",
+                      "amount_cents":  75000,
+                      "currency":  "usd",
+                      "card_id":  4,
+                      "tier":  "GF",
+                      "founder_id":  7,
+                      "issued_at":  "2025-08-21T08:07:02.506407+00:00"
+                  },
+                  {
+                      "hold_id":  12,
+                      "email":  "vladkuhar27@gmail.com",
+                      "hold_status":  "converted",
+                      "paid_at":  "2025-08-21T13:40:26.727313+00:00",
+                      "order_id":  4,
+                      "provider":  "stripe",
+                      "tx_id":  "legacy-4",
+                      "amount_cents":  75000,
+                      "currency":  "usd",
+                      "card_id":  3,
+                      "tier":  "GF",
+                      "founder_id":  6,
+                      "issued_at":  "2025-08-21T08:07:02.506407+00:00"
+                  },
+                  {
+                      "hold_id":  15,
+                      "email":  "vladkuhar27@gmail.com",
+                      "hold_status":  "converted",
+                      "paid_at":  "2025-08-21T05:17:24.508+00:00",
+                      "order_id":  7,
+                      "provider":  "stripe",
+                      "tx_id":  "legacy-7",
+                      "amount_cents":  75000,
+                      "currency":  "usd",
+                      "card_id":  6,
+                      "tier":  "GF",
+                      "founder_id":  9,
+                      "issued_at":  "2025-08-21T08:07:02.506407+00:00"
+                  }
+              ],
+    "Count":  4
+}

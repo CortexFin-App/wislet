@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../../models/financial_story.dart';
+import 'package:sage_wallet_reborn/models/financial_story.dart';
 
 class TopExpenseStoryCard extends StatelessWidget {
+  const TopExpenseStoryCard({required this.story, super.key});
   final TopExpensesStory story;
-  const TopExpenseStoryCard({super.key, required this.story});
 
   @override
   Widget build(BuildContext context) {
@@ -12,7 +12,13 @@ class TopExpenseStoryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Куди пішли гроші ${story.period}?", style: theme.textTheme.titleLarge?.copyWith(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold)),
+          Text(
+            'РљСѓРґРё РїС–С€Р»Рё РіСЂРѕС€С– ${story.period}?',
+            style: theme.textTheme.titleLarge?.copyWith(
+              color: theme.colorScheme.onSurface,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           const SizedBox(height: 16),
           ...story.topExpenses.map((item) => _ExpenseBar(item: item)),
         ],
@@ -22,14 +28,14 @@ class TopExpenseStoryCard extends StatelessWidget {
 }
 
 class _ExpenseBar extends StatelessWidget {
-  final ExpenseItem item;
   const _ExpenseBar({required this.item});
+  final ExpenseItem item;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
           Icon(item.icon, color: item.color, size: 24),
@@ -38,7 +44,10 @@ class _ExpenseBar extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(item.categoryName, style: TextStyle(color: theme.colorScheme.onSurface)),
+                Text(
+                  item.categoryName,
+                  style: TextStyle(color: theme.colorScheme.onSurface),
+                ),
                 const SizedBox(height: 4),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(10),
@@ -53,44 +62,63 @@ class _ExpenseBar extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          Text("${item.percentage.toStringAsFixed(0)}%", style: TextStyle(color: item.color, fontWeight: FontWeight.bold)),
+          Text(
+            '${item.percentage.toStringAsFixed(0)}%',
+            style: TextStyle(color: item.color, fontWeight: FontWeight.bold),
+          ),
         ],
       ),
     );
   }
 }
 
-
 class ComparisonStoryCard extends StatelessWidget {
+  const ComparisonStoryCard({required this.story, super.key});
   final ComparisonStory story;
-  const ComparisonStoryCard({super.key, required this.story});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color = story.isPositiveChange ? Colors.green : theme.colorScheme.error;
-    final icon = story.isPositiveChange ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded;
-    
+    final color =
+        story.isPositiveChange ? Colors.green : theme.colorScheme.error;
+    final icon = story.isPositiveChange
+        ? Icons.arrow_downward_rounded
+        : Icons.arrow_upward_rounded;
+
     return _StoryCardBase(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(story.title, style: theme.textTheme.titleLarge?.copyWith(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold)),
+          Text(
+            story.title,
+            style: theme.textTheme.titleLarge?.copyWith(
+              color: theme.colorScheme.onSurface,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           const SizedBox(height: 16),
-          Text(story.comparisonText, style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+          Text(
+            story.comparisonText,
+            style: theme.textTheme.bodyLarge
+                ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          ),
           const SizedBox(height: 8),
           Row(
             children: [
               Icon(icon, color: color, size: 28),
               const SizedBox(width: 8),
               Text(
-                "(${story.changePercentage.toStringAsFixed(0)}%)",
-                style: theme.textTheme.headlineSmall?.copyWith(color: color, fontWeight: FontWeight.bold),
+                '(${story.changePercentage.toStringAsFixed(0)}%)',
+                style: theme.textTheme.headlineSmall
+                    ?.copyWith(color: color, fontWeight: FontWeight.bold),
               ),
               const Spacer(),
-              Text("Чудова робота! 💪", style: TextStyle(color: theme.colorScheme.onSurface)),
+              Text(
+                'Р§СѓРґРѕРІР° СЂРѕР±РѕС‚Р°! рџ’Є',
+                style: TextStyle(color: theme.colorScheme.onSurface),
+              ),
             ],
-          )
+          ),
         ],
       ),
     );
@@ -98,8 +126,8 @@ class ComparisonStoryCard extends StatelessWidget {
 }
 
 class AiTipStoryCard extends StatelessWidget {
+  const AiTipStoryCard({required this.story, super.key});
   final AiTipStory story;
-  const AiTipStoryCard({super.key, required this.story});
 
   @override
   Widget build(BuildContext context) {
@@ -108,15 +136,27 @@ class AiTipStoryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-           Row(
-             children: [
-               Icon(Icons.lightbulb_outline, color: Colors.amber.shade600),
-               const SizedBox(width: 8),
-               Text(story.title, style: theme.textTheme.titleLarge?.copyWith(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold)),
-             ],
-           ),
+          Row(
+            children: [
+              Icon(Icons.lightbulb_outline, color: Colors.amber.shade600),
+              const SizedBox(width: 8),
+              Text(
+                story.title,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  color: theme.colorScheme.onSurface,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 16),
-          Text(story.content, style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant, height: 1.5)),
+          Text(
+            story.content,
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              height: 1.5,
+            ),
+          ),
         ],
       ),
     );
@@ -124,29 +164,40 @@ class AiTipStoryCard extends StatelessWidget {
 }
 
 class MostExpensiveDayStoryCard extends StatelessWidget {
-    final MostExpensiveDayStory story;
-    const MostExpensiveDayStoryCard({super.key, required this.story});
-    
-    @override
-    Widget build(BuildContext context) {
-        final theme = Theme.of(context);
-        return _StoryCardBase(
-            child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                    Text(story.title, style: theme.textTheme.titleLarge?.copyWith(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 16),
-                    Text(story.content, style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant, height: 1.5)),
-                ],
+  const MostExpensiveDayStoryCard({required this.story, super.key});
+  final MostExpensiveDayStory story;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return _StoryCardBase(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            story.title,
+            style: theme.textTheme.titleLarge?.copyWith(
+              color: theme.colorScheme.onSurface,
+              fontWeight: FontWeight.bold,
             ),
-        );
-    }
+          ),
+          const SizedBox(height: 16),
+          Text(
+            story.content,
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              height: 1.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
-
 class _StoryCardBase extends StatelessWidget {
-  final Widget child;
   const _StoryCardBase({required this.child});
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {

@@ -1,47 +1,47 @@
 import 'dart:async';
+
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:collection/collection.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sage_wallet_reborn/core/constants/app_constants.dart';
+import 'package:sage_wallet_reborn/core/di/injector.dart';
+import 'package:sage_wallet_reborn/data/repositories/budget_repository.dart';
+import 'package:sage_wallet_reborn/data/repositories/category_repository.dart';
+import 'package:sage_wallet_reborn/data/repositories/goal_repository.dart';
+import 'package:sage_wallet_reborn/data/repositories/transaction_repository.dart';
+import 'package:sage_wallet_reborn/models/category.dart';
+import 'package:sage_wallet_reborn/models/currency_model.dart';
+import 'package:sage_wallet_reborn/models/financial_goal.dart';
 import 'package:sage_wallet_reborn/models/transaction.dart' as fin_transaction;
-import '../../core/constants/app_constants.dart';
-import '../../core/di/injector.dart';
-import '../../providers/currency_provider.dart';
-import '../../providers/pro_status_provider.dart';
-import '../../providers/wallet_provider.dart';
-import '../../providers/app_mode_provider.dart';
-import '../../models/currency_model.dart';
-import '../../models/category.dart';
-import '../../models/financial_goal.dart';
-import '../../services/exchange_rate_service.dart';
-import '../../services/ai_categorization_service.dart';
-import '../../services/ocr_service.dart';
-import '../../services/receipt_parser.dart';
-import '../../services/analytics_service.dart';
-import '../../data/repositories/transaction_repository.dart';
-import '../../data/repositories/category_repository.dart';
-import '../../data/repositories/goal_repository.dart';
-import '../../data/repositories/budget_repository.dart';
-import '../../services/auth_service.dart';
-import '../../widgets/scaffold/patterned_scaffold.dart';
-import 'qr_scanner_screen.dart';
-import 'create_transfer_screen.dart';
+import 'package:sage_wallet_reborn/providers/app_mode_provider.dart';
+import 'package:sage_wallet_reborn/providers/currency_provider.dart';
+import 'package:sage_wallet_reborn/providers/pro_status_provider.dart';
+import 'package:sage_wallet_reborn/providers/wallet_provider.dart';
+import 'package:sage_wallet_reborn/screens/transactions/create_transfer_screen.dart';
+import 'package:sage_wallet_reborn/screens/transactions/qr_scanner_screen.dart';
+import 'package:sage_wallet_reborn/services/ai_categorization_service.dart';
+import 'package:sage_wallet_reborn/services/analytics_service.dart';
+import 'package:sage_wallet_reborn/services/auth_service.dart';
+import 'package:sage_wallet_reborn/services/exchange_rate_service.dart';
+import 'package:sage_wallet_reborn/services/ocr_service.dart';
+import 'package:sage_wallet_reborn/services/receipt_parser.dart';
+import 'package:sage_wallet_reborn/widgets/scaffold/patterned_scaffold.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 enum _TransactionScreenMode { expense, income, transfer }
 
 class AddEditTransactionScreen extends StatefulWidget {
-  final fin_transaction.Transaction? transactionToEdit;
-  final bool isFirstTransaction;
-  final bool isTransferAllowed;
-
   const AddEditTransactionScreen({
     super.key,
     this.transactionToEdit,
     this.isFirstTransaction = false,
     this.isTransferAllowed = true,
   });
+  final fin_transaction.Transaction? transactionToEdit;
+  final bool isFirstTransaction;
+  final bool isTransferAllowed;
 
   @override
   State<AddEditTransactionScreen> createState() =>
@@ -59,8 +59,7 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
   final OcrService _ocrService = getIt<OcrService>();
   final ReceiptParser _receiptParser = getIt<ReceiptParser>();
   final AnalyticsService _analyticsService = getIt<AnalyticsService>();
-  final ExchangeRateService _exchangeRateService =
-      getIt<ExchangeRateService>();
+  final ExchangeRateService _exchangeRateService = getIt<ExchangeRateService>();
 
   Timer? _debounce;
   bool _showDetails = false;
@@ -113,24 +112,31 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
       if (transaction.exchangeRateUsed != null &&
           transaction.originalCurrencyCode != _baseCurrencyCode) {
         _currentRateInfo = ConversionRateInfo(
-            rate: transaction.exchangeRateUsed!,
-            effectiveRateDate: transaction.date,
-            isRateStale: true);
+          rate: transaction.exchangeRateUsed!,
+          effectiveRateDate: transaction.date,
+          isRateStale: true,
+        );
       } else {
         _fetchAndSetExchangeRate(
-            date: _selectedDate, currency: _selectedInputCurrency);
+          date: _selectedDate,
+          currency: _selectedInputCurrency,
+        );
       }
     } else {
-      _selectedInputCurrency = context.read<CurrencyProvider>().selectedCurrency;
+      _selectedInputCurrency =
+          context.read<CurrencyProvider>().selectedCurrency;
       _fetchAndSetExchangeRate(
-          date: _selectedDate, currency: _selectedInputCurrency);
+        date: _selectedDate,
+        currency: _selectedInputCurrency,
+      );
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadCategoriesForType(
-          _selectedMode == _TransactionScreenMode.income
-              ? fin_transaction.TransactionType.income
-              : fin_transaction.TransactionType.expense,
-          initialCategoryId: widget.transactionToEdit?.categoryId);
+        _selectedMode == _TransactionScreenMode.income
+            ? fin_transaction.TransactionType.income
+            : fin_transaction.TransactionType.expense,
+        initialCategoryId: widget.transactionToEdit?.categoryId,
+      );
       _loadAvailableGoals();
     });
   }
@@ -145,11 +151,13 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
     super.dispose();
   }
 
-  void _onDescriptionChanged() async {
-    if (_userHasManuallySelectedCategory) return;
+  Future<void> _onDescriptionChanged() async {
+    if (_userHasManuallySelectedCategory) {
+      return;
+    }
 
     final prefs = await SharedPreferences.getInstance();
-    final bool isAiEnabled =
+    final isAiEnabled =
         prefs.getBool(AppConstants.prefsKeyAiCategorization) ?? true;
     if (!mounted || !isAiEnabled) return;
     final proStatus = context.read<ProStatusProvider>();
@@ -162,8 +170,7 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
       if (walletId == null || _descriptionController.text.trim().length < 3) {
         return;
       }
-      final suggestedCategory =
-          await _aiCategorizationService.suggestCategory(
+      final suggestedCategory = await _aiCategorizationService.suggestCategory(
         description: _descriptionController.text,
         walletId: walletId,
       );
@@ -189,9 +196,13 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
         appModeProvider.isOnline ? authService.currentUser?.id : '1';
 
     if (currentWalletId == null || currentUserId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
           content: Text(
-              'Помилка: не вдалося визначити гаманець або користувача. Спробуйте перезайти.')));
+            'РџРѕРјРёР»РєР°: РЅРµ РІРґР°Р»РѕСЃСЏ РІРёР·РЅР°С‡РёС‚Рё РіР°РјР°РЅРµС†СЊ Р°Р±Рѕ РєРѕСЂРёСЃС‚СѓРІР°С‡Р°. РЎРїСЂРѕР±СѓР№С‚Рµ РїРµСЂРµР·Р°Р№С‚Рё.',
+          ),
+        ),
+      );
       return;
     }
 
@@ -199,21 +210,25 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
     final originalAmount = double.tryParse(amountString);
     if (originalAmount == null ||
         _selectedCategory == null ||
-        _selectedInputCurrency == null) return;
+        _selectedInputCurrency == null) {
+      return;
+    }
 
     if (_selectedCategory!.id != null &&
         _descriptionController.text.trim().isNotEmpty) {
       await _aiCategorizationService.rememberUserChoice(
-          _descriptionController.text.trim(), _selectedCategory!);
+        _descriptionController.text.trim(),
+        _selectedCategory!,
+      );
     }
 
-    double finalExchangeRate = _currentRateInfo?.rate ?? 1.0;
+    final finalExchangeRate = _currentRateInfo?.rate ?? 1.0;
 
     setState(() => _isSaving = true);
-    double amountInBase = originalAmount * finalExchangeRate;
-    final int? newLinkedGoalId = _selectedLinkedGoal?.id;
+    final amountInBase = originalAmount * finalExchangeRate;
+    final newLinkedGoalId = _selectedLinkedGoal?.id;
 
-    fin_transaction.Transaction transactionToSave = fin_transaction.Transaction(
+    final transactionToSave = fin_transaction.Transaction(
       id: widget.transactionToEdit?.id,
       type: _selectedMode == _TransactionScreenMode.income
           ? fin_transaction.TransactionType.income
@@ -230,9 +245,15 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
 
     final result = _isEditing
         ? await _transactionRepo.updateTransaction(
-            transactionToSave, currentWalletId, currentUserId)
+            transactionToSave,
+            currentWalletId,
+            currentUserId,
+          )
         : await _transactionRepo.createTransaction(
-            transactionToSave, currentWalletId, currentUserId);
+            transactionToSave,
+            currentWalletId,
+            currentUserId,
+          );
 
     if (!mounted) return;
 
@@ -240,12 +261,14 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
     final navigator = Navigator.of(context);
 
     result.fold((failure) {
-      messenger
-          .showSnackBar(SnackBar(content: Text('Помилка: ${failure.userMessage}')));
+      messenger.showSnackBar(
+        SnackBar(content: Text('РџРѕРјРёР»РєР°: ${failure.userMessage}')),
+      );
       if (mounted) setState(() => _isSaving = false);
     }, (savedId) async {
       final finalTransaction = fin_transaction.Transaction.fromMap(
-          transactionToSave.toMap()..['id'] = savedId);
+        transactionToSave.toMap()..['id'] = savedId,
+      );
 
       try {
         if (_isEditing &&
@@ -264,10 +287,16 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
         }
       } catch (e) {
         if (mounted) {
-          messenger.showSnackBar(SnackBar(
-              content:
-                  Text('Транзакцію збережено, але сталася помилка: $e')));
-          if (navigator.canPop()) navigator.pop(true);
+          messenger.showSnackBar(
+            SnackBar(
+              content: Text(
+                'РўСЂР°РЅР·Р°РєС†С–СЋ Р·Р±РµСЂРµР¶РµРЅРѕ, Р°Р»Рµ СЃС‚Р°Р»Р°СЃСЏ РїРѕРјРёР»РєР°: $e',
+              ),
+            ),
+          );
+          if (navigator.canPop()) {
+            navigator.pop(true);
+          }
         }
       } finally {
         if (mounted) setState(() => _isSaving = false);
@@ -282,11 +311,16 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
 
     if (!proStatusProvider.isPro) {
       messenger.showSnackBar(
-          const SnackBar(content: Text('Сканування чеків доступне лише у Pro-версії.')));
+        const SnackBar(
+          content: Text(
+            'РЎРєР°РЅСѓРІР°РЅРЅСЏ С‡РµРєС–РІ РґРѕСЃС‚СѓРїРЅРµ Р»РёС€Рµ Сѓ Pro-РІРµСЂСЃС–С—.',
+          ),
+        ),
+      );
       return;
     }
-    final ImagePicker picker = ImagePicker();
-    final XFile? imageFile = await picker.pickImage(source: ImageSource.camera);
+    final picker = ImagePicker();
+    final imageFile = await picker.pickImage(source: ImageSource.camera);
     if (imageFile == null || !mounted) return;
     setState(() => _isScanning = true);
     try {
@@ -302,14 +336,24 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
             _selectedDate = result.date!;
           }
         });
-        messenger
-            .showSnackBar(const SnackBar(content: Text('Дані з чека заповнено!')));
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('Р”Р°РЅС– Р· С‡РµРєР° Р·Р°РїРѕРІРЅРµРЅРѕ!'),
+          ),
+        );
       } else {
-        messenger.showSnackBar(const SnackBar(
-            content: Text('Не вдалося розпізнати текст на зображенні.')));
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text(
+              'РќРµ РІРґР°Р»РѕСЃСЏ СЂРѕР·РїС–Р·РЅР°С‚Рё С‚РµРєСЃС‚ РЅР° Р·РѕР±СЂР°Р¶РµРЅРЅС–.',
+            ),
+          ),
+        );
       }
     } catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text('Помилка сканування: $e')));
+      messenger.showSnackBar(
+        SnackBar(content: Text('РџРѕРјРёР»РєР° СЃРєР°РЅСѓРІР°РЅРЅСЏ: $e')),
+      );
     } finally {
       if (mounted) setState(() => _isScanning = false);
     }
@@ -323,7 +367,12 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
 
     if (!proStatusProvider.isPro) {
       messenger.showSnackBar(
-          const SnackBar(content: Text('Сканування QR доступне лише у Pro-версії.')));
+        const SnackBar(
+          content: Text(
+            'РЎРєР°РЅСѓРІР°РЅРЅСЏ QR РґРѕСЃС‚СѓРїРЅРµ Р»РёС€Рµ Сѓ Pro-РІРµСЂСЃС–С—.',
+          ),
+        ),
+      );
       return;
     }
 
@@ -344,8 +393,11 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
           _descriptionController.text = parsedData.merchantName!;
         }
       });
-      messenger
-          .showSnackBar(const SnackBar(content: Text('Дані з QR-коду заповнено!')));
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Р”Р°РЅС– Р· QR-РєРѕРґСѓ Р·Р°РїРѕРІРЅРµРЅРѕ!'),
+        ),
+      );
     }
   }
 
@@ -368,15 +420,21 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
     if (mounted) setState(() {});
   }
 
-  Future<void> _fetchAndSetExchangeRate(
-      {DateTime? date, Currency? currency}) async {
+  Future<void> _fetchAndSetExchangeRate({
+    DateTime? date,
+    Currency? currency,
+  }) async {
     final targetDate = date ?? _selectedDate;
     final targetCurrency = currency ?? _selectedInputCurrency;
 
     if (targetCurrency == null || targetCurrency.code == _baseCurrencyCode) {
       if (mounted) {
-        setState(() => _currentRateInfo = ConversionRateInfo(
-            rate: 1.0, effectiveRateDate: targetDate, isRateStale: false));
+        setState(
+          () => _currentRateInfo = ConversionRateInfo(
+            rate: 1,
+            effectiveRateDate: targetDate,
+          ),
+        );
       }
       return;
     }
@@ -404,14 +462,21 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
           _currentRateInfo = null;
           _isLoadingRate = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Не вдалося отримати курс для ${targetCurrency.code}')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'РќРµ РІРґР°Р»РѕСЃСЏ РѕС‚СЂРёРјР°С‚Рё РєСѓСЂСЃ РґР»СЏ ${targetCurrency.code}',
+            ),
+          ),
+        );
       }
     }
   }
 
-  Future<void> _loadCategoriesForType(fin_transaction.TransactionType type,
-      {int? initialCategoryId}) async {
+  Future<void> _loadCategoriesForType(
+    fin_transaction.TransactionType type, {
+    int? initialCategoryId,
+  }) async {
     if (!mounted) return;
     final walletId = context.read<WalletProvider>().currentWallet?.id;
     if (walletId == null) return;
@@ -422,10 +487,9 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
       _availableCategories = [];
     });
 
-    final categoryTypeToLoad =
-        (type == fin_transaction.TransactionType.income)
-            ? CategoryType.income
-            : CategoryType.expense;
+    final categoryTypeToLoad = (type == fin_transaction.TransactionType.income)
+        ? CategoryType.income
+        : CategoryType.expense;
     var categoriesEither =
         await _categoryRepo.getCategoriesByType(walletId, categoryTypeToLoad);
 
@@ -434,14 +498,16 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
     if (categories.isEmpty) {
       final prefs = await SharedPreferences.getInstance();
       final flagKey = 'default_categories_created_for_wallet_$walletId';
-      final bool alreadyCreated = prefs.getBool(flagKey) ?? false;
+      final alreadyCreated = prefs.getBool(flagKey) ?? false;
 
       if (!alreadyCreated) {
         await _categoryRepo.addDefaultCategories(walletId);
         await prefs.setBool(flagKey, true);
 
         categoriesEither = await _categoryRepo.getCategoriesByType(
-            walletId, categoryTypeToLoad);
+          walletId,
+          categoryTypeToLoad,
+        );
         categories = categoriesEither.getOrElse((_) => []);
       }
     }
@@ -465,20 +531,24 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
     final authService = context.watch<AuthService>();
     final appModeProvider = context.watch<AppModeProvider>();
 
-    final bool isUserAvailable =
+    final isUserAvailable =
         appModeProvider.isOnline ? authService.currentUser != null : true;
-    final bool isRateReady = _selectedInputCurrency?.code == _baseCurrencyCode ||
+    final isRateReady = _selectedInputCurrency?.code == _baseCurrencyCode ||
         (_currentRateInfo != null && !_isLoadingRate);
-    final bool canSave = !_isSaving &&
+    final canSave = !_isSaving &&
         _amountController.text.isNotEmpty &&
         _selectedCategory != null &&
         walletProvider.currentWallet != null &&
         isUserAvailable &&
         isRateReady;
-    
-    String titleText = _isEditing ? 'Редагувати транзакцію' : 'Нова транзакція';
-    if(widget.isFirstTransaction) {
-      titleText = _selectedMode == _TransactionScreenMode.income ? 'Ваш перший дохід' : 'Ваша перша витрата';
+
+    var titleText = _isEditing
+        ? 'Р РµРґР°РіСѓРІР°С‚Рё С‚СЂР°РЅР·Р°РєС†С–СЋ'
+        : 'РќРѕРІР° С‚СЂР°РЅР·Р°РєС†С–СЏ';
+    if (widget.isFirstTransaction) {
+      titleText = _selectedMode == _TransactionScreenMode.income
+          ? 'Р’Р°С€ РїРµСЂС€РёР№ РґРѕС…С–Рґ'
+          : 'Р’Р°С€Р° РїРµСЂС€Р° РІРёС‚СЂР°С‚Р°';
     }
 
     return PatternedScaffold(
@@ -488,15 +558,15 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
           if (!widget.isFirstTransaction) ...[
             IconButton(
               icon: const Icon(Icons.qr_code_scanner_outlined),
-              tooltip: 'Сканувати QR-код',
+              tooltip: 'РЎРєР°РЅСѓРІР°С‚Рё QR-РєРѕРґ',
               onPressed: _scanQrCode,
             ),
             IconButton(
               icon: const Icon(Icons.camera_alt_outlined),
-              tooltip: 'Сканувати чек',
+              tooltip: 'РЎРєР°РЅСѓРІР°С‚Рё С‡РµРє',
               onPressed: _scanReceipt,
             ),
-          ]
+          ],
         ],
       ),
       body: Stack(
@@ -504,24 +574,27 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
           Form(
             key: _formKey,
             child: ListView(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(16),
               children: <Widget>[
                 SegmentedButton<_TransactionScreenMode>(
                   style: theme.segmentedButtonTheme.style,
                   segments: <ButtonSegment<_TransactionScreenMode>>[
                     const ButtonSegment(
-                        value: _TransactionScreenMode.expense,
-                        label: Text('Витрата'),
-                        icon: Icon(Icons.arrow_upward)),
+                      value: _TransactionScreenMode.expense,
+                      label: Text('Р’РёС‚СЂР°С‚Р°'),
+                      icon: Icon(Icons.arrow_upward),
+                    ),
                     const ButtonSegment(
-                        value: _TransactionScreenMode.income,
-                        label: Text('Дохід'),
-                        icon: Icon(Icons.arrow_downward)),
+                      value: _TransactionScreenMode.income,
+                      label: Text('Р”РѕС…С–Рґ'),
+                      icon: Icon(Icons.arrow_downward),
+                    ),
                     if (widget.isTransferAllowed)
                       const ButtonSegment(
-                          value: _TransactionScreenMode.transfer,
-                          label: Text('Переказ'),
-                          icon: Icon(Icons.swap_horiz)),
+                        value: _TransactionScreenMode.transfer,
+                        label: Text('РџРµСЂРµРєР°Р·'),
+                        icon: Icon(Icons.swap_horiz),
+                      ),
                   ],
                   selected: <_TransactionScreenMode>{_selectedMode},
                   onSelectionChanged:
@@ -530,10 +603,11 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
                       if (newSelection.first ==
                           _TransactionScreenMode.transfer) {
                         final result = await Navigator.push<bool>(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) =>
-                                    const CreateTransferScreen()));
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const CreateTransferScreen(),
+                          ),
+                        );
                         if (result == true) {
                           WidgetsBinding.instance.addPostFrameCallback((_) {
                             if (mounted) {
@@ -545,9 +619,10 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
                         setState(() {
                           _selectedMode = newSelection.first;
                           _loadCategoriesForType(
-                              _selectedMode == _TransactionScreenMode.income
-                                  ? fin_transaction.TransactionType.income
-                                  : fin_transaction.TransactionType.expense);
+                            _selectedMode == _TransactionScreenMode.income
+                                ? fin_transaction.TransactionType.income
+                                : fin_transaction.TransactionType.expense,
+                          );
                         });
                       }
                     }
@@ -557,28 +632,32 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
                 TextFormField(
                   controller: _amountController,
                   decoration: InputDecoration(
-                      labelText: 'Сума',
-                      prefixIcon: _selectedInputCurrency != null
-                          ? Padding(
-                              padding: const EdgeInsets.all(14.0),
-                              child: Text(_selectedInputCurrency!.symbol,
-                                  style: TextStyle(
-                                      fontSize: 16,
-                                      color: theme
-                                          .colorScheme.onSurfaceVariant)))
-                          : null),
+                    labelText: 'РЎСѓРјР°',
+                    prefixIcon: _selectedInputCurrency != null
+                        ? Padding(
+                            padding: const EdgeInsets.all(14),
+                            child: Text(
+                              _selectedInputCurrency!.symbol,
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          )
+                        : null,
+                  ),
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Введіть суму';
+                      return 'Р’РІРµРґС–С‚СЊ СЃСѓРјСѓ';
                     }
                     final cleanValue = value.replaceAll(',', '.');
                     if (double.tryParse(cleanValue) == null) {
-                      return 'Коректне число';
+                      return 'РљРѕСЂРµРєС‚РЅРµ С‡РёСЃР»Рѕ';
                     }
                     if (double.parse(cleanValue) <= 0) {
-                      return 'Більше нуля';
+                      return 'Р‘С–Р»СЊС€Рµ РЅСѓР»СЏ';
                     }
                     return null;
                   },
@@ -586,16 +665,18 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
                 const SizedBox(height: 16),
                 if (_isLoadingCategories)
                   const Center(
-                      child: Padding(
-                          padding: EdgeInsets.all(8.0),
-                          child: CircularProgressIndicator()))
+                    child: Padding(
+                      padding: EdgeInsets.all(8),
+                      child: CircularProgressIndicator(),
+                    ),
+                  )
                 else if (_availableCategories.isEmpty)
                   Card(
                     color: theme.colorScheme.surfaceContainerHighest,
                     child: Padding(
-                      padding: const EdgeInsets.all(12.0),
+                      padding: const EdgeInsets.all(12),
                       child: Text(
-                        'Спочатку створіть категорії для "${_selectedMode == _TransactionScreenMode.expense ? 'витрат' : 'доходів'}" в налаштуваннях.',
+                        'РЎРїРѕС‡Р°С‚РєСѓ СЃС‚РІРѕСЂС–С‚СЊ РєР°С‚РµРіРѕСЂС–С— РґР»СЏ "${_selectedMode == _TransactionScreenMode.expense ? 'РІРёС‚СЂР°С‚' : 'РґРѕС…РѕРґС–РІ'}" РІ РЅР°Р»Р°С€С‚СѓРІР°РЅРЅСЏС….',
                         textAlign: TextAlign.center,
                       ),
                     ),
@@ -604,13 +685,18 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
                   DropdownButtonFormField<Category>(
                     value: _selectedCategory,
                     decoration: const InputDecoration(
-                        labelText: 'Категорія',
-                        prefixIcon: Icon(Icons.category_outlined)),
-                    hint: const Text('Оберіть категорію'),
+                      labelText: 'РљР°С‚РµРіРѕСЂС–СЏ',
+                      prefixIcon: Icon(Icons.category_outlined),
+                    ),
+                    hint: const Text('РћР±РµСЂС–С‚СЊ РєР°С‚РµРіРѕСЂС–СЋ'),
                     isExpanded: true,
                     items: _availableCategories
-                        .map((Category category) => DropdownMenuItem<Category>(
-                            value: category, child: Text(category.name)))
+                        .map(
+                          (Category category) => DropdownMenuItem<Category>(
+                            value: category,
+                            child: Text(category.name),
+                          ),
+                        )
                         .toList(),
                     onChanged: (Category? newValue) {
                       setState(() {
@@ -618,15 +704,17 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
                         _userHasManuallySelectedCategory = true;
                       });
                     },
-                    validator: (value) =>
-                        value == null ? 'Оберіть категорію' : null,
+                    validator: (value) => value == null
+                        ? 'РћР±РµСЂС–С‚СЊ РєР°С‚РµРіРѕСЂС–СЋ'
+                        : null,
                   ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _descriptionController,
                   decoration: const InputDecoration(
-                      labelText: 'Опис (опціонально)',
-                      prefixIcon: Icon(Icons.description_outlined)),
+                    labelText: 'РћРїРёСЃ (РѕРїС†С–РѕРЅР°Р»СЊРЅРѕ)',
+                    prefixIcon: Icon(Icons.description_outlined),
+                  ),
                   maxLines: 3,
                 ),
                 const SizedBox(height: 8),
@@ -644,30 +732,40 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
                     TextButton(
                       onPressed: () =>
                           setState(() => _showDetails = !_showDetails),
-                      child: Text(_showDetails
-                          ? 'Сховати деталі'
-                          : 'Показати деталі'),
+                      child: Text(
+                        _showDetails
+                            ? 'РЎС…РѕРІР°С‚Рё РґРµС‚Р°Р»С–'
+                            : 'РџРѕРєР°Р·Р°С‚Рё РґРµС‚Р°Р»С–',
+                      ),
                     ),
                     ElevatedButton(
                       onPressed: canSave ? _saveTransaction : null,
                       style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 32, vertical: 12)),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 32,
+                          vertical: 12,
+                        ),
+                      ),
                       child: _isSaving
                           ? const SizedBox(
                               width: 24,
                               height: 24,
                               child: CircularProgressIndicator(
-                                  color: Colors.white, strokeWidth: 2))
-                          : Text(_isEditing ? 'Зберегти' : 'Додати'),
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : Text(
+                              _isEditing ? 'Р—Р±РµСЂРµРіС‚Рё' : 'Р”РѕРґР°С‚Рё',
+                            ),
                     ),
                   ],
-                )
+                ),
               ],
             ),
           ),
           if (_isScanning)
-            Container(
+            ColoredBox(
               color: Colors.black.withAlpha(128),
               child: const Center(
                 child: Column(
@@ -675,8 +773,10 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
                   children: [
                     CircularProgressIndicator(),
                     SizedBox(height: 16),
-                    Text('Обробка зображення...',
-                        style: TextStyle(color: Colors.white, fontSize: 16)),
+                    Text(
+                      'РћР±СЂРѕР±РєР° Р·РѕР±СЂР°Р¶РµРЅРЅСЏ...',
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
                   ],
                 ),
               ),
@@ -691,18 +791,24 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Divider(height: 24),
-        Text("Додаткові параметри",
-            style: Theme.of(context).textTheme.titleMedium),
+        Text(
+          'Р”РѕРґР°С‚РєРѕРІС– РїР°СЂР°РјРµС‚СЂРё',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
         const SizedBox(height: 16),
         DropdownButtonFormField<Currency>(
           decoration: const InputDecoration(
-              labelText: 'Валюта',
-              prefixIcon: Icon(Icons.currency_exchange_outlined)),
+            labelText: 'Р’Р°Р»СЋС‚Р°',
+            prefixIcon: Icon(Icons.currency_exchange_outlined),
+          ),
           value: _selectedInputCurrency,
           items: appCurrencies
-              .map((Currency currency) => DropdownMenuItem<Currency>(
+              .map(
+                (Currency currency) => DropdownMenuItem<Currency>(
                   value: currency,
-                  child: Text('${currency.code} - ${currency.name}')))
+                  child: Text('${currency.code} - ${currency.name}'),
+                ),
+              )
               .toList(),
           onChanged: (Currency? newValue) {
             if (mounted && newValue != null) {
@@ -710,18 +816,20 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
               _fetchAndSetExchangeRate(currency: newValue);
             }
           },
-          validator: (value) => value == null ? 'Оберіть валюту' : null,
+          validator: (value) =>
+              value == null ? 'РћР±РµСЂС–С‚СЊ РІР°Р»СЋС‚Сѓ' : null,
         ),
         if (_isLoadingRate)
           const Padding(
-              padding: EdgeInsets.symmetric(vertical: 8.0),
-              child: Center(child: CircularProgressIndicator()))
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: Center(child: CircularProgressIndicator()),
+          )
         else if (_currentRateInfo != null &&
             _selectedInputCurrency?.code != _baseCurrencyCode)
           Padding(
-            padding: const EdgeInsets.only(top: 8.0),
+            padding: const EdgeInsets.only(top: 8),
             child: Text(
-              "Курс: 1 ${_selectedInputCurrency?.code} ≈ ${(_currentRateInfo!.rate).toStringAsFixed(4)} $_baseCurrencyCode",
+              'РљСѓСЂСЃ: 1 ${_selectedInputCurrency?.code} в‰€ ${_currentRateInfo!.rate.toStringAsFixed(4)} $_baseCurrencyCode',
               style: Theme.of(context).textTheme.bodySmall,
               textAlign: TextAlign.center,
             ),
@@ -731,29 +839,35 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
           contentPadding: EdgeInsets.zero,
           leading: const Icon(Icons.calendar_today_outlined),
           title: Text(
-              "Дата: ${DateFormat('dd.MM.yyyy, HH:mm').format(_selectedDate)}"),
+            "Р”Р°С‚Р°: ${DateFormat('dd.MM.yyyy, HH:mm').format(_selectedDate)}",
+          ),
           trailing: const Icon(Icons.edit_outlined),
           onTap: () async {
             final pickedDate = await showDatePicker(
-                context: context,
-                initialDate: _selectedDate,
-                firstDate: DateTime(2000),
-                lastDate: DateTime(2101));
+              context: context,
+              initialDate: _selectedDate,
+              firstDate: DateTime(2000),
+              lastDate: DateTime(2101),
+            );
             if (pickedDate != null && mounted) {
               final pickedTime = await showTimePicker(
-                  context: context,
-                  initialTime: TimeOfDay.fromDateTime(_selectedDate));
+                context: context,
+                initialTime: TimeOfDay.fromDateTime(_selectedDate),
+              );
               if (mounted) {
                 setState(() {
                   _selectedDate = DateTime(
-                      pickedDate.year,
-                      pickedDate.month,
-                      pickedDate.day,
-                      pickedTime?.hour ?? _selectedDate.hour,
-                      pickedTime?.minute ?? _selectedDate.minute);
+                    pickedDate.year,
+                    pickedDate.month,
+                    pickedDate.day,
+                    pickedTime?.hour ?? _selectedDate.hour,
+                    pickedTime?.minute ?? _selectedDate.minute,
+                  );
                 });
                 _fetchAndSetExchangeRate(
-                    date: _selectedDate, currency: _selectedInputCurrency);
+                  date: _selectedDate,
+                  currency: _selectedInputCurrency,
+                );
               }
             }
           },
@@ -763,26 +877,28 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
           DropdownButtonFormField<FinancialGoal?>(
             value: _selectedLinkedGoal,
             decoration: InputDecoration(
-              labelText: 'Прив\'язати до цілі',
+              labelText: "РџСЂРёРІ'СЏР·Р°С‚Рё РґРѕ С†С–Р»С–",
               border: const OutlineInputBorder(),
               prefixIcon: const Icon(Icons.flag_outlined),
               suffixIcon: _selectedLinkedGoal != null
                   ? IconButton(
                       icon: const Icon(Icons.clear, size: 20),
                       onPressed: () =>
-                          setState(() => _selectedLinkedGoal = null))
+                          setState(() => _selectedLinkedGoal = null),
+                    )
                   : null,
             ),
             isExpanded: true,
-            hint: const Text('Не прив\'язувати'),
+            hint: const Text("РќРµ РїСЂРёРІ'СЏР·СѓРІР°С‚Рё"),
             items: [
               const DropdownMenuItem<FinancialGoal?>(
-                  value: null, child: Text('Не прив\'язувати до цілі')),
+                child: Text("РќРµ РїСЂРёРІ'СЏР·СѓРІР°С‚Рё РґРѕ С†С–Р»С–"),
+              ),
               ..._availableGoals.map((FinancialGoal goal) {
                 return DropdownMenuItem<FinancialGoal?>(
-                    value: goal,
-                    child:
-                        Text(goal.name, overflow: TextOverflow.ellipsis));
+                  value: goal,
+                  child: Text(goal.name, overflow: TextOverflow.ellipsis),
+                );
               }),
             ],
             onChanged: (FinancialGoal? newValue) =>
@@ -793,7 +909,9 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
   }
 
   Future<void> _runPostSaveChecks(
-      fin_transaction.Transaction transaction, int walletId) async {
+    fin_transaction.Transaction transaction,
+    int walletId,
+  ) async {
     await _budgetRepo.checkAndNotifyEnvelopeLimits(transaction, walletId);
     if (transaction.linkedGoalId != null) {
       await _goalRepo.updateFinancialGoalProgress(transaction.linkedGoalId!);
@@ -802,7 +920,9 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
       final proStatus = context.read<ProStatusProvider>();
       if (proStatus.isPro) {
         await _analyticsService.analyzeAndNotifyOnNewTransaction(
-            transaction, walletId);
+          transaction,
+          walletId,
+        );
       }
     }
   }

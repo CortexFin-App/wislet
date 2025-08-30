@@ -1,4 +1,55 @@
 class FinancialGoal {
+  FinancialGoal({
+    required this.name,
+    required this.originalTargetAmount,
+    required this.originalCurrentAmount,
+    required this.currencyCode,
+    required this.targetAmountInBaseCurrency,
+    required this.currentAmountInBaseCurrency,
+    required this.creationDate,
+    this.id,
+    this.exchangeRateUsed,
+    this.targetDate,
+    this.iconName,
+    this.notes,
+    this.isAchieved = false,
+    this.updatedAt,
+    this.isDeleted = false,
+  });
+
+  factory FinancialGoal.fromMap(Map<String, dynamic> map) {
+    bool _bool(dynamic v, [bool def = false]) {
+      if (v is bool) return v;
+      if (v is num) return v != 0;
+      return def;
+    }
+
+    return FinancialGoal(
+      id: map['id'] as int?,
+      name: map['name'] as String,
+      originalTargetAmount: (map['original_target_amount'] as num).toDouble(),
+      originalCurrentAmount:
+          (map['original_current_amount'] as num).toDouble(),
+      currencyCode: map['currency_code'] as String,
+      exchangeRateUsed: (map['exchange_rate_used'] as num?)?.toDouble(),
+      targetAmountInBaseCurrency:
+          (map['target_amount_in_base_currency'] as num).toDouble(),
+      currentAmountInBaseCurrency:
+          (map['current_amount_in_base_currency'] as num).toDouble(),
+      targetDate: map['target_date'] != null
+          ? DateTime.parse(map['target_date'] as String)
+          : null,
+      creationDate: DateTime.parse(map['creation_date'] as String),
+      iconName: map['icon_name'] as String?,
+      notes: map['notes'] as String?,
+      isAchieved: _bool(map['is_achieved'], false),
+      updatedAt: map['updated_at'] != null
+          ? DateTime.parse(map['updated_at'] as String)
+          : null,
+      isDeleted: _bool(map['is_deleted'], false),
+    );
+  }
+
   final int? id;
   final String name;
   final double originalTargetAmount;
@@ -14,24 +65,6 @@ class FinancialGoal {
   final bool isAchieved;
   final DateTime? updatedAt;
   final bool isDeleted;
-
-  FinancialGoal({
-    this.id,
-    required this.name,
-    required this.originalTargetAmount,
-    this.originalCurrentAmount = 0.0,
-    required this.currencyCode,
-    this.exchangeRateUsed,
-    required this.targetAmountInBaseCurrency,
-    this.currentAmountInBaseCurrency = 0.0,
-    this.targetDate,
-    required this.creationDate,
-    this.iconName,
-    this.notes,
-    this.isAchieved = false,
-    this.updatedAt,
-    this.isDeleted = false,
-  });
 
   Map<String, dynamic> toMap() {
     return {
@@ -52,23 +85,43 @@ class FinancialGoal {
     };
   }
 
-  factory FinancialGoal.fromMap(Map<String, dynamic> map) {
+  FinancialGoal copyWith({
+    int? id,
+    String? name,
+    double? originalTargetAmount,
+    double? originalCurrentAmount,
+    String? currencyCode,
+    double? exchangeRateUsed,
+    double? targetAmountInBaseCurrency,
+    double? currentAmountInBaseCurrency,
+    DateTime? targetDate,
+    DateTime? creationDate,
+    String? iconName,
+    String? notes,
+    bool? isAchieved,
+    DateTime? updatedAt,
+    bool? isDeleted,
+  }) {
     return FinancialGoal(
-      id: map['id'],
-      name: map['name'],
-      originalTargetAmount: (map['original_target_amount'] as num).toDouble(),
-      originalCurrentAmount: (map['original_current_amount'] as num).toDouble(),
-      currencyCode: map['currency_code'],
-      exchangeRateUsed: (map['exchange_rate_used'] as num?)?.toDouble(),
-      targetAmountInBaseCurrency: (map['target_amount_in_base_currency'] as num).toDouble(),
-      currentAmountInBaseCurrency: (map['current_amount_in_base_currency'] as num).toDouble(),
-      targetDate: map['target_date'] != null ? DateTime.parse(map['target_date']) : null,
-      creationDate: DateTime.parse(map['creation_date']),
-      iconName: map['icon_name'],
-      notes: map['notes'],
-      isAchieved: (map['is_achieved'] is bool) ? map['is_achieved'] : ((map['is_achieved'] as int? ?? 0) == 1),
-      updatedAt: map['updated_at'] != null ? DateTime.parse(map['updated_at'] as String) : null,
-      isDeleted: (map['is_deleted'] is bool) ? map['is_deleted'] : ((map['is_deleted'] as int? ?? 0) == 1),
+      id: id ?? this.id,
+      name: name ?? this.name,
+      originalTargetAmount:
+          originalTargetAmount ?? this.originalTargetAmount,
+      originalCurrentAmount:
+          originalCurrentAmount ?? this.originalCurrentAmount,
+      currencyCode: currencyCode ?? this.currencyCode,
+      exchangeRateUsed: exchangeRateUsed ?? this.exchangeRateUsed,
+      targetAmountInBaseCurrency:
+          targetAmountInBaseCurrency ?? this.targetAmountInBaseCurrency,
+      currentAmountInBaseCurrency:
+          currentAmountInBaseCurrency ?? this.currentAmountInBaseCurrency,
+      targetDate: targetDate ?? this.targetDate,
+      creationDate: creationDate ?? this.creationDate,
+      iconName: iconName ?? this.iconName,
+      notes: notes ?? this.notes,
+      isAchieved: isAchieved ?? this.isAchieved,
+      updatedAt: updatedAt ?? this.updatedAt,
+      isDeleted: isDeleted ?? this.isDeleted,
     );
   }
 }

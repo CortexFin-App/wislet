@@ -1,0 +1,17 @@
+User-agent: *
+# Block service/transactional/system pages
+Disallow: /admin
+Disallow: /admin.html
+Disallow: /admin/
+Disallow: /pay/
+Disallow: /thanks.html
+Disallow: /cancel.html
+Disallow: /404.html
+Disallow: /sw.js
+# Block data dumps and internal files
+Disallow: /*.json$
+Disallow: /*.csv$
+Disallow: /.vercel/
+# Allow everything else
+Allow: /
+Sitemap: https://cortexfinapp.com/sitemap.xml

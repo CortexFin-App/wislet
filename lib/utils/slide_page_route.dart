@@ -3,22 +3,22 @@ import 'package:flutter/material.dart';
 enum SlideDirection { leftToRight, rightToLeft, topToBottom, bottomToTop }
 
 class SlidePageRoute<T> extends PageRouteBuilder<T> {
-  final WidgetBuilder builder;
-  final SlideDirection direction;
-
-  SlidePageRoute({required this.builder, this.direction = SlideDirection.leftToRight, super.settings})
-      : super(
+  SlidePageRoute({
+    required this.builder,
+    this.direction = SlideDirection.leftToRight,
+    super.settings,
+  }) : super(
           pageBuilder: (
-            BuildContext context,
-            Animation<double> animation,
-            Animation<double> secondaryAnimation,
+            context,
+            animation,
+            secondaryAnimation,
           ) =>
               builder(context),
           transitionsBuilder: (
-            BuildContext context,
-            Animation<double> animation,
-            Animation<double> secondaryAnimation,
-            Widget child,
+            context,
+            animation,
+            secondaryAnimation,
+            child,
           ) {
             return SlideTransition(
               position: Tween<Offset>(
@@ -35,16 +35,19 @@ class SlidePageRoute<T> extends PageRouteBuilder<T> {
           },
         );
 
+  final WidgetBuilder builder;
+  final SlideDirection direction;
+
   static Offset _getBeginOffset(SlideDirection direction) {
     switch (direction) {
       case SlideDirection.leftToRight:
-        return const Offset(-1.0, 0.0);
+        return const Offset(-1, 0);
       case SlideDirection.rightToLeft:
-        return const Offset(1.0, 0.0);
+        return const Offset(1, 0);
       case SlideDirection.topToBottom:
-        return const Offset(0.0, -1.0);
+        return const Offset(0, -1);
       case SlideDirection.bottomToTop:
-        return const Offset(0.0, 1.0);
+        return const Offset(0, 1);
     }
   }
 }

@@ -1,9 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../core/di/injector.dart';
-import '../../services/auth_service.dart';
-import '../auth/widgets/pin_indicator.dart';
-import '../auth/widgets/pin_pad.dart';
+import 'package:sage_wallet_reborn/core/di/injector.dart';
+import 'package:sage_wallet_reborn/screens/auth/widgets/pin_indicator.dart';
+import 'package:sage_wallet_reborn/screens/auth/widgets/pin_pad.dart';
+import 'package:sage_wallet_reborn/services/auth_service.dart';
 
 enum _PinSetupStage { createNew, confirm }
 
@@ -16,7 +18,7 @@ class PinSetupScreen extends StatefulWidget {
 
 class _PinSetupScreenState extends State<PinSetupScreen> {
   final AuthService _authService = getIt<AuthService>();
-  
+
   _PinSetupStage _stage = _PinSetupStage.createNew;
   String _firstPinAttempt = '';
   String _currentPin = '';
@@ -26,12 +28,12 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
   String get _title {
     switch (_stage) {
       case _PinSetupStage.createNew:
-        return 'Створіть новий PIN-код';
+        return 'РЎС‚РІРѕСЂС–С‚СЊ РЅРѕРІРёР№ PIN-РєРѕРґ';
       case _PinSetupStage.confirm:
-        return 'Підтвердьте PIN-код';
+        return 'РџС–РґС‚РІРµСЂРґСЊС‚Рµ PIN-РєРѕРґ';
     }
   }
-  
+
   void _onNumberPressed(String number) {
     if (_isSaving || _currentPin.length >= 4) return;
     setState(() {
@@ -48,11 +50,11 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
     if (_currentPin.isEmpty) return;
     setState(() {
       _currentPin = _currentPin.substring(0, _currentPin.length - 1);
-       _errorMessage = null;
+      _errorMessage = null;
     });
   }
 
-  void _handlePinEntered() async {
+  Future<void> _handlePinEntered() async {
     if (_stage == _PinSetupStage.createNew) {
       setState(() {
         _firstPinAttempt = _currentPin;
@@ -65,7 +67,8 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
       } else {
         HapticFeedback.heavyImpact();
         setState(() {
-          _errorMessage = 'PIN-коди не збігаються. Спробуйте ще раз.';
+          _errorMessage =
+              'PIN-РєРѕРґРё РЅРµ Р·Р±С–РіР°СЋС‚СЊСЃСЏ. РЎРїСЂРѕР±СѓР№С‚Рµ С‰Рµ СЂР°Р·.';
           _firstPinAttempt = '';
           _currentPin = '';
           _stage = _PinSetupStage.createNew;
@@ -82,12 +85,16 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
     try {
       await _authService.setPin(_currentPin);
       messenger.showSnackBar(
-        const SnackBar(content: Text('PIN-код успішно встановлено!')),
+        const SnackBar(
+          content: Text('PIN-РєРѕРґ СѓСЃРїС–С€РЅРѕ РІСЃС‚Р°РЅРѕРІР»РµРЅРѕ!'),
+        ),
       );
       navigator.pop(true);
-    } catch (e) {
+    } on Exception catch (e) {
       messenger.showSnackBar(
-        SnackBar(content: Text('Помилка збереження PIN-коду: $e')),
+        SnackBar(
+          content: Text('РџРѕРјРёР»РєР° Р·Р±РµСЂРµР¶РµРЅРЅСЏ PIN-РєРѕРґСѓ: $e'),
+        ),
       );
     } finally {
       if (mounted) {
@@ -100,11 +107,11 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Встановлення PIN-коду'),
+        title: const Text('Р’СЃС‚Р°РЅРѕРІР»РµРЅРЅСЏ PIN-РєРѕРґСѓ'),
       ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 48.0),
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 48),
           child: Column(
             children: [
               Text(
@@ -119,11 +126,20 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
                 height: 48,
                 alignment: Alignment.center,
                 child: _isSaving
-                    ? const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2,)))
+                    ? const Center(
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      )
                     : Text(
                         _errorMessage ?? '',
                         textAlign: TextAlign.center,
-                        style: TextStyle(color: Theme.of(context).colorScheme.error, height: 1.2),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                          height: 1.2,
+                        ),
                       ),
               ),
               const Spacer(),

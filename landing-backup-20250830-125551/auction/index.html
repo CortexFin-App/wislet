@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wislet • Гаманець Мудреця — CortexFin</title>
+
+  <!-- Canonical + alternates -->
+  <link rel="canonical" href="https://cortexfinapp.com/ua">
+  <link rel="alternate" hreflang="uk" href="https://cortexfinapp.com/ua">
+  <link rel="alternate" hreflang="en" href="https://cortexfinapp.com/">
+
+  <!-- Open Graph -->
+  <meta property="og:url" content="https://cortexfinapp.com/ua">
+  <meta name="description" content="Wislet — offline-first персональний фінансовий менеджер. Аукціон Founder-карт з обмеженими квотами та зростаючою ціною.">
+  <meta property="og:title" content="Wislet • Аукціон Founder-карт">
+  <meta property="og:description" content="Offline-first. Приватність. Інвайти та спільні гаманці. Обмежені квоти й зростаюча ціна.">
+  <meta property="og:image" content="/assets/og-ua.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#0ea5e9"/>
+
+  <!-- PWA / Icons -->
+  <link rel="manifest" href="assets/manifest.webmanifest" />
+  <link rel="icon" href="assets/app-icon.png" />
+  <link rel="apple-touch-icon" href="assets/app-icon.png" />
+
+  <!-- UI -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet"/>
+  <!-- existing base styles + wow add-on -->
+  <link rel="stylesheet" href="/assets/styles.css">
+  <link rel="stylesheet" href="/assets/wow.css">
+
+  <style>
+    :root { --bg:#0b1220; --text:#e2e8f0; }
+    html,body{background:var(--bg); color:var(--text); font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial; overflow-x:hidden;}
+    img{max-width:100%; height:auto;}
+    .glass{backdrop-filter:blur(8px); background:rgba(15,23,42,.6); border:1px solid rgba(255,255,255,.08);}
+    .pill{background:rgba(14,165,233,.15); color:#7dd3fc;}
+    a{color:#7dd3fc}
+    @media (max-width: 640px){
+      .glass{backdrop-filter:none; background:rgba(15,23,42,.85);}
+      .mobile-title{font-size:16px; line-height:1.2;}
+      .sticky-cta{left:8px; right:8px; transform:none; width:auto; max-width:calc(100vw - 16px);}
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Header -->
+  <header class="max-w-6xl mx-auto px-4 py-6 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <img src="assets/app-icon.png" alt="Wislet Owl" class="w-9 h-9 rounded-2xl" width="1024" height="1024"/>
+      <div class="font-extrabold text-base md:text-xl mobile-title">Wislet • Гаманець Мудреця</div>
+    </div>
+    <nav class="hidden md:flex items-center gap-6 text-sm">
+      <a href="#tiers" class="opacity-80 hover:opacity-100">Картки</a>
+      <a href="#why"  class="opacity-80 hover:opacity-100">Чому ми</a>
+      <a href="#hall" class="opacity-80 hover:opacity-100">Зала Засновників</a>
+      <a href="/terms.html" class="opacity-80 hover:opacity-100">Умови</a>
+      <a href="/privacy.html" class="opacity-80 hover:opacity-100">Приватність</a>
+      <a href="/support.html" class="opacity-80 hover:opacity-100">Підтримати</a>
+      <!-- перемикач мови -->
+      <a href="/" rel="alternate" hreflang="en" class="opacity-80 hover:opacity-100">EN</a>
+    </nav>
+    <button onclick="document.getElementById('tiers').scrollIntoView({behavior:'smooth'})"
+            class="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-semibold">Придбати</button>
+  </header>
+
+  <!-- Hero & progress -->
+  <section class="hero max-w-6xl mx-auto px-4 py-10">
+    <div class="text-center mb-6">
+      <span class="pill text-xs font-semibold px-3 py-1 rounded-full">Офіційний старт — 72 години</span>
+      <h1 class="text-3xl md:text-5xl font-extrabold mt-4 leading-tight">
+        Аукціон Founders-карт: <span class="text-cyan-400">обмежені квоти</span> і зростаюча ціна
+      </h1>
+      <p class="mt-4 text-lg opacity-80">Offline-first PFM, який показує, де тече бюджет. Приватність, швидкість, спільні гаманці.</p>
+    </div>
+
+    <div class="glass rounded-2xl p-5 md:p-8">
+      <div class="grid md:grid-cols-3 gap-4 md:gap-8 items-center">
+        <div class="col-span-2">
+          <div class="flex items-center justify-between text-sm opacity-80">
+            <span>Прогрес до мети $35k</span>
+            <span id="nettoLabel">$0 нетто</span>
+          </div>
+          <div class="w-full h-3 rounded-full bg-slate-700 mt-2">
+            <div id="progressBar" class="h-3 rounded-full bg-cyan-500" style="width:0%"></div>
+          </div>
+          <div class="mt-6 grid grid-cols-3 gap-3 text-center">
+            <div class="p-3 rounded-xl bg-slate-800/50">
+              <div class="text-xs opacity-70">Час до кінця хвилі</div>
+              <div id="countdown" class="text-xl font-bold">—:—:—</div>
+            </div>
+            <div class="p-3 rounded-xl bg-slate-800/50">
+              <div class="text-xs opacity-70">Залишок Gold</div>
+              <div id="goldRemaining" class="text-xl font-bold">—</div>
+            </div>
+            <div class="p-3 rounded-xl bg-slate-800/50">
+              <div class="text-xs opacity-70">Залишок Silver</div>
+              <div id="silverRemaining" class="text-xl font-bold">—</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-span-1 text-sm opacity-90">
+          <ul class="space-y-2 list-disc list-inside">
+            <li>Довічний доступ із Fair-Use</li>
+            <li>Зала Засновників і бейдж в апці</li>
+            <li>Інвайти для друзів</li>
+            <li>Он-девайс приватність + offline-first</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tiers -->
+  <section id="tiers" class="max-w-6xl mx-auto px-4 py-6">
+    <h2 class="text-2xl md:text-3xl font-extrabold mb-6">Вибери свій рівень</h2>
+    <div class="grid md:grid-cols-3 gap-6">
+      <div class="glass rounded-2xl p-6 flex flex-col">
+        <div class="text-sm font-semibold text-cyan-300">Platinum Founder</div>
+        <div class="mt-1 text-3xl font-extrabold">$1,500</div>
+        <div class="text-xs opacity-70 mt-1">Квота: 5 • Залишок: <span id="pfLeft">—</span></div>
+        <ul class="text-sm mt-4 space-y-2 opacity-90">
+          <li>Premium довічно (3× кредити, rollover 3 міс.)</li>
+          <li>Founder ID #1–#5 + 1:1 дзвінок</li>
+          <li>Early API + саппорт 12 міс.</li>
+          <li>5 Silver-Pass (3 міс.)</li>
+        </ul>
+        <button class="mt-auto px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-semibold"
+                onclick="buy('PF-001')">Придбати</button>
+      </div>
+
+      <div class="glass rounded-2xl p-6 flex flex-col">
+        <div class="text-sm font-semibold text-yellow-300">Gold Founder</div>
+        <div class="mt-1 text-3xl font-extrabold" id="goldPrice">$1,400</div>
+        <div class="text-xs opacity-70 mt-1">Квота: 20 • Залишок: <span id="gfLeftTop">—</span></div>
+        <ul class="text-sm mt-4 space-y-2 opacity-90">
+          <li>Premium довічно (2× кредити, rollover 2 міс.)</li>
+          <li>Бейдж Gold Founder</li>
+          <li>3 Silver-Pass (3 міс.) або 3× −50% річної Pro</li>
+        </ul>
+        <div class="mt-3 text-xs opacity-80">Фіксована ціна <span id="goldWave" class="hidden">—</span></div>
+        <button class="mt-auto px-4 py-2 rounded-xl bg-yellow-300 hover:bg-yellow-200 text-black font-semibold"
+                onclick="buy('GF')">Придбати</button>
+      </div>
+
+      <div class="glass rounded-2xl p-6 flex flex-col">
+        <div class="text-sm font-semibold text-slate-300">Silver Early Access</div>
+        <div class="mt-1 text-3xl font-extrabold">$69</div>
+        <div class="text-xs opacity-70 mt-1">Квота: 120 • Залишок: <span id="seLeftTop">—</span></div>
+        <ul class="text-sm mt-4 space-y-2 opacity-90">
+          <li>Premium довічно (1× кредити, rollover 1 міс.)</li>
+          <li>Бейдж Early Supporter</li>
+        </ul>
+        <button class="mt-auto px-4 py-2 rounded-xl bg-slate-300 hover:bg-white text-black font-semibold"
+                onclick="buy('SE')">Придбати</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHY -->
+  <section id="why" class="max-w-6xl mx-auto px-4 py-10 md:py-12">
+    <div class="grid md:grid-cols-2 gap-6 md:gap-8 items-center">
+      <div class="flex justify-center md:justify-start">
+        <div class="rounded-3xl overflow-hidden border border-white/10 shadow-lg aspect-square w-[200px] md:w-[240px]">
+          <img src="assets/app-icon.png" alt="Wislet Icon" class="w-full h-full object-cover" loading="lazy" width="1024" height="1024"/>
+        </div>
+      </div>
+      <div>
+        <h3 class="text-2xl md:text-3xl font-extrabold mb-3">Чому ми?</h3>
+        <ul class="list-disc list-inside space-y-2 opacity-90">
+          <li>Offline-first</li>
+          <li>Приватність</li>
+          <li>Спільні гаманці та інвайти</li>
+          <li>AI/OCR на пристрої</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Hall of Founders -->
+  <section id="hall" class="max-w-6xl mx-auto px-4 py-10">
+    <h2 class="text-2xl md:text-3xl font-extrabold mb-2">Зала Засновників</h2>
+    <p class="opacity-80 mb-4 text-sm">Маскуємо email; порядок за тирами та номером.</p>
+    <div id="foundersGrid" class="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3"></div>
+    <div class="mt-4 flex gap-3">
+      <button id="hallMore" class="px-3 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-sm">Показати ще</button>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="max-w-6xl mx-auto px-4 py-10 text-sm opacity-70">
+    <div class="flex flex-col md:flex-row items-center md:items-start justify-between gap-4">
+      <div>© 2025 CortexFin</div>
+      <div class="flex items-center gap-4">
+        <a href="/terms.html">Умови</a>
+        <a href="/privacy.html">Приватність</a>
+        <a href="/auction">Аукціон</a>
+        <a href="#hall" id="foundersHallLink">Зала Засновників</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- === CONFIG / DATA === -->
+  <script>
+    // Supabase / Edge
+    window.SUPABASE_URL  = "https://xdofjorgomwdyawmwbcj.supabase.co";
+    window.SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkb2Zqb3Jnb213ZHlhd213YmNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkzMzE0MTcsImV4cCI6MjA2NDkwNzQxN30.2i9ru8fXLZEYD_jNHoHd0ZJmN4k9gKcPOChdiuL_AMY";
+    window.EDGE_URL      = "https://xdofjorgomwdyawmwbcj.functions.supabase.co";
+
+    // SKU -> batch_id (sell_batches.id)
+    window.SKU_TO_BATCH = { "PF-001": 1, "GF": 2, "SE": 5 };
+
+    // Дедлайн хвилі (таймер)
+    window.WAVE_DEADLINE_ISO = "2025-09-10T18:00:00+03:00";
+
+    // Банки Mono
+    window.JAR_LINKS = {
+      SE: "https://send.monobank.ua/jar/8254PBnk66",
+      GF: "https://send.monobank.ua/jar/7mNKkrhiUw",
+      PF: "https://send.monobank.ua/jar/5La4vaWdbh"
+    };
+
+    // Заголовки для Edge/Supabase
+    const EDGE_HEADERS = () => ({
+      "Authorization": `Bearer ${window.SUPABASE_ANON}`,
+      "apikey": window.SUPABASE_ANON
+    });
+
+    // --- UTM capture ---
+    const UTM_KEY="__utm__";
+    try{
+      const u=new URL(location.href);
+      const utm= {
+        source:u.searchParams.get("utm_source"),
+        medium:u.searchParams.get("utm_medium"),
+        campaign:u.searchParams.get("utm_campaign"),
+        content:u.searchParams.get("utm_content"),
+        term:u.searchParams.get("utm_term"),
+      };
+      if(Object.values(utm).some(Boolean)) sessionStorage.setItem(UTM_KEY, JSON.stringify(utm));
+    }catch(_){}
+    const getUTM=()=>{ try{return JSON.parse(sessionStorage.getItem(UTM_KEY)||"{}")}catch{return{}} };
+
+    // --- таймер ---
+    (function(){
+      const el=document.getElementById('countdown');
+      if(!el||!window.WAVE_DEADLINE_ISO) return;
+      const target=new Date(window.WAVE_DEADLINE_ISO).getTime();
+      const tick=()=>{
+        const t=target-Date.now();
+        if(t<=0){el.textContent="00:00:00"; return;}
+        const h=String(Math.floor(t/36e5)).padStart(2,'0');
+        const m=String(Math.floor(t%36e5/6e4)).padStart(2,'0');
+        const s=String(Math.floor(t%6e4/1e3)).padStart(2,'0');
+        el.textContent=`${h}:${m}:${s}`;
+      };
+      tick(); setInterval(tick,1000);
+    })();
+
+    // --- Метрики для лендінгу ---
+    async function fetchMetrics(){
+      const r=await fetch(`${window.EDGE_URL}/public-metrics`,{headers:EDGE_HEADERS()});
+      if(!r.ok) throw new Error(await r.text());
+      return r.json();
+    }
+    async function refreshMetrics(){
+      try{
+        const m=await fetchMetrics();
+        const goal=3500000; // $35k в центах
+        const net=Number(m.net_cents||0);
+        const pct=Math.max(0,Math.min(100,(net/goal)*100));
+        document.getElementById('progressBar').style.width=pct.toFixed(2)+'%';
+        document.getElementById('nettoLabel').textContent=`$${(net/100).toLocaleString('en-US',{maximumFractionDigits:2})} нетто`;
+
+        const gfLeft=Math.max(0, Number(m.quota_gf||0)-Number(m.sold_gf||0));
+        const seLeft=Math.max(0, Number(m.quota_se||0)-Number(m.sold_se||0));
+        document.getElementById('gfLeftTop').textContent=gfLeft;
+        document.getElementById('seLeftTop').textContent=seLeft;
+        document.getElementById('goldRemaining').textContent=gfLeft;
+        document.getElementById('silverRemaining').textContent=seLeft;
+
+        document.getElementById('goldWave').textContent=m.gf_wave_short||'A';
+        if (m.gf_price_cents>0)
+          document.getElementById('goldPrice').textContent=`$${(m.gf_price_cents/100).toLocaleString('en-US',{maximumFractionDigits:2})}`;
+      }catch(e){ console.warn('metrics:',e); }
+    }
+    refreshMetrics(); setInterval(refreshMetrics, 30000);
+
+    // --- Hall of Founders ---
+    let hallOffset=0; const HALL_PAGE=24;
+    async function fetchFounders(offset=0,limit=HALL_PAGE){
+      const r=await fetch(`${window.EDGE_URL}/founders-hall?offset=${offset}&limit=${limit}`,{headers:EDGE_HEADERS()});
+      if(!r.ok) throw new Error(await r.text());
+      return r.json();
+    }
+    function tierBadge(t){ if(t==='PF')return'bg-cyan-500 text-black'; if(t==='GF')return'bg-yellow-300 text-black'; return'bg-slate-300 text-black';}
+    function n3(n){ return String(n??'').padStart(3,'0'); }
+    async function renderHall(append=false){
+      const grid=document.getElementById('foundersGrid'); const more=document.getElementById('hallMore');
+      if(!grid) return;
+      if(!append){
+        grid.innerHTML='';
+        for(let i=0;i<6;i++){ const s=document.createElement('div'); s.className='glass rounded-xl p-3 animate-pulse h-16'; grid.appendChild(s); }
+      }
+      try{
+        const list=await fetchFounders(hallOffset,HALL_PAGE);
+        if(!append) grid.innerHTML='';
+        for(const row of list){
+          const el=document.createElement('div');
+          el.className='glass rounded-xl p-3 text-sm flex items-center justify-between';
+          el.innerHTML=`
+            <div>
+              <div class="opacity-70">#${row.card_id}</div>
+              <div class="text-xs opacity-60">${row.email_mask??''}</div>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-1 rounded-lg ${tierBadge(row.tier)}">${row.tier}</span>
+              <span class="opacity-90 font-semibold">ID ${n3(row.founder_id)}</span>
+            </div>`;
+          grid.appendChild(el);
+        }
+        hallOffset+=list.length;
+        more.style.display = list.length < HALL_PAGE ? 'none' : 'inline-block';
+      }catch(e){
+        console.warn('hall:',e);
+        if(!append) grid.innerHTML='<div class="opacity-80 text-sm">Не вдалося завантажити Залу Засновників.</div>';
+        document.getElementById('hallMore').style.display='none';
+      }
+    }
+    document.addEventListener('DOMContentLoaded', ()=>{
+      renderHall(false);
+      document.getElementById('hallMore')?.addEventListener('click',()=>renderHall(true));
+    });
+
+    // ---- HOLD (довга RPC) ----
+    async function createHold(batchId,email,minutes=10){
+      const utm=getUTM();
+      const body={
+        p_batch_id:batchId, p_email:email, p_minutes:minutes,
+        p_utm_source:utm.source??null, p_utm_medium:utm.medium??null, p_utm_campaign:utm.campaign??null,
+        p_utm_content:utm.content??null, p_utm_term:utm.term??null,
+        p_referrer: document.referrer||null, p_landing_path:(location.pathname+location.search)||null,
+        p_client_ip: null
+      };
+      const r=await fetch(`${window.SUPABASE_URL}/rest/v1/rpc/create_hold_v2`,{
+        method:'POST', headers:{...EDGE_HEADERS(),'Content-Type':'application/json'}, body:JSON.stringify(body)
+      });
+      if(!r.ok){ throw new Error(`create_hold_v2: ${r.status} ${await r.text()}`); }
+      return r.json(); // { hold_id, ... }
+    }
+
+    // ---- КУПИТИ → бронь → проміжна сторінка Mono ----
+    function skuToTierKey(s){ return String(s).startsWith('PF') ? 'PF' : String(s); }
+
+    window.buy = async function(sku){
+      const btn = event?.currentTarget;
+      try{
+        if(btn){ btn.disabled=true; btn.style.opacity=.6; }
+        const batchId = window.SKU_TO_BATCH[sku];
+        if(!batchId) throw new Error('Невідомий SKU');
+
+        const email = prompt("Email для квитанції:");
+        if(!email) throw new Error("Потрібен email.");
+        if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error("Невалідний email.");
+
+        // 1) бронь у Supabase
+        const hold = await createHold(batchId,email,10);
+        sessionStorage.setItem('__last_hold', JSON.stringify({sku,email,hold}));
+
+        // 2) редірект на проміжну сторінку Mono
+        const tierKey = skuToTierKey(sku);
+        const u = new URL('/pay/mono.html', location.origin);
+        u.searchParams.set('tier', tierKey);
+        u.searchParams.set('email', email);
+        if(hold?.hold_id) u.searchParams.set('hold_id', hold.hold_id);
+        location.href = u.toString();
+      }catch(e){
+        alert(e.message||String(e));
+      }finally{
+        if(btn){ btn.disabled=false; btn.style.opacity=1; }
+      }
+    };
+
+    // PWA
+    if('serviceWorker' in navigator){ navigator.serviceWorker.register('/sw.js').catch(()=>{}); }
+  </script>
+
+  <!-- Sticky CTA (mini) -->
+  <div class="fixed bottom-3 left-1/2 -translate-x-1/2 z-50 glass rounded-2xl px-4 py-3 border border-white/10 shadow-lg flex items-center gap-3">
+    <span class="text-sm">Gold залишок: <b id="gfLeftMini">—</b></span>
+    <button onclick="buy('GF')" class="px-3 py-1.5 rounded-xl bg-yellow-300 hover:bg-yellow-200 text-black font-semibold">Купити Gold</button>
+    <button onclick="buy('SE')" class="px-3 py-1.5 rounded-xl bg-slate-300 hover:bg-white text-black font-semibold">Silver $69</button>
+  </div>
+
+  <script>
+    (function syncMini(){
+      const m=document.getElementById('gfLeftTop'), mini=document.getElementById('gfLeftMini');
+      const i=setInterval(()=>{ if(m && mini){ mini.textContent=m.textContent||'—'; } }, 500);
+      setTimeout(()=>clearInterval(i), 10000);
+    })();
+  </script>
+
+  <!-- Floating Monobank Support -->
+  <a class="btn don-sticky" href="https://send.monobank.ua/jar/Z1TUkVerK" target="_blank" rel="noopener">Підтримати</a>
+</body>
+</html>

@@ -1,37 +1,45 @@
 import 'package:fpdart/fpdart.dart';
-import '../../../core/error/failures.dart';
-import '../../../models/liability.dart';
-import '../../../services/error_monitoring_service.dart';
-import '../../../utils/database_helper.dart';
-import '../liability_repository.dart';
+import 'package:sage_wallet_reborn/core/error/failures.dart';
+import 'package:sage_wallet_reborn/data/repositories/liability_repository.dart';
+import 'package:sage_wallet_reborn/models/liability.dart';
+import 'package:sage_wallet_reborn/services/error_monitoring_service.dart';
+import 'package:sage_wallet_reborn/utils/database_helper.dart';
 
 class LocalLiabilityRepositoryImpl implements LiabilityRepository {
-  final DatabaseHelper _dbHelper;
   LocalLiabilityRepositoryImpl(this._dbHelper);
+
+  final DatabaseHelper _dbHelper;
 
   @override
   Stream<List<Liability>> watchAllLiabilities(int walletId) {
     return Stream.fromFuture(getAllLiabilities(walletId))
         .map((either) => either.getOrElse((_) => []));
   }
-  
-  Future<Either<AppFailure, List<Liability>>> getAllLiabilities(int walletId) async {
+
+  Future<Either<AppFailure, List<Liability>>> getAllLiabilities(
+    int walletId,
+  ) async {
     try {
       final db = await _dbHelper.database;
       final maps = await db.query(
         DatabaseHelper.tableLiabilities,
-        where: '${DatabaseHelper.colLiabilityWalletId} = ? AND ${DatabaseHelper.colLiabilityIsDeleted} = 0',
+        where:
+            '${DatabaseHelper.colLiabilityWalletId} = ? AND ${DatabaseHelper.colLiabilityIsDeleted} = 0',
         whereArgs: [walletId],
       );
-      return Right(maps.map((map) => Liability.fromMap(map)).toList());
-    } catch (e, s) {
-      ErrorMonitoringService.capture(e, stackTrace: s);
+      return Right(maps.map(Liability.fromMap).toList());
+    } on Exception catch (e, s) {
+      await ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(DatabaseFailure(details: e.toString()));
     }
   }
 
   @override
-  Future<Either<AppFailure, int>> createLiability(Liability liability, int walletId, String userId) async {
+  Future<Either<AppFailure, int>> createLiability(
+    Liability liability,
+    int walletId,
+    String userId,
+  ) async {
     try {
       final db = await _dbHelper.database;
       final map = liability.toMap();
@@ -39,8 +47,8 @@ class LocalLiabilityRepositoryImpl implements LiabilityRepository {
       map[DatabaseHelper.colLiabilityUserId] = userId;
       final newId = await db.insert(DatabaseHelper.tableLiabilities, map);
       return Right(newId);
-    } catch(e, s) {
-      ErrorMonitoringService.capture(e, stackTrace: s);
+    } on Exception catch (e, s) {
+      await ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(DatabaseFailure(details: e.toString()));
     }
   }
@@ -57,12 +65,12 @@ class LocalLiabilityRepositoryImpl implements LiabilityRepository {
         whereArgs: [liability.id],
       );
       return Right(updatedId);
-    } catch(e, s) {
-      ErrorMonitoringService.capture(e, stackTrace: s);
+    } on Exception catch (e, s) {
+      await ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(DatabaseFailure(details: e.toString()));
     }
   }
-  
+
   @override
   Future<Either<AppFailure, int>> deleteLiability(int liabilityId) async {
     try {
@@ -72,14 +80,14 @@ class LocalLiabilityRepositoryImpl implements LiabilityRepository {
         DatabaseHelper.tableLiabilities,
         {
           DatabaseHelper.colLiabilityIsDeleted: 1,
-          DatabaseHelper.colLiabilityUpdatedAt: now
+          DatabaseHelper.colLiabilityUpdatedAt: now,
         },
         where: '${DatabaseHelper.colLiabilityId} = ?',
         whereArgs: [liabilityId],
       );
       return Right(deletedRows);
-    } catch(e, s) {
-      ErrorMonitoringService.capture(e, stackTrace: s);
+    } on Exception catch (e, s) {
+      await ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(DatabaseFailure(details: e.toString()));
     }
   }

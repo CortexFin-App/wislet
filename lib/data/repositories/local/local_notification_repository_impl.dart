@@ -1,14 +1,18 @@
+import 'package:sage_wallet_reborn/data/repositories/notification_repository.dart';
 import 'package:sage_wallet_reborn/models/notification_history_item.dart';
 import 'package:sage_wallet_reborn/utils/database_helper.dart';
-import 'package:sage_wallet_reborn/data/repositories/notification_repository.dart';
 
 class LocalNotificationRepositoryImpl implements NotificationRepository {
-  final DatabaseHelper _dbHelper;
-
   LocalNotificationRepositoryImpl(this._dbHelper);
 
+  final DatabaseHelper _dbHelper;
+
   @override
-  Future<void> addNotificationToHistory(String title, String body, String? payload) async {
+  Future<void> addNotificationToHistory(
+    String title,
+    String body,
+    String? payload,
+  ) async {
     final db = await _dbHelper.database;
     await db.insert(DatabaseHelper.tableNotificationHistory, {
       DatabaseHelper.colNotificationTitle: title,
@@ -22,17 +26,17 @@ class LocalNotificationRepositoryImpl implements NotificationRepository {
   @override
   Future<List<NotificationHistoryItem>> getNotificationHistory() async {
     final db = await _dbHelper.database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      DatabaseHelper.tableNotificationHistory, 
-      orderBy: '${DatabaseHelper.colNotificationTimestamp} DESC'
+    final maps = await db.query(
+      DatabaseHelper.tableNotificationHistory,
+      orderBy: '${DatabaseHelper.colNotificationTimestamp} DESC',
     );
-    return maps.map((map) => NotificationHistoryItem.fromMap(map)).toList();
+    return maps.map(NotificationHistoryItem.fromMap).toList();
   }
 
   @override
   Future<int> markNotificationAsRead(int id) async {
     final db = await _dbHelper.database;
-    return await db.update(
+    return db.update(
       DatabaseHelper.tableNotificationHistory,
       {DatabaseHelper.colNotificationIsRead: 1},
       where: '${DatabaseHelper.colNotificationId} = ?',
@@ -43,6 +47,6 @@ class LocalNotificationRepositoryImpl implements NotificationRepository {
   @override
   Future<int> clearNotificationHistory() async {
     final db = await _dbHelper.database;
-    return await db.delete(DatabaseHelper.tableNotificationHistory);
+    return db.delete(DatabaseHelper.tableNotificationHistory);
   }
 }

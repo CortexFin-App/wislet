@@ -1,29 +1,33 @@
 import 'package:fpdart/fpdart.dart';
-import 'package:sqflite/sqflite.dart';
-import 'package:sage_wallet_reborn/models/transaction.dart' as fin_transaction_model;
-import 'package:sage_wallet_reborn/models/transaction_view_data.dart';
-import 'package:sage_wallet_reborn/models/wallet.dart';
-import 'package:sage_wallet_reborn/utils/database_helper.dart';
-import 'package:sage_wallet_reborn/data/repositories/transaction_repository.dart';
-import 'package:sage_wallet_reborn/services/error_monitoring_service.dart';
-import 'package:sage_wallet_reborn/services/exchange_rate_service.dart';
 import 'package:sage_wallet_reborn/core/constants/app_constants.dart';
 import 'package:sage_wallet_reborn/core/error/failures.dart';
+import 'package:sage_wallet_reborn/data/repositories/transaction_repository.dart';
+import 'package:sage_wallet_reborn/models/transaction.dart'
+    as fin_transaction_model;
+import 'package:sage_wallet_reborn/models/transaction_view_data.dart';
+import 'package:sage_wallet_reborn/models/wallet.dart';
+import 'package:sage_wallet_reborn/services/error_monitoring_service.dart';
+import 'package:sage_wallet_reborn/services/exchange_rate_service.dart';
+import 'package:sage_wallet_reborn/utils/database_helper.dart';
+import 'package:sqflite/sqflite.dart';
+
+double _asDouble(dynamic x) =>
+    x == null ? 0.0 : (x is num ? x.toDouble() : double.parse(x.toString()));
 
 class LocalTransactionRepositoryImpl implements TransactionRepository {
+  LocalTransactionRepositoryImpl(this._dbHelper, this._exchangeRateService);
+
   final DatabaseHelper _dbHelper;
   final ExchangeRateService _exchangeRateService;
-
-  LocalTransactionRepositoryImpl(this._dbHelper, this._exchangeRateService);
 
   Future<int> _getOrCreateTransferCategoryId(
     Transaction txn,
     int walletId,
     fin_transaction_model.TransactionType type,
-    String userId
+    String userId,
   ) async {
     final categoryType = type.name;
-    const transferCategoryName = "Перекази";
+    const transferCategoryName = 'Перекази';
 
     final existing = await txn.query(
       DatabaseHelper.tableCategories,
@@ -33,7 +37,7 @@ class LocalTransactionRepositoryImpl implements TransactionRepository {
     );
 
     if (existing.isNotEmpty) {
-      return existing.first[DatabaseHelper.colCategoryId] as int;
+      return existing.first[DatabaseHelper.colCategoryId]! as int;
     } else {
       final newCategory = {
         DatabaseHelper.colCategoryName: transferCategoryName,
@@ -41,14 +45,17 @@ class LocalTransactionRepositoryImpl implements TransactionRepository {
         DatabaseHelper.colCategoryWalletId: walletId,
         DatabaseHelper.colCategoryUserId: userId,
       };
-      return await txn.insert(DatabaseHelper.tableCategories, newCategory);
+      return txn.insert(DatabaseHelper.tableCategories, newCategory);
     }
   }
 
   @override
-  Stream<List<TransactionViewData>> watchTransactionsWithDetails({required int walletId}) {
+  Stream<List<TransactionViewData>> watchTransactionsWithDetails({
+    required int walletId,
+  }) {
     final future = getTransactionsWithDetails(walletId: walletId);
-    return Stream.fromFuture(future).map((either) => either.getOrElse((_) => []));
+    return Stream.fromFuture(future)
+        .map((either) => either.getOrElse((_) => []));
   }
 
   @override
@@ -64,23 +71,31 @@ class LocalTransactionRepositoryImpl implements TransactionRepository {
       final db = await _dbHelper.database;
       final fromWalletOwnerId = fromWallet.ownerUserId;
 
-      double exchangeRate = 1.0;
+      var exchangeRate = 1.0;
       if (currencyCode != AppConstants.baseCurrencyCode) {
         final rateInfo = await _exchangeRateService.getConversionRate(
           currencyCode,
           AppConstants.baseCurrencyCode,
           date: date,
         );
-        exchangeRate = rateInfo.rate;
+        exchangeRate = _asDouble(rateInfo.rate);
       }
 
       final amountInBaseCurrency = amount * exchangeRate;
 
       await db.transaction((txn) async {
         final expenseCategoryId = await _getOrCreateTransferCategoryId(
-            txn, fromWallet.id!, fin_transaction_model.TransactionType.expense, fromWalletOwnerId);
+          txn,
+          fromWallet.id!,
+          fin_transaction_model.TransactionType.expense,
+          fromWalletOwnerId,
+        );
         final incomeCategoryId = await _getOrCreateTransferCategoryId(
-            txn, toWallet.id!, fin_transaction_model.TransactionType.income, fromWalletOwnerId);
+          txn,
+          toWallet.id!,
+          fin_transaction_model.TransactionType.income,
+          fromWalletOwnerId,
+        );
 
         final expenseTransaction = fin_transaction_model.Transaction(
           type: fin_transaction_model.TransactionType.expense,
@@ -96,8 +111,10 @@ class LocalTransactionRepositoryImpl implements TransactionRepository {
         final expenseMap = expenseTransaction.toMap();
         expenseMap[DatabaseHelper.colTransactionWalletId] = fromWallet.id;
         expenseMap[DatabaseHelper.colTransactionUserId] = fromWalletOwnerId;
-        final expenseId =
-            await txn.insert(DatabaseHelper.tableTransactions, expenseMap);
+        final expenseId = await txn.insert(
+          DatabaseHelper.tableTransactions,
+          expenseMap,
+        );
 
         final incomeTransaction = fin_transaction_model.Transaction(
           type: fin_transaction_model.TransactionType.income,
@@ -114,8 +131,10 @@ class LocalTransactionRepositoryImpl implements TransactionRepository {
         final incomeMap = incomeTransaction.toMap();
         incomeMap[DatabaseHelper.colTransactionWalletId] = toWallet.id;
         incomeMap[DatabaseHelper.colTransactionUserId] = fromWalletOwnerId;
-        final incomeId =
-            await txn.insert(DatabaseHelper.tableTransactions, incomeMap);
+        final incomeId = await txn.insert(
+          DatabaseHelper.tableTransactions,
+          incomeMap,
+        );
 
         await txn.update(
           DatabaseHelper.tableTransactions,
@@ -125,15 +144,16 @@ class LocalTransactionRepositoryImpl implements TransactionRepository {
         );
       });
       return const Right(null);
-    } catch (e, s) {
-      ErrorMonitoringService.capture(e, stackTrace: s);
+    } on Exception catch (e, s) {
+      await ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(DatabaseFailure(details: e.toString()));
     }
   }
 
   @override
   Future<Either<AppFailure, fin_transaction_model.Transaction?>> getTransaction(
-      int transactionId) async {
+    int transactionId,
+  ) async {
     try {
       final db = await _dbHelper.database;
       final maps = await db.query(
@@ -145,8 +165,8 @@ class LocalTransactionRepositoryImpl implements TransactionRepository {
         return Right(fin_transaction_model.Transaction.fromMap(maps.first));
       }
       return const Right(null);
-    } catch (e, s) {
-      ErrorMonitoringService.capture(e, stackTrace: s);
+    } on Exception catch (e, s) {
+      await ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(DatabaseFailure(details: e.toString()));
     }
   }
@@ -156,24 +176,27 @@ class LocalTransactionRepositoryImpl implements TransactionRepository {
       getTransactionsForGoal(int goalId) async {
     try {
       final db = await _dbHelper.database;
-      final List<Map<String, dynamic>> maps = await db.query(
+      final maps = await db.query(
         DatabaseHelper.tableTransactions,
         where: '${DatabaseHelper.colTransactionLinkedGoalId} = ?',
         whereArgs: [goalId],
         orderBy: '${DatabaseHelper.colTransactionDate} ASC',
       );
-      return Right(maps
-          .map((map) => fin_transaction_model.Transaction.fromMap(map))
-          .toList());
-    } catch (e, s) {
-      ErrorMonitoringService.capture(e, stackTrace: s);
+      return Right(
+        maps.map(fin_transaction_model.Transaction.fromMap).toList(),
+      );
+    } on Exception catch (e, s) {
+      await ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(DatabaseFailure(details: e.toString()));
     }
   }
 
   @override
   Future<Either<AppFailure, int>> createTransaction(
-      fin_transaction_model.Transaction transaction, int walletId, String userId) async {
+    fin_transaction_model.Transaction transaction,
+    int walletId,
+    String userId,
+  ) async {
     try {
       final db = await _dbHelper.database;
       final map = transaction.toMap();
@@ -181,15 +204,18 @@ class LocalTransactionRepositoryImpl implements TransactionRepository {
       map[DatabaseHelper.colTransactionUserId] = userId;
       final newId = await db.insert(DatabaseHelper.tableTransactions, map);
       return Right(newId);
-    } catch (e, s) {
-      ErrorMonitoringService.capture(e, stackTrace: s);
+    } on Exception catch (e, s) {
+      await ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(DatabaseFailure(details: e.toString()));
     }
   }
 
   @override
   Future<Either<AppFailure, int>> updateTransaction(
-      fin_transaction_model.Transaction transaction, int walletId, String userId) async {
+    fin_transaction_model.Transaction transaction,
+    int walletId,
+    String userId,
+  ) async {
     try {
       final db = await _dbHelper.database;
       final map = transaction.toMap();
@@ -202,8 +228,8 @@ class LocalTransactionRepositoryImpl implements TransactionRepository {
         whereArgs: [transaction.id],
       );
       return Right(updatedId);
-    } catch (e, s) {
-      ErrorMonitoringService.capture(e, stackTrace: s);
+    } on Exception catch (e, s) {
+      await ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(DatabaseFailure(details: e.toString()));
     }
   }
@@ -218,8 +244,8 @@ class LocalTransactionRepositoryImpl implements TransactionRepository {
         whereArgs: [transactionId],
       );
       return Right(deletedId);
-    } catch (e, s) {
-      ErrorMonitoringService.capture(e, stackTrace: s);
+    } on Exception catch (e, s) {
+      await ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(DatabaseFailure(details: e.toString()));
     }
   }
@@ -238,45 +264,45 @@ class LocalTransactionRepositoryImpl implements TransactionRepository {
   }) async {
     try {
       final db = await _dbHelper.database;
-      const String defaultOrderBy =
-          "t.${DatabaseHelper.colTransactionDate} DESC, t.${DatabaseHelper.colTransactionId} DESC";
+      const defaultOrderBy =
+          't.${DatabaseHelper.colTransactionDate} DESC, t.${DatabaseHelper.colTransactionId} DESC';
 
-      List<String> whereClauses = [
+      final whereClauses = <String>[
         't.${DatabaseHelper.colTransactionWalletId} = ?',
-        't.${DatabaseHelper.colTransactionIsDeleted} = 0'
+        't.${DatabaseHelper.colTransactionIsDeleted} = 0',
       ];
-      List<dynamic> whereArgs = [walletId];
+      final whereArgs = <dynamic>[walletId];
 
       if (startDate != null) {
         whereClauses
-            .add("date(t.${DatabaseHelper.colTransactionDate}) >= date(?)");
+            .add('date(t.${DatabaseHelper.colTransactionDate}) >= date(?)');
         whereArgs.add(startDate.toIso8601String());
       }
       if (endDate != null) {
         whereClauses
-            .add("date(t.${DatabaseHelper.colTransactionDate}) <= date(?)");
+            .add('date(t.${DatabaseHelper.colTransactionDate}) <= date(?)');
         whereArgs.add(endDate.toIso8601String());
       }
       if (filterTransactionType != null) {
-        whereClauses.add("t.${DatabaseHelper.colTransactionType} = ?");
+        whereClauses.add('t.${DatabaseHelper.colTransactionType} = ?');
         whereArgs.add(filterTransactionType.name);
       }
       if (filterCategoryId != null) {
-        whereClauses.add("t.${DatabaseHelper.colTransactionCategoryId} = ?");
+        whereClauses.add('t.${DatabaseHelper.colTransactionCategoryId} = ?');
         whereArgs.add(filterCategoryId);
       }
       if (searchQuery != null && searchQuery.isNotEmpty) {
-        String searchTerm = '%${searchQuery.toLowerCase()}%';
+        final searchTerm = '%${searchQuery.toLowerCase()}%';
         whereClauses.add(
-            "(LOWER(t.${DatabaseHelper.colTransactionDescription}) LIKE ? OR LOWER(c.${DatabaseHelper.colCategoryName}) LIKE ?)");
-        whereArgs.add(searchTerm);
-        whereArgs.add(searchTerm);
+          '(LOWER(t.${DatabaseHelper.colTransactionDescription}) LIKE ? OR LOWER(c.${DatabaseHelper.colCategoryName}) LIKE ?)',
+        );
+        whereArgs.addAll([searchTerm, searchTerm]);
       }
 
-      String whereStatement = "WHERE ${whereClauses.join(' AND ')}";
-      String limitClause = limit != null ? "LIMIT $limit" : "";
+      final whereStatement = 'WHERE ${whereClauses.join(' AND ')}';
+      final limitClause = limit != null ? 'LIMIT $limit' : '';
 
-      final String sql = '''
+      final sql = '''
         SELECT
           t.*, c.${DatabaseHelper.colCategoryName} AS categoryName, c.${DatabaseHelper.colCategoryBucket}
         FROM ${DatabaseHelper.tableTransactions} t
@@ -286,11 +312,10 @@ class LocalTransactionRepositoryImpl implements TransactionRepository {
         $limitClause
       ''';
 
-      final List<Map<String, dynamic>> maps = await db.rawQuery(sql, whereArgs);
-      return Right(
-          maps.map((map) => TransactionViewData.fromMap(map)).toList());
-    } catch (e, s) {
-      ErrorMonitoringService.capture(e, stackTrace: s);
+      final maps = await db.rawQuery(sql, whereArgs);
+      return Right(maps.map(TransactionViewData.fromMap).toList());
+    } on Exception catch (e, s) {
+      await ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(DatabaseFailure(details: e.toString()));
     }
   }
@@ -299,26 +324,28 @@ class LocalTransactionRepositoryImpl implements TransactionRepository {
   Future<Either<AppFailure, double>> getOverallBalance(int walletId) async {
     try {
       final db = await _dbHelper.database;
-      double totalIncome = 0;
-      var incomeResult = await db.rawQuery(
-          'SELECT SUM(${DatabaseHelper.colTransactionAmountInBaseCurrency}) as total FROM ${DatabaseHelper.tableTransactions} WHERE ${DatabaseHelper.colTransactionType} = ? AND ${DatabaseHelper.colTransactionWalletId} = ?',
-          [fin_transaction_model.TransactionType.income.name, walletId]);
+
+      var totalIncome = 0.0;
+      final incomeResult = await db.rawQuery(
+        'SELECT SUM(${DatabaseHelper.colTransactionAmountInBaseCurrency}) as total FROM ${DatabaseHelper.tableTransactions} WHERE ${DatabaseHelper.colTransactionType} = ? AND ${DatabaseHelper.colTransactionWalletId} = ?',
+        [fin_transaction_model.TransactionType.income.name, walletId],
+      );
       if (incomeResult.isNotEmpty && incomeResult.first['total'] != null) {
-        totalIncome = (incomeResult.first['total'] as num).toDouble();
+        totalIncome = _asDouble(incomeResult.first['total']);
       }
-      double totalExpenses = 0;
-      var expenseResult = await db.rawQuery(
-          'SELECT SUM(${DatabaseHelper.colTransactionAmountInBaseCurrency}) as total FROM ${DatabaseHelper.tableTransactions} WHERE ${DatabaseHelper.colTransactionType} = ? AND ${DatabaseHelper.colTransactionWalletId} = ?',
-          [
-            fin_transaction_model.TransactionType.expense.name,
-            walletId
-          ]);
+
+      var totalExpenses = 0.0;
+      final expenseResult = await db.rawQuery(
+        'SELECT SUM(${DatabaseHelper.colTransactionAmountInBaseCurrency}) as total FROM ${DatabaseHelper.tableTransactions} WHERE ${DatabaseHelper.colTransactionType} = ? AND ${DatabaseHelper.colTransactionWalletId} = ?',
+        [fin_transaction_model.TransactionType.expense.name, walletId],
+      );
       if (expenseResult.isNotEmpty && expenseResult.first['total'] != null) {
-        totalExpenses = (expenseResult.first['total'] as num).toDouble();
+        totalExpenses = _asDouble(expenseResult.first['total']);
       }
+
       return Right(totalIncome - totalExpenses);
-    } catch (e, s) {
-      ErrorMonitoringService.capture(e, stackTrace: s);
+    } on Exception catch (e, s) {
+      await ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(DatabaseFailure(details: e.toString()));
     }
   }
@@ -333,13 +360,13 @@ class LocalTransactionRepositoryImpl implements TransactionRepository {
   }) async {
     try {
       final db = await _dbHelper.database;
-      List<String> whereClauses = [
+      final whereClauses = <String>[
         '${DatabaseHelper.colTransactionWalletId} = ?',
         '${DatabaseHelper.colTransactionType} = ?',
         'date(${DatabaseHelper.colTransactionDate}) >= date(?)',
-        'date(${DatabaseHelper.colTransactionDate}) <= date(?)'
+        'date(${DatabaseHelper.colTransactionDate}) <= date(?)',
       ];
-      List<dynamic> whereArgs = [
+      final whereArgs = <dynamic>[
         walletId,
         transactionType.name,
         startDate.toIso8601String(),
@@ -353,17 +380,18 @@ class LocalTransactionRepositoryImpl implements TransactionRepository {
       final result = await db.query(
         DatabaseHelper.tableTransactions,
         columns: [
-          'SUM(${DatabaseHelper.colTransactionAmountInBaseCurrency}) as total'
+          'SUM(${DatabaseHelper.colTransactionAmountInBaseCurrency}) as total',
         ],
         where: whereClauses.join(' AND '),
         whereArgs: whereArgs,
       );
+
       if (result.isNotEmpty && result.first['total'] != null) {
-        return Right((result.first['total'] as num).toDouble());
+        return Right(_asDouble(result.first['total']));
       }
-      return const Right(0.0);
-    } catch (e, s) {
-      ErrorMonitoringService.capture(e, stackTrace: s);
+      return const Right(0);
+    } on Exception catch (e, s) {
+      await ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(DatabaseFailure(details: e.toString()));
     }
   }
@@ -371,10 +399,13 @@ class LocalTransactionRepositoryImpl implements TransactionRepository {
   @override
   Future<Either<AppFailure, List<Map<String, dynamic>>>>
       getExpensesGroupedByCategory(
-          int walletId, DateTime startDate, DateTime endDate) async {
+    int walletId,
+    DateTime startDate,
+    DateTime endDate,
+  ) async {
     try {
       final db = await _dbHelper.database;
-      const String sql = '''
+      const sql = '''
         SELECT
           c.${DatabaseHelper.colCategoryName} AS categoryName,
           SUM(t.${DatabaseHelper.colTransactionAmountInBaseCurrency}) AS totalAmount
@@ -388,22 +419,28 @@ class LocalTransactionRepositoryImpl implements TransactionRepository {
         HAVING SUM(t.${DatabaseHelper.colTransactionAmountInBaseCurrency}) > 0
         ORDER BY totalAmount DESC
       ''';
-      final List<Map<String, dynamic>> maps = await db.rawQuery(sql, [
-        walletId,
-        fin_transaction_model.TransactionType.expense.name,
-        startDate.toIso8601String(),
-        endDate.toIso8601String(),
-      ]);
+      final maps = await db.rawQuery(
+        sql,
+        [
+          walletId,
+          fin_transaction_model.TransactionType.expense.name,
+          startDate.toIso8601String(),
+          endDate.toIso8601String(),
+        ],
+      );
       return Right(maps);
-    } catch (e, s) {
-      ErrorMonitoringService.capture(e, stackTrace: s);
+    } on Exception catch (e, s) {
+      await ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(DatabaseFailure(details: e.toString()));
     }
   }
 
   @override
   Future<Either<AppFailure, List<fin_transaction_model.Transaction>>>
-      getTransactionsSince(int walletId, String? lastSyncTimestamp) async {
+      getTransactionsSince(
+    int walletId,
+    String? lastSyncTimestamp,
+  ) async {
     return const Right([]);
   }
 }

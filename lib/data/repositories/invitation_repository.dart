@@ -1,10 +1,16 @@
-import '../../models/invitation_model.dart';
+import 'package:sage_wallet_reborn/models/invitation_model.dart';
 
 enum InvitationStatus { accepted, declined }
 
 abstract class InvitationRepository {
   Future<String> generateInvitation(int walletId);
+
   Future<void> acceptInvitation(String invitationToken);
+
   Future<List<Invitation>> getMyPendingInvitations();
-  Future<void> respondToInvitation(String invitationId, InvitationStatus status);
+
+  Future<void> respondToInvitation(
+    String invitationId,
+    InvitationStatus status,
+  );
 }

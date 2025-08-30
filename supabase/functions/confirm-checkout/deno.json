@@ -1,0 +1,4 @@
+{
+  "functions": { "verify_jwt": false },
+  "compilerOptions": { "lib": ["deno.ns", "dom"] }
+}

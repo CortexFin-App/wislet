@@ -1,5 +1,5 @@
 import 'package:intl/intl.dart';
-import '../models/receipt_parse_result.dart';
+import 'package:sage_wallet_reborn/models/receipt_parse_result.dart';
 
 class ReceiptParser {
   ParseResult parseQrCode(String qrData) {
@@ -16,12 +16,10 @@ class ReceiptParser {
       if (sumString != null) {
         final sumAsDouble = double.tryParse(sumString);
         if (sumAsDouble != null) {
-          amount =
-              sumString.contains('.') ? sumAsDouble : sumAsDouble / 100.0;
+          amount = sumString.contains('.') ? sumAsDouble : sumAsDouble / 100;
         }
       }
-      DateTime? date =
-          timeString != null ? _parseFiscalDateTime(timeString) : null;
+      final date = timeString != null ? _parseFiscalDateTime(timeString) : null;
 
       if (amount == null && date == null) {
         return parseFromText(qrData);
@@ -29,9 +27,9 @@ class ReceiptParser {
       return ParseResult(
         totalAmount: amount,
         date: date,
-        merchantName: fiscalNumber != null ? 'Чек QR: $fiscalNumber' : null,
+        merchantName: fiscalNumber != null ? 'Р§РµРє QR: $fiscalNumber' : null,
       );
-    } catch (e) {
+    } on Exception {
       return parseFromText(qrData);
     }
   }
@@ -54,9 +52,10 @@ class ReceiptParser {
       return ParseResult(
         totalAmount: amount,
         date: date,
-        merchantName: fiscalNumber != null ? 'Чек ДПС: $fiscalNumber' : null,
+        merchantName:
+            fiscalNumber != null ? 'Р§РµРє Р”РџРЎ: $fiscalNumber' : null,
       );
-    } catch (e) {
+    } on Exception {
       return parseFromText(url);
     }
   }
@@ -66,9 +65,9 @@ class ReceiptParser {
     try {
       final cleanedTimeStr = timeStr.trim().replaceAll(':', '');
       final fullDateTimeString = '$dateStr$cleanedTimeStr';
-      
+
       return _parseFiscalDateTime(fullDateTimeString);
-    } catch (e) {
+    } on Exception {
       return null;
     }
   }
@@ -87,26 +86,31 @@ class ReceiptParser {
             : 0;
         return DateTime(year, month, day, hour, minute, seconds);
       }
-    } catch (e) {
+    } on Exception {
       return null;
     }
     return null;
   }
 
   ParseResult parseFromText(String text) {
-    final lines = text.split('\n').where((line) => line.trim().isNotEmpty).toList();
+    final lines =
+        text.split('\n').where((line) => line.trim().isNotEmpty).toList();
     if (lines.isEmpty) {
       return ParseResult(merchantName: text);
     }
-    final double? amount = _findTotalAmountFromText(lines);
-    final DateTime? date = _findDateFromText(lines);
-    final String? merchant = _findMerchantFromText(lines);
+    final amount = _findTotalAmountFromText(lines);
+    final date = _findDateFromText(lines);
+    final merchant = _findMerchantFromText(lines);
     return ParseResult(
-        totalAmount: amount, date: date, merchantName: merchant ?? text);
+      totalAmount: amount,
+      date: date,
+      merchantName: merchant ?? text,
+    );
   }
 
   double? _findTotalAmountFromText(List<String> lines) {
-    final specificPatternRegex = RegExp(r'(\d+[,.]\d{2})\s*rph', caseSensitive: false);
+    final specificPatternRegex =
+        RegExp(r'(\d+[,.]\d{2})\s*rph', caseSensitive: false);
     for (final line in lines.reversed) {
       final match = specificPatternRegex.firstMatch(line);
       if (match != null) {
@@ -118,23 +122,26 @@ class ReceiptParser {
   }
 
   DateTime? _findDateFromText(List<String> lines) {
-    final dateTimeRegex = RegExp(r'(\d{2,4}[./-]\d{2}[./-]\d{2,4})[\sT]*(\d{2}\s*:\s*\d{2}(?:\s*:\s*\d{2})?)?');
+    final dateTimeRegex = RegExp(
+      r'(\d{2,4}[./-]\d{2}[./-]\d{2,4})[\sT]*(\d{2}\s*:\s*\d{2}(?:\s*:\s*\d{2})?)?',
+    );
     final dateFormats = [
       DateFormat('dd.MM.yyyy'),
       DateFormat('dd.MM.yy'),
-      DateFormat('yyyy-MM-dd')
+      DateFormat('yyyy-MM-dd'),
     ];
-    for (String line in lines) {
+    for (final line in lines) {
       final match = dateTimeRegex.firstMatch(line);
       if (match != null) {
-        String dateStr = match.group(1)!.replaceAll('-', '.').replaceAll('/', '.');
-        String? timeStr = match.group(2);
+        final dateStr =
+            match.group(1)!.replaceAll('-', '.').replaceAll('/', '.');
+        final timeStr = match.group(2);
         DateTime? parsedDate;
-        for (var format in dateFormats) {
+        for (final format in dateFormats) {
           try {
             parsedDate = format.parse(dateStr);
             break;
-          } catch (_) {
+          } on FormatException {
             continue;
           }
         }
@@ -144,11 +151,21 @@ class ReceiptParser {
             final hour = int.tryParse(timeParts[0]) ?? 0;
             final minute = int.tryParse(timeParts[1]) ?? 0;
             return DateTime(
-                parsedDate.year, parsedDate.month, parsedDate.day, hour, minute);
+              parsedDate.year,
+              parsedDate.month,
+              parsedDate.day,
+              hour,
+              minute,
+            );
           } else {
             final now = DateTime.now();
             return DateTime(
-                parsedDate.year, parsedDate.month, parsedDate.day, now.hour, now.minute);
+              parsedDate.year,
+              parsedDate.month,
+              parsedDate.day,
+              now.hour,
+              now.minute,
+            );
           }
         }
       }

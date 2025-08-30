@@ -1,10 +1,11 @@
+import 'package:sage_wallet_reborn/data/repositories/user_repository.dart';
+import 'package:sage_wallet_reborn/models/user.dart' as fin_user;
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../models/user.dart' as fin_user;
-import '../user_repository.dart';
 
 class SupabaseUserRepositoryImpl implements UserRepository {
-  final SupabaseClient _client;
   SupabaseUserRepositoryImpl(this._client);
+
+  final SupabaseClient _client;
 
   @override
   Future<List<fin_user.User>> getUsersForWallet(int walletId) async {
@@ -13,14 +14,19 @@ class SupabaseUserRepositoryImpl implements UserRepository {
         .select('users!inner(*)')
         .eq('wallet_id', walletId);
 
-    return (response as List)
-        .map((data) => fin_user.User.fromMap(data['users']))
+    return response
+        .map(
+          (data) => fin_user.User.fromMap(
+            data['users'] as Map<String, dynamic>,
+          ),
+        )
         .toList();
   }
 
   @override
   Future<fin_user.User?> getUser(String id) async {
-    final response = await _client.from('users').select().eq('id', id).maybeSingle();
+    final response =
+        await _client.from('users').select().eq('id', id).maybeSingle();
     if (response == null) return null;
     return fin_user.User.fromMap(response);
   }
@@ -47,7 +53,10 @@ class SupabaseUserRepositoryImpl implements UserRepository {
 
   @override
   Future<int> updateUserRoleInWallet(
-      int walletId, String userId, String newRole) {
+    int walletId,
+    String userId,
+    String newRole,
+  ) {
     throw UnimplementedError('This is handled by WalletRepository.');
   }
 }

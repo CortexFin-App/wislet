@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../models/wallet.dart';
-import '../../providers/wallet_provider.dart';
+import 'package:sage_wallet_reborn/models/wallet.dart';
+import 'package:sage_wallet_reborn/providers/wallet_provider.dart';
 
 class AddEditWalletScreen extends StatefulWidget {
+  const AddEditWalletScreen({
+    this.walletToEdit,
+    this.isFirstWallet = false,
+    super.key,
+  });
   final Wallet? walletToEdit;
   final bool isFirstWallet;
-  const AddEditWalletScreen({super.key, this.walletToEdit, this.isFirstWallet = false});
 
   @override
   State<AddEditWalletScreen> createState() => _AddEditWalletScreenState();
@@ -21,7 +25,9 @@ class _AddEditWalletScreenState extends State<AddEditWalletScreen> {
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.walletToEdit?.name ?? 'Особистий');
+    _nameController = TextEditingController(
+      text: widget.walletToEdit?.name ?? 'РћСЃРѕР±РёСЃС‚РёР№',
+    );
   }
 
   @override
@@ -54,10 +60,10 @@ class _AddEditWalletScreenState extends State<AddEditWalletScreen> {
       if (mounted) {
         Navigator.of(context).pop(true);
       }
-    } catch (e) {
+    } on Exception catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Помилка: ${e.toString()}')),
+          SnackBar(content: Text('РџРѕРјРёР»РєР°: $e')),
         );
       }
     } finally {
@@ -72,19 +78,25 @@ class _AddEditWalletScreenState extends State<AddEditWalletScreen> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(widget.isFirstWallet ? 'Створимо ваш перший гаманець' : (_isEditing ? 'Редагувати гаманець' : 'Новий гаманець')),
+      title: Text(
+        widget.isFirstWallet
+            ? 'РЎС‚РІРѕСЂРёРјРѕ РІР°С€ РїРµСЂС€РёР№ РіР°РјР°РЅРµС†СЊ'
+            : (_isEditing
+                ? 'Р РµРґР°РіСѓРІР°С‚Рё РіР°РјР°РЅРµС†СЊ'
+                : 'РќРѕРІРёР№ РіР°РјР°РЅРµС†СЊ'),
+      ),
       content: Form(
         key: _formKey,
         child: TextFormField(
           controller: _nameController,
           autofocus: true,
           decoration: const InputDecoration(
-            labelText: 'Назва гаманця',
+            labelText: 'РќР°Р·РІР° РіР°РјР°РЅС†СЏ',
             prefixIcon: Icon(Icons.account_balance_wallet_outlined),
           ),
           validator: (value) {
             if (value == null || value.trim().isEmpty) {
-              return 'Назва не може бути порожньою';
+              return 'РќР°Р·РІР° РЅРµ РјРѕР¶Рµ Р±СѓС‚Рё РїРѕСЂРѕР¶РЅСЊРѕСЋ';
             }
             return null;
           },
@@ -93,14 +105,24 @@ class _AddEditWalletScreenState extends State<AddEditWalletScreen> {
       actions: [
         if (!widget.isFirstWallet)
           TextButton(
-            onPressed: _isSaving ? null : () => Navigator.of(context).pop(),
-            child: const Text('Скасувати'),
+            onPressed: _isSaving ? null : Navigator.of(context).pop,
+            child: const Text('РЎРєР°СЃСѓРІР°С‚Рё'),
           ),
         ElevatedButton(
           onPressed: _isSaving ? null : _saveWallet,
           child: _isSaving
-            ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-            : Text(_isEditing ? 'Зберегти' : (widget.isFirstWallet ? 'Створити' : 'Створити')),
+              ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : Text(
+                  _isEditing
+                      ? 'Р—Р±РµСЂРµРіС‚Рё'
+                      : (widget.isFirstWallet
+                          ? 'РЎС‚РІРѕСЂРёС‚Рё'
+                          : 'РЎС‚РІРѕСЂРёС‚Рё'),
+                ),
         ),
       ],
     );

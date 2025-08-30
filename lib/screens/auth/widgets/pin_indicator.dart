@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
-import '../../../utils/app_palette.dart';
+import 'package:sage_wallet_reborn/utils/app_palette.dart';
 
 class PinIndicator extends StatelessWidget {
-  final int pinLength;
-  final int maxLength;
-  final bool hasError;
-
   const PinIndicator({
-    super.key,
     required this.pinLength,
     this.maxLength = 4,
     this.hasError = false,
+    super.key,
   });
+
+  final int pinLength;
+  final int maxLength;
+  final bool hasError;
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +32,9 @@ class PinIndicator extends StatelessWidget {
                 ? (hasError ? errorColor : AppPalette.darkPrimary)
                 : AppPalette.darkSurface,
             border: Border.all(
-              color: hasError ? errorColor.withAlpha(128) : AppPalette.darkPrimary.withAlpha(77),
+              color: hasError
+                  ? errorColor.withAlpha(128)
+                  : AppPalette.darkPrimary.withAlpha(77),
             ),
           ),
         );

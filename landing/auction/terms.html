@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Умови користування • CortexFin</title>
+  <meta name="description" content="Офіційні умови користування сервісами CortexFin / Wislet."/>
+  <meta property="og:title" content="Умови користування • CortexFin" />
+  <meta property="og:description" content="Правила використання, платежі, повернення, права й обов'язки." />
+  <meta property="og:image" content="/assets/app-icon.png" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root{--bg:#0b1220;--text:#e2e8f0}
+    html,body{background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Arial}
+    .glass{background:rgba(255,255,255,.04);backdrop-filter:blur(12px)}
+    a{color:#67e8f9}
+  </style>
+  <link rel="icon" href="/assets/app-icon.png" />
+  <link rel="canonical" href="https://cortexfinapp.com/terms" />
+
+  <!-- GA4 -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-SYFYY8CH3F"></script>
+  <script>
+    var DNT=(navigator.doNotTrack=="1"||window.doNotTrack=="1"||navigator.msDoNotTrack=="1");
+    window.dataLayer=window.dataLayer||[];
+    function gtag(){dataLayer.push(arguments);}
+    if(!DNT){
+      gtag('consent','default',{ad_user_data:'denied',ad_personalization:'denied',ad_storage:'denied',analytics_storage:'granted'});
+      gtag('js',new Date()); gtag('config','G-SYFYY8CH3F',{send_page_view:true});
+    }
+  </script>
+</head>
+<body class="min-h-screen p-6">
+<header class="max-w-3xl mx-auto flex items-center justify-between py-3">
+  <a href="/" class="font-semibold opacity-80 hover:opacity-100">CortexFin</a>
+  <nav class="text-sm opacity-80">
+    <a class="mr-4 hover:opacity-100" href="/">Головна</a>
+    <a class="hover:opacity-100" href="/privacy.html">Приватність</a>
+  </nav>
+</header>
+
+<main class="max-w-3xl mx-auto mt-6 glass rounded-2xl p-8 border border-white/10">
+  <h1 class="text-3xl font-extrabold text-cyan-400">Умови користування</h1>
+  <p class="mt-3 opacity-80 text-sm">P25-08-27</p>
+
+  <section class="mt-6 space-y-4 leading-relaxed">
+    <p>Користуючись сервісами <strong>CortexFin</strong> / <em>Wislet</em>, ви погоджуєтесь із цими умовами.</p>
+    <h2 class="text-xl font-semibold mt-6">1. Призначення</h2>
+    <p>Сайт надає інформаційні матеріали та платіжні сторінки для отримання доступів/продуктів.</p>
+    <h2 class="text-xl font-semibold mt-6">2. Платежі та повернення</h2>
+    <p>Оплати приймаємо банківськими переказами, в т.ч. через monobank (публічна банка). Питання щодо повернення: <a href="mailto:cortexfin.team@gmail.com">cortexfin.team@gmail.com</a>.</p>
+    <h2 class="text-xl font-semibold mt-6">3. Облікові дані</h2>
+    <p>Ви відповідаєте за достовірність наданої інформації.</p>
+    <h2 class="text-xl font-semibold mt-6">4. Контент і права</h2>
+    <p>Матеріали захищені авторським правом. Заборонено копіювати без згоди.</p>
+    <h2 class="text-xl font-semibold mt-6">5. Відповідальність</h2>
+    <p>Сервіс надається “як є”. Можливі переривання роботи.</p>
+    <h2 class="text-xl font-semibold mt-6">6. Зміни</h2>
+    <p>Ми можемо оновлювати умови. Актуальна версія — тут.</p>
+  </section>
+
+  <div class="mt-8 flex gap-3">
+    <a href="/" class="px-4 py-2 rounded-xl bg-cyan-500 text-black font-semibold">На головну</a>
+    <a href="mailto:cortexfin.team@gmail.com" class="px-4 py-2 rounded-xl border border-white/20">Підтримка</a>
+  </div>
+</main>
+
+<footer class="max-w-3xl mx-auto text-xs opacity-60 mt-6 text-center">
+  © <span id="y"></span> CortexFin.
+</footer>
+<script>document.getElementById('y').textContent=new Date().getFullYear()</script>
+</body>
+</html>

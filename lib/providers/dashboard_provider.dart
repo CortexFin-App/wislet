@@ -1,39 +1,44 @@
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:fpdart/fpdart.dart';
+import 'package:sage_wallet_reborn/core/di/injector.dart';
+import 'package:sage_wallet_reborn/data/repositories/goal_repository.dart';
+import 'package:sage_wallet_reborn/data/repositories/transaction_repository.dart';
+import 'package:sage_wallet_reborn/models/financial_goal.dart';
+import 'package:sage_wallet_reborn/models/financial_health.dart';
+import 'package:sage_wallet_reborn/models/transaction.dart' as fin_transaction;
+import 'package:sage_wallet_reborn/services/financial_health_service.dart';
+import 'package:sage_wallet_reborn/utils/app_palette.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../core/di/injector.dart';
-import '../data/repositories/transaction_repository.dart';
-import '../data/repositories/goal_repository.dart';
-import '../models/financial_health.dart';
-import '../models/transaction.dart' as fin_transaction;
-import '../models/financial_goal.dart';
-import '../services/financial_health_service.dart';
-import '../utils/app_palette.dart';
 
 class AiAdvice {
+  AiAdvice({
+    required this.title,
+    required this.positive,
+    required this.suggestion,
+  });
   final String title;
   final String positive;
   final String suggestion;
-  AiAdvice({required this.title, required this.positive, required this.suggestion});
 }
 
 class SpendingCategory {
-  final String name;
-  final double amount;
-  final double percentage;
-  final Color color;
   SpendingCategory({
     required this.name,
     required this.amount,
     required this.percentage,
     required this.color,
   });
+  final String name;
+  final double amount;
+  final double percentage;
+  final Color color;
 }
 
 class DashboardProvider with ChangeNotifier {
   final TransactionRepository _transactionRepo = getIt<TransactionRepository>();
   final GoalRepository _goalRepo = getIt<GoalRepository>();
-  final FinancialHealthService _healthService = getIt<FinancialHealthService>();
+  final FinancialHealthService _healthService = FinancialHealthService();
   final SupabaseClient _supabase = getIt<SupabaseClient>();
 
   FinancialHealth _health = FinancialHealth.initial();
@@ -55,23 +60,29 @@ class DashboardProvider with ChangeNotifier {
     notifyListeners();
 
     final now = DateTime.now();
-    final startOfMonth = DateTime(now.year, now.month, 1);
+    final startOfMonth = DateTime(now.year, now.month);
 
     final overallBalanceEither = _transactionRepo.getOverallBalance(walletId);
     final monthlyIncomeEither = _transactionRepo.getTotalAmount(
-        walletId: walletId,
-        startDate: startOfMonth,
-        endDate: now,
-        transactionType: fin_transaction.TransactionType.income);
+      walletId: walletId,
+      startDate: startOfMonth,
+      endDate: now,
+      transactionType: fin_transaction.TransactionType.income,
+    );
     final monthlyExpensesEither = _transactionRepo.getTotalAmount(
-        walletId: walletId,
-        startDate: startOfMonth,
-        endDate: now,
-        transactionType: fin_transaction.TransactionType.expense);
-    final expensesGroupedEither =
-        _transactionRepo.getExpensesGroupedByCategory(walletId, startOfMonth, now);
+      walletId: walletId,
+      startDate: startOfMonth,
+      endDate: now,
+      transactionType: fin_transaction.TransactionType.expense,
+    );
+    final expensesGroupedEither = _transactionRepo.getExpensesGroupedByCategory(
+      walletId,
+      startOfMonth,
+      now,
+    );
     final goalsEither = _goalRepo.getAllFinancialGoals(walletId);
-    final healthScoreProfile = _healthService.calculateHealthScore(walletId);
+    final healthScoreProfileFuture =
+        _healthService.calculateHealthScore(walletId);
 
     final results = await Future.wait([
       overallBalanceEither,
@@ -79,7 +90,7 @@ class DashboardProvider with ChangeNotifier {
       monthlyExpensesEither,
       expensesGroupedEither,
       goalsEither,
-      healthScoreProfile
+      healthScoreProfileFuture,
     ]);
 
     final overallBalance =
@@ -88,11 +99,12 @@ class DashboardProvider with ChangeNotifier {
         (results[1] as Either<dynamic, double>).getOrElse((_) => 0.0);
     final monthlyExpenses =
         (results[2] as Either<dynamic, double>).getOrElse((_) => 0.0);
-    final expensesGrouped = (results[3] as Either<dynamic, List<Map<String, dynamic>>>)
-        .getOrElse((_) => []);
+    final expensesGrouped =
+        (results[3] as Either<dynamic, List<Map<String, dynamic>>>)
+            .getOrElse((_) => []);
     final allGoals = (results[4] as Either<dynamic, List<FinancialGoal>>)
         .getOrElse((_) => []);
-    
+
     _healthScoreProfile = results[5] as HealthScoreProfile;
 
     _health = FinancialHealth(
@@ -101,11 +113,11 @@ class DashboardProvider with ChangeNotifier {
       balance: overallBalance,
       dailyBalance: 0,
     );
-    
-    _mainGoal = allGoals.where((g) => !g.isAchieved).firstOrNull;
+
+    _mainGoal = allGoals.firstWhereOrNull((g) => !g.isAchieved);
 
     if (monthlyExpenses > 0) {
-      final List<Color> pieColors = [
+      final pieColors = <Color>[
         AppPalette.darkAccent,
         Colors.purpleAccent.shade100,
         Colors.orangeAccent.shade100,
@@ -113,23 +125,26 @@ class DashboardProvider with ChangeNotifier {
         Colors.pinkAccent.shade100,
       ];
       _topCategories = expensesGrouped.take(4).map((e) {
-        int index = expensesGrouped.indexOf(e);
+        final index = expensesGrouped.indexOf(e);
         return SpendingCategory(
-          name: e['categoryName'],
-          amount: e['totalAmount'],
-          percentage: (e['totalAmount'] / monthlyExpenses),
+          name: e['categoryName'] as String,
+          amount: e['totalAmount'] as double,
+          percentage: (e['totalAmount'] as double) / monthlyExpenses,
           color: pieColors[index % pieColors.length],
         );
       }).toList();
 
-      double topCategoriesSum = _topCategories.fold(0.0, (sum, item) => sum + item.amount);
+      final topCategoriesSum =
+          _topCategories.fold<double>(0, (sum, item) => sum + item.amount);
       if (monthlyExpenses - topCategoriesSum > 0) {
-        _topCategories.add(SpendingCategory(
-          name: 'Інше',
-          amount: monthlyExpenses - topCategoriesSum,
-          percentage: (monthlyExpenses - topCategoriesSum) / monthlyExpenses,
-          color: Colors.grey.shade700,
-        ));
+        _topCategories.add(
+          SpendingCategory(
+            name: 'Р†РЅС€Рµ',
+            amount: monthlyExpenses - topCategoriesSum,
+            percentage: (monthlyExpenses - topCategoriesSum) / monthlyExpenses,
+            color: Colors.grey.shade700,
+          ),
+        );
       }
     } else {
       _topCategories = [];
@@ -140,12 +155,13 @@ class DashboardProvider with ChangeNotifier {
         'generate-health-advice',
         body: _healthScoreProfile!.toJson(),
       );
+      final responseData = response.data as Map<String, dynamic>?;
       _aiAdvice = AiAdvice(
-        title: response.data['title'],
-        positive: response.data['positive'],
-        suggestion: response.data['suggestion'],
+        title: responseData?['title'] as String? ?? '',
+        positive: responseData?['positive'] as String? ?? '',
+        suggestion: responseData?['suggestion'] as String? ?? '',
       );
-    } catch (e) {
+    } on Exception {
       _aiAdvice = null;
     }
 

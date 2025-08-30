@@ -1,20 +1,20 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../core/di/injector.dart';
-import '../../services/auth_service.dart';
-import 'widgets/pin_indicator.dart';
-import 'widgets/pin_pad.dart';
+import 'package:sage_wallet_reborn/core/di/injector.dart';
+import 'package:sage_wallet_reborn/screens/auth/widgets/pin_indicator.dart';
+import 'package:sage_wallet_reborn/screens/auth/widgets/pin_pad.dart';
+import 'package:sage_wallet_reborn/services/auth_service.dart';
 
 class PinEntryScreen extends StatefulWidget {
-  final VoidCallback onSuccess;
-  final VoidCallback? onForgotPin;
-
   const PinEntryScreen({
-    super.key,
     required this.onSuccess,
     this.onForgotPin,
+    super.key,
   });
+  final VoidCallback onSuccess;
+  final VoidCallback? onForgotPin;
 
   @override
   State<PinEntryScreen> createState() => _PinEntryScreenState();
@@ -34,13 +34,13 @@ class _PinEntryScreenState extends State<PinEntryScreen> {
   }
 
   Future<void> _checkBiometricsAndAuthenticate() async {
-    final canUse = await _authService.canUseBiometrics();
+    final canUse = await _authService.isBiometricsEnabled();
     if (mounted) {
       setState(() {
         _canUseBiometrics = canUse;
       });
       if (canUse) {
-        _tryBiometrics();
+        await _tryBiometrics();
       }
     }
   }
@@ -73,7 +73,7 @@ class _PinEntryScreenState extends State<PinEntryScreen> {
 
   Future<void> _verifyPin() async {
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(milliseconds: 200));
+    await Future<void>.delayed(const Duration(milliseconds: 200));
 
     final isCorrect = await _authService.verifyPin(_pin);
 
@@ -84,7 +84,7 @@ class _PinEntryScreenState extends State<PinEntryScreen> {
     } else {
       HapticFeedback.heavyImpact();
       setState(() {
-        _errorMessage = 'Невірний PIN-код';
+        _errorMessage = 'РќРµРІС–СЂРЅРёР№ PIN-РєРѕРґ';
         _pin = '';
         _isLoading = false;
       });
@@ -96,24 +96,35 @@ class _PinEntryScreenState extends State<PinEntryScreen> {
     return Scaffold(
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 48.0),
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 48),
           child: Column(
             children: [
               Text(
-                'Введіть PIN-код',
+                'Р’РІРµРґС–С‚СЊ PIN-РєРѕРґ',
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               const SizedBox(height: 32),
-              PinIndicator(pinLength: _pin.length, hasError: _errorMessage != null),
+              PinIndicator(
+                pinLength: _pin.length,
+                hasError: _errorMessage != null,
+              ),
               const SizedBox(height: 16),
               AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
                 height: 24,
                 child: _isLoading
-                    ? const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2,)))
+                    ? const Center(
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      )
                     : Text(
                         _errorMessage ?? '',
-                        style: TextStyle(color: Theme.of(context).colorScheme.error),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
                       ),
               ),
               const Spacer(),

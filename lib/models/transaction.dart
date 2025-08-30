@@ -1,6 +1,38 @@
 enum TransactionType { income, expense }
 
 class Transaction {
+  Transaction({
+    required this.type,
+    required this.originalAmount,
+    required this.originalCurrencyCode,
+    required this.amountInBaseCurrency,
+    required this.categoryId,
+    required this.date,
+    this.id,
+    this.exchangeRateUsed,
+    this.description,
+    this.linkedGoalId,
+    this.subscriptionId,
+    this.linkedTransferId,
+  });
+
+  factory Transaction.fromMap(Map<String, dynamic> map) {
+    return Transaction(
+      id: map['id'] as int?,
+      type: TransactionType.values.byName(map['type'] as String),
+      originalAmount: (map['original_amount'] as num).toDouble(),
+      originalCurrencyCode: map['original_currency_code'] as String,
+      amountInBaseCurrency: (map['amount_in_base_currency'] as num).toDouble(),
+      exchangeRateUsed: (map['exchange_rate_used'] as num?)?.toDouble(),
+      categoryId: map['category_id'] as int,
+      date: DateTime.parse(map['date'] as String),
+      description: map['description'] as String?,
+      linkedGoalId: map['linked_goal_id'] as int?,
+      subscriptionId: map['subscription_id'] as int?,
+      linkedTransferId: map['linked_transfer_id'] as int?,
+    );
+  }
+
   final int? id;
   final TransactionType type;
   final double originalAmount;
@@ -13,21 +45,6 @@ class Transaction {
   final int? linkedGoalId;
   final int? subscriptionId;
   final int? linkedTransferId;
-
-  Transaction({
-    this.id,
-    required this.type,
-    required this.originalAmount,
-    required this.originalCurrencyCode,
-    required this.amountInBaseCurrency,
-    this.exchangeRateUsed,
-    required this.categoryId,
-    required this.date,
-    this.description,
-    this.linkedGoalId,
-    this.subscriptionId,
-    this.linkedTransferId,
-  });
 
   Map<String, dynamic> toMap() {
     return {
@@ -44,22 +61,5 @@ class Transaction {
       'subscription_id': subscriptionId,
       'linked_transfer_id': linkedTransferId,
     };
-  }
-
-  factory Transaction.fromMap(Map<String, dynamic> map) {
-    return Transaction(
-      id: map['id'] as int?,
-      type: TransactionType.values.byName(map['type']),
-      originalAmount: (map['original_amount'] as num).toDouble(),
-      originalCurrencyCode: map['original_currency_code'] as String,
-      amountInBaseCurrency: (map['amount_in_base_currency'] as num).toDouble(),
-      exchangeRateUsed: (map['exchange_rate_used'] as num?)?.toDouble(),
-      categoryId: map['category_id'] as int,
-      date: DateTime.parse(map['date'] as String),
-      description: map['description'] as String?,
-      linkedGoalId: map['linked_goal_id'] as int?,
-      subscriptionId: map['subscription_id'] as int?,
-      linkedTransferId: map['linked_transfer_id'] as int?,
-    );
   }
 }

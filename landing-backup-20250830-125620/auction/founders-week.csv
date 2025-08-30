@@ -1,0 +1,12 @@
+﻿id,order_id,hold_id,tier,founder_id,email,issued_at,is_test
+2,3,17,PF,1,vladkuhar27@gmail.com,2025-08-21T08:06:44.232181+00:00,false
+3,4,12,GF,6,vladkuhar27@gmail.com,2025-08-21T08:07:02.506407+00:00,false
+4,5,13,GF,7,vladkuhar27@gmail.com,2025-08-21T08:07:02.506407+00:00,false
+5,6,14,GF,8,vladkuhar27@gmail.com,2025-08-21T08:07:02.506407+00:00,false
+6,7,15,GF,9,vladkuhar27@gmail.com,2025-08-21T08:07:02.506407+00:00,false
+7,8,16,PF,2,vladkuhar27@gmail.com,2025-08-21T08:07:02.506407+00:00,false
+8,,21,GF,10,test+1@gmail.com,2025-08-22T09:42:16.577268+00:00,false
+10,,5,GF,11,you@example.com,2025-08-22T10:22:43.166445+00:00,false
+11,16,,GF,12,fresh@example.com,2025-08-25T15:25:11.297422+00:00,false
+12,16,,GF,13,auto2@example.com,2025-08-25T15:32:26.595214+00:00,false
+13,17,,GF,14,vladkuhar27@gmail.com,2025-08-25T17:09:36.068192+00:00,false

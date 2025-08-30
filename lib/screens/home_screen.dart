@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import '../providers/dashboard_provider.dart';
-import '../providers/wallet_provider.dart';
-import 'transactions/add_edit_transaction_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:sage_wallet_reborn/providers/dashboard_provider.dart';
+import 'package:sage_wallet_reborn/providers/wallet_provider.dart';
+import 'package:sage_wallet_reborn/widgets/home/health_score_widget.dart';
+import 'package:sage_wallet_reborn/widgets/home/main_goal_card_widget.dart';
+import 'package:sage_wallet_reborn/widgets/home/summary_card_widget.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -55,207 +56,68 @@ class HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<DashboardProvider>();
+    final currencyFormat =
+        NumberFormat.currency(locale: 'uk_UA', symbol: 'в‚ґ', decimalDigits: 0);
+    final theme = Theme.of(context);
+
     return RefreshIndicator(
       onRefresh: _refresh,
-      child: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 200.0,
-            backgroundColor: Colors.transparent,
-            flexibleSpace: FlexibleSpaceBar(
-              centerTitle: true,
-              titlePadding: const EdgeInsets.only(bottom: 20),
-              title: Consumer<DashboardProvider>(
-                builder: (context, provider, child) {
-                  if (provider.isLoading) {
-                    return const SizedBox.shrink();
-                  }
-                  final currencyFormat = NumberFormat.currency(
-                      locale: 'uk_UA', symbol: '₴', decimalDigits: 0);
-                  return Text(
-                    currencyFormat.format(provider.health.balance),
-                    style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontWeight: FontWeight.bold),
-                  );
-                },
-              ),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
+      child: provider.isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : ListView(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
-              child: Consumer<DashboardProvider>(
-                builder: (context, provider, child) {
-                  if (provider.isLoading) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  final currencyFormat = NumberFormat.currency(
-                      locale: 'uk_UA', symbol: '₴', decimalDigits: 2);
-
-                  return Column(
-                    children: [
-                      if (provider.aiAdvice != null && provider.healthScoreProfile != null) ...[
-                        AiAdviceCard(
-                          advice: provider.aiAdvice!, 
-                          score: provider.healthScoreProfile!.score
-                        ),
-                        const SizedBox(height: 16),
-                      ],
-                      Wrap(
-                        spacing: 16,
-                        runSpacing: 16,
-                        alignment: WrapAlignment.center,
-                        children: [
-                          SolidInfoCard(
-                            title: 'Доходи',
-                            amount: currencyFormat.format(provider.health.income),
-                            color: Colors.green.shade400,
-                          ),
-                          SolidInfoCard(
-                            title: 'Витрати',
-                            amount:
-                                currencyFormat.format(provider.health.expenses),
-                            color: Colors.red.shade400,
-                          ),
-                        ],
-                      )
-                    ],
-                  );
-                },
-              ),
+              children: [
+                const SizedBox(height: 16),
+                Text(
+                  'Р—Р°РіР°Р»СЊРЅРёР№ Р±Р°Р»Р°РЅСЃ',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.titleMedium
+                      ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                ),
+                Text(
+                  currencyFormat.format(provider.health.balance),
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.displayMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                if (provider.healthScoreProfile != null &&
+                    provider.aiAdvice != null)
+                  HealthScoreWidget(
+                    profile: provider.healthScoreProfile!,
+                    advice: provider.aiAdvice!,
+                  ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: SummaryCard(
+                        title: 'Р”РѕС…РѕРґРё',
+                        amount: provider.health.income,
+                        color: Colors.green.shade400,
+                        icon: Icons.arrow_downward_rounded,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: SummaryCard(
+                        title: 'Р’РёС‚СЂР°С‚Рё',
+                        amount: provider.health.expenses,
+                        color: Colors.red.shade400,
+                        icon: Icons.arrow_upward_rounded,
+                      ),
+                    ),
+                  ],
+                ),
+                if (provider.mainGoal != null) ...[
+                  const SizedBox(height: 16),
+                  MainGoalCard(goal: provider.mainGoal!),
+                ],
+              ],
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class QuantumFab extends StatelessWidget {
-  const QuantumFab({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.lightImpact();
-        Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (_) => const AddEditTransactionScreen()));
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.primary,
-          borderRadius: BorderRadius.circular(50),
-          boxShadow: [
-            BoxShadow(
-              color: theme.colorScheme.primary.withAlpha(128),
-              blurRadius: 20,
-              spreadRadius: -5,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.add_rounded, color: theme.colorScheme.onPrimary, size: 28),
-            const SizedBox(width: 8),
-            Text('Транзакція',
-                style: TextStyle(
-                    color: theme.colorScheme.onPrimary,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class SolidInfoCard extends StatelessWidget {
-  final String title;
-  final String amount;
-  final Color color;
-
-  const SolidInfoCard({
-    super.key,
-    required this.title,
-    required this.amount,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(20),
-      constraints: const BoxConstraints(minWidth: 160),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: TextStyle(
-              color: theme.colorScheme.onSurfaceVariant,
-              fontSize: 14,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            amount,
-            style: TextStyle(
-              color: color,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class AiAdviceCard extends StatelessWidget {
-  final AiAdvice advice;
-  final int score;
-
-  const AiAdviceCard({super.key, required this.advice, required this.score});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.primaryContainer.withAlpha(128),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: theme.colorScheme.primaryContainer),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.auto_awesome, color: Colors.amber),
-              const SizedBox(width: 8),
-              Expanded(child: Text(advice.title, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold))),
-            ],
-          ),
-          const Divider(height: 24),
-          Text(advice.positive, style: theme.textTheme.bodyMedium),
-          const SizedBox(height: 12),
-          Text(advice.suggestion, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-        ],
-      ),
     );
   }
 }

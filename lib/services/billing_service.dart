@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -20,27 +21,27 @@ class AppStoreBillingService implements BillingService {
   final InAppPurchase _iap = InAppPurchase.instance;
   final ApiClient _apiClient = getIt<ApiClient>();
   late StreamSubscription<List<PurchaseDetails>> _purchaseStream;
-  
+
   List<ProductDetails> _products = [];
   List<ProductDetails> get products => _products;
-  
+
   final ProStatusProvider _proStatusProvider = getIt<ProStatusProvider>();
 
   @override
   Future<void> init() async {
-    final bool available = await _iap.isAvailable();
+    final available = await _iap.isAvailable();
     if (!available) {
-      debugPrint("Billing service is not available.");
+      debugPrint('Billing service is not available.');
       return;
     }
 
-    _purchaseStream = _iap.purchaseStream.listen((purchaseDetailsList) {
-      _listenToPurchaseUpdated(purchaseDetailsList);
-    }, onDone: () {
-      _purchaseStream.cancel();
-    }, onError: (error) {
-      debugPrint("Billing stream error: $error");
-    });
+    _purchaseStream = _iap.purchaseStream.listen(
+      _listenToPurchaseUpdated,
+      onDone: _purchaseStream.cancel,
+      onError: (Object error) {
+        debugPrint('Billing stream error: $error');
+      },
+    );
 
     await loadProducts();
   }
@@ -48,28 +49,28 @@ class AppStoreBillingService implements BillingService {
   @override
   Future<void> loadProducts() async {
     try {
-      final ProductDetailsResponse response = await _iap.queryProductDetails({_proSubscriptionId});
+      final response = await _iap.queryProductDetails({_proSubscriptionId});
       if (response.notFoundIDs.isNotEmpty) {
-        debugPrint("Products not found: ${response.notFoundIDs}");
+        debugPrint('Products not found: ${response.notFoundIDs}');
         _products = [];
         return;
       }
       _products = response.productDetails;
-    } catch (e) {
-      debugPrint("Error loading products: $e");
+    } on Exception catch (e) {
+      debugPrint('Error loading products: $e');
     }
   }
 
   @override
   Future<void> buyProSubscription() async {
     if (_products.isEmpty) {
-      debugPrint("No products to buy. Trying to load them again...");
+      debugPrint('No products to buy. Trying to load them again...');
       await loadProducts();
       if (_products.isEmpty) {
         return;
       }
     }
-    final PurchaseParam purchaseParam = PurchaseParam(productDetails: _products.first);
+    final purchaseParam = PurchaseParam(productDetails: _products.first);
     await _iap.buyNonConsumable(purchaseParam: purchaseParam);
   }
 
@@ -79,28 +80,33 @@ class AppStoreBillingService implements BillingService {
   }
 
   void _listenToPurchaseUpdated(List<PurchaseDetails> purchaseDetailsList) {
-    for (var purchaseDetails in purchaseDetailsList) {
-      if (purchaseDetails.status == PurchaseStatus.purchased || purchaseDetails.status == PurchaseStatus.restored) {
+    for (final purchaseDetails in purchaseDetailsList) {
+      if (purchaseDetails.status == PurchaseStatus.purchased ||
+          purchaseDetails.status == PurchaseStatus.restored) {
         _handleAndVerifyPurchase(purchaseDetails);
       } else if (purchaseDetails.status == PurchaseStatus.error) {
-        debugPrint("Purchase error: ${purchaseDetails.error}");
+        debugPrint('Purchase error: ${purchaseDetails.error}');
       }
     }
   }
 
-  Future<void> _handleAndVerifyPurchase(PurchaseDetails purchaseDetails) async {
-    final bool isValid = await _verifyPurchaseOnBackend(purchaseDetails);
+  Future<void> _handleAndVerifyPurchase(
+    PurchaseDetails purchaseDetails,
+  ) async {
+    final isValid = await _verifyPurchaseOnBackend(purchaseDetails);
 
     if (isValid) {
       await _iap.completePurchase(purchaseDetails);
-      _proStatusProvider.setProStatus(true);
-      debugPrint("SUCCESS: Purchase completed and verified.");
+      await _proStatusProvider.setProStatus(isPro: true);
+      debugPrint('SUCCESS: Purchase completed and verified.');
     } else {
-      debugPrint("ERROR: Backend verification failed. Purchase not completed.");
+      debugPrint('ERROR: Backend verification failed. Purchase not completed.');
     }
   }
 
-  Future<bool> _verifyPurchaseOnBackend(PurchaseDetails purchaseDetails) async {
+  Future<bool> _verifyPurchaseOnBackend(
+    PurchaseDetails purchaseDetails,
+  ) async {
     try {
       final packageInfo = await PackageInfo.fromPlatform();
       final packageName = packageInfo.packageName;
@@ -108,14 +114,15 @@ class AppStoreBillingService implements BillingService {
       await _apiClient.post(
         '/billing/verify-purchase',
         body: {
-          'purchase_token': purchaseDetails.verificationData.serverVerificationData,
+          'purchase_token':
+              purchaseDetails.verificationData.serverVerificationData,
           'subscription_id': purchaseDetails.productID,
           'package_name': packageName,
         },
       );
       return true;
-    } catch (e) {
-      debugPrint("API Client Error during verification: $e");
+    } on Exception catch (e) {
+      debugPrint('API Client Error during verification: $e');
       return false;
     }
   }
@@ -131,31 +138,31 @@ class FakeBillingService implements BillingService {
 
   @override
   Future<void> init() async {
-    debugPrint("FakeBillingService initialized.");
+    debugPrint('FakeBillingService initialized.');
   }
 
   @override
   Future<void> loadProducts() async {
-     debugPrint("FakeBillingService: Loading fake products.");
+    debugPrint('FakeBillingService: Loading fake products.');
   }
 
   @override
   Future<void> buyProSubscription() async {
-    debugPrint("FakeBillingService: Simulating Pro subscription purchase...");
-    await Future.delayed(const Duration(seconds: 2));
-    await _proStatusProvider.setProStatus(true);
-    debugPrint("FakeBillingService: Pro status activated.");
+    debugPrint('FakeBillingService: Simulating Pro subscription purchase...');
+    await Future<void>.delayed(const Duration(seconds: 2));
+    await _proStatusProvider.setProStatus(isPro: true);
+    debugPrint('FakeBillingService: Pro status activated.');
   }
 
   @override
   Future<void> restorePurchases() async {
-    debugPrint("FakeBillingService: Simulating purchase restore...");
-    await Future.delayed(const Duration(seconds: 1));
-    await _proStatusProvider.setProStatus(true);
+    debugPrint('FakeBillingService: Simulating purchase restore...');
+    await Future<void>.delayed(const Duration(seconds: 1));
+    await _proStatusProvider.setProStatus(isPro: true);
   }
 
   @override
   void dispose() {
-    debugPrint("FakeBillingService disposed.");
+    debugPrint('FakeBillingService disposed.');
   }
 }

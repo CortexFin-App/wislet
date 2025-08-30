@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import '../../core/di/injector.dart';
-import '../../data/repositories/invitation_repository.dart';
-import '../../utils/app_palette.dart';
+import 'package:sage_wallet_reborn/core/di/injector.dart';
+import 'package:sage_wallet_reborn/data/repositories/invitation_repository.dart';
+import 'package:sage_wallet_reborn/utils/app_palette.dart';
 
 class AcceptInvitationScreen extends StatefulWidget {
-  final String? invitationToken;
+  const AcceptInvitationScreen({this.invitationToken, super.key});
 
-  const AcceptInvitationScreen({super.key, this.invitationToken});
+  final String? invitationToken;
 
   @override
   State<AcceptInvitationScreen> createState() => _AcceptInvitationScreenState();
@@ -24,7 +24,8 @@ class _AcceptInvitationScreenState extends State<AcceptInvitationScreen> {
   void initState() {
     super.initState();
     if (_isDeepLink) {
-      _linkController.text = 'токен отримано з посилання';
+      _linkController.text =
+          'С‚РѕРєРµРЅ РѕС‚СЂРёРјР°РЅРѕ Р· РїРѕСЃРёР»Р°РЅРЅСЏ';
     }
   }
 
@@ -48,12 +49,16 @@ class _AcceptInvitationScreenState extends State<AcceptInvitationScreen> {
 
     try {
       await _invitationRepo.acceptInvitation(token);
-      messenger.showSnackBar(const SnackBar(
+      messenger.showSnackBar(
+        const SnackBar(
           content: Text(
-              'Запрошення успішно прийнято! Гаманець додано до вашого списку.')));
+            'Р—Р°РїСЂРѕС€РµРЅРЅСЏ СѓСЃРїС–С€РЅРѕ РїСЂРёР№РЅСЏС‚Рѕ! Р“Р°РјР°РЅРµС†СЊ РґРѕРґР°РЅРѕ РґРѕ РІР°С€РѕРіРѕ СЃРїРёСЃРєСѓ.',
+          ),
+        ),
+      );
       navigator.pop();
-    } catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text('Помилка: $e')));
+    } on Exception catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('РџРѕРјРёР»РєР°: $e')));
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -64,9 +69,10 @@ class _AcceptInvitationScreenState extends State<AcceptInvitationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Прийняти запрошення')),
+      appBar:
+          AppBar(title: const Text('РџСЂРёР№РЅСЏС‚Рё Р·Р°РїСЂРѕС€РµРЅРЅСЏ')),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
           child: Column(
@@ -78,10 +84,12 @@ class _AcceptInvitationScreenState extends State<AcceptInvitationScreen> {
                 TextFormField(
                   controller: _linkController,
                   decoration: const InputDecoration(
-                    labelText: 'Посилання-запрошення або код',
+                    labelText:
+                        'РџРѕСЃРёР»Р°РЅРЅСЏ-Р·Р°РїСЂРѕС€РµРЅРЅСЏ Р°Р±Рѕ РєРѕРґ',
                   ),
-                  validator: (val) =>
-                      val == null || val.isEmpty ? 'Вставте посилання' : null,
+                  validator: (val) => val == null || val.isEmpty
+                      ? 'Р’СЃС‚Р°РІС‚Рµ РїРѕСЃРёР»Р°РЅРЅСЏ'
+                      : null,
                 ),
               const SizedBox(height: 20),
               ElevatedButton.icon(
@@ -89,9 +97,10 @@ class _AcceptInvitationScreenState extends State<AcceptInvitationScreen> {
                     ? const SizedBox(
                         height: 20,
                         width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2))
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
                     : const Icon(Icons.check_circle_outline),
-                label: const Text('Прийняти'),
+                label: const Text('РџСЂРёР№РЅСЏС‚Рё'),
                 onPressed: _isLoading ? null : _acceptInvite,
               ),
             ],
@@ -107,7 +116,7 @@ class _AcceptInvitationScreenState extends State<AcceptInvitationScreen> {
       decoration: BoxDecoration(
         color: AppPalette.darkPrimary.withAlpha(50),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppPalette.darkPrimary)
+        border: Border.all(color: AppPalette.darkPrimary),
       ),
       child: Row(
         children: [
@@ -115,7 +124,7 @@ class _AcceptInvitationScreenState extends State<AcceptInvitationScreen> {
           const SizedBox(width: 16),
           const Expanded(
             child: Text(
-              'Запрошення отримано з посилання. Натисніть "Прийняти", щоб продовжити.',
+              'Р—Р°РїСЂРѕС€РµРЅРЅСЏ РѕС‚СЂРёРјР°РЅРѕ Р· РїРѕСЃРёР»Р°РЅРЅСЏ. РќР°С‚РёСЃРЅС–С‚СЊ "РџСЂРёР№РЅСЏС‚Рё", С‰РѕР± РїСЂРѕРґРѕРІР¶РёС‚Рё.',
               style: TextStyle(fontSize: 16),
             ),
           ),

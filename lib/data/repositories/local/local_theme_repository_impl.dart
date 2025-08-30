@@ -1,11 +1,12 @@
+import 'package:sage_wallet_reborn/data/repositories/theme_repository.dart';
+import 'package:sage_wallet_reborn/models/theme_profile.dart';
+import 'package:sage_wallet_reborn/utils/database_helper.dart';
 import 'package:sqflite/sqflite.dart';
-import '../../../models/theme_profile.dart';
-import '../../../utils/database_helper.dart';
-import '../theme_repository.dart';
 
 class LocalThemeRepositoryImpl implements ThemeRepository {
-  final DatabaseHelper _dbHelper;
   LocalThemeRepositoryImpl(this._dbHelper);
+
+  final DatabaseHelper _dbHelper;
 
   Map<String, dynamic> _toMap(ThemeProfile profile) {
     return profile.toMap();
@@ -28,8 +29,9 @@ class LocalThemeRepositoryImpl implements ThemeRepository {
   @override
   Future<List<ThemeProfile>> getSavedThemes() async {
     final db = await _dbHelper.database;
-    final List<Map<String, dynamic>> maps = await db.query(DatabaseHelper.tableThemeProfiles);
-    return maps.map((map) => _fromMap(map)).toList();
+    final List<Map<String, dynamic>> maps =
+        await db.query(DatabaseHelper.tableThemeProfiles);
+    return maps.map(_fromMap).toList();
   }
 
   @override

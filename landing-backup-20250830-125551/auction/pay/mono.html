@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Оплата через monobank • CortexFin</title>
+  <link rel="icon" href="/assets/app-icon.png"/>
+  <style>
+    :root{color-scheme:dark}
+    body{margin:40px auto;max-width:720px;font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto;color:#e5eaf3;background:#0b1220}
+    .card{border:1px solid #2b2f3a;border-radius:16px;padding:24px;background:#0f172a}
+    .btn{display:inline-block;margin:10px 10px 0 0;padding:10px 14px;border-radius:10px;background:#22d3ee;color:#000;text-decoration:none;font-weight:700}
+    .btn.gray{background:#334155;color:#e5eaf3}
+    .muted{opacity:.85}
+    .hint{margin-top:10px;padding:10px;border-radius:10px;background:#0b1220;border:1px solid #273142}
+    code{background:#0b1220;padding:2px 6px;border-radius:6px;border:1px solid #273142}
+  </style>
+  <meta name="robots" content="noindex, nofollow, noarchive">
+</head>
+<body>
+  <div class="card">
+    <h1>Оплата через monobank</h1>
+    <p class="muted">Gold — $1400 (фіксовано). Silver — $69, Platinum — $1500.</p>
+    <p id="ctx" class="muted"></p>
+
+    <div id="sumBox" class="hint" style="display:none">
+      <div class="muted" style="font-size:14px">Рекомендована сума поповнення:</div>
+      <div style="font-size:20px;font-weight:800" id="sumUAH">— ₴</div>
+      <div class="muted" style="font-size:13px" id="sumNote">Розраховано як ціна в $ × курс НБУ.</div>
+    </div>
+
+    <div style="margin-top:12px">
+      <a id="btnJar" class="btn">Внести в банку</a>
+      <a id="btnClaim" class="btn gray">Я оплатив — видати доступ</a>
+    </div>
+
+    <p class="muted" style="margin-top:12px">
+      Після оплати натисніть «Я оплатив — видати доступ». Якщо щось — телеграм @cortexfin.  
+      У коментарі в банці вкажіть свій email (щоб ми швидше звірили).
+    </p>
+
+    <a href="/" class="btn gray" style="margin-top:16px">Повернутися на головну</a>
+  </div>
+
+  <script>
+    // === CONFIG ===
+    const JARS = {
+      SE: "https://send.monobank.ua/jar/8254PBnk66",
+      GF: "https://send.monobank.ua/jar/7mNKkrhiUw",
+      PF: "https://send.monobank.ua/jar/5La4vaWdbh",
+    };
+    const EDGE_URL = "https://xdofjorgomwdyawmwbcj.functions.supabase.co";
+    const SUPPORT  = "cortexfin.team@gmail.com";
+    const FALLBACK_USD_UAH = 42.00; // запасний курс, якщо НБУ не віддасть
+
+    // ціни у $ (Gold підтягнемо динамічно з метрик)
+    const PRICE_USD = { SE: 69, GF: 1400, PF: 1500 };
+
+    // === CTX ===
+    const p = new URL(location.href).searchParams;
+    const tier = (p.get('tier') || '').toUpperCase();      // SE/GF/PF
+    const email = p.get('email') || '';
+    const holdId = p.get('hold_id') || '';
+    const jar = JARS[tier] || JARS.SE;
+
+    document.getElementById('ctx').textContent =
+      `Тир: ${tier}. Бронь № ${holdId || '—'}. Email: ${email || '—'}.`;
+
+    // кнопки
+    document.getElementById('btnJar').href = jar;
+    document.getElementById('btnJar').setAttribute('target','_blank');
+
+    document.getElementById('btnClaim').onclick = () => {
+      const u = new URL('/thanks', location.origin);
+      if (tier)   u.searchParams.set('tier', tier.toLowerCase());
+      if (email)  u.searchParams.set('email', email);
+      if (holdId) u.searchParams.set('hold_id', holdId);
+      location.href = u.toString();
+    };
+
+    // === Рекомендована сума в ₴ ===
+    async function fetchGoldPriceUSD(){
+      try{
+        const r = await fetch(`${EDGE_URL}/public-metrics`, { headers: { "Authorization": "Bearer none" }});
+        if(!r.ok) throw 0;
+        const m = await r.json();
+        return (Number(m.gf_price_cents||0) / 100) || null;
+      }catch{ return null; }
+    }
+    async function fetchUsdUah(){
+      try{
+        const r = await fetch('https://bank.gov.ua/NBUStatService/v1/statdirectory/exchange?valcode=USD&json', {cache:'no-store'});
+        if(!r.ok) throw 0;
+        const arr = await r.json();
+        const rate = Number(arr?.[0]?.rate);
+        return rate || FALLBACK_USD_UAH;
+      }catch{ return FALLBACK_USD_UAH; }
+    }
+
+    (async function showSuggested(){
+      let usd = PRICE_USD[tier] ?? null;
+      if (tier === 'GF' && usd == null) usd = await fetchGoldPriceUSD();
+      if (!usd) return; // для невідомого тиру
+
+      const rate = await fetchUsdUah();
+      const uah = Math.round(usd * rate);
+
+      const box = document.getElementById('sumBox');
+      document.getElementById('sumUAH').textContent = uah.toLocaleString('uk-UA') + ' ₴';
+      document.getElementById('sumNote').innerHTML =
+        `Ціна: <code>$${usd.toLocaleString('en-US')}</code> × курс НБУ <code>${rate.toFixed(2)}</code>. ` +
+        `Можна округлити до зручної суми.`;
+      box.style.display = 'block';
+    })();
+  </script>
+</body>
+</html>

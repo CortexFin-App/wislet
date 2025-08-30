@@ -1,17 +1,24 @@
-import 'package:flutter/material.dart';
-import 'package:sage_wallet_reborn/data/repositories/transaction_repository.dart';
+import 'package:flutter/foundation.dart';
 import 'package:sage_wallet_reborn/data/repositories/category_repository.dart';
+import 'package:sage_wallet_reborn/data/repositories/transaction_repository.dart';
 import 'package:sage_wallet_reborn/models/transaction.dart' as fin_transaction;
 import 'package:sage_wallet_reborn/services/notification_service.dart';
 
 class AnalyticsService {
+  AnalyticsService(
+    this._transactionRepo,
+    this._categoryRepo,
+    this._notificationService,
+  );
+
   final TransactionRepository _transactionRepo;
   final CategoryRepository _categoryRepo;
   final NotificationService _notificationService;
 
-  AnalyticsService(this._transactionRepo, this._categoryRepo, this._notificationService);
-
-  Future<void> analyzeAndNotifyOnNewTransaction(fin_transaction.Transaction transaction, int walletId) async {
+  Future<void> analyzeAndNotifyOnNewTransaction(
+    fin_transaction.Transaction transaction,
+    int walletId,
+  ) async {
     if (transaction.type == fin_transaction.TransactionType.income) {
       return;
     }
@@ -30,7 +37,9 @@ class AnalyticsService {
 
       await recentTransactionsEither.fold(
         (failure) async {
-          debugPrint("AnalyticsService: Failed to get recent transactions: ${failure.userMessage}");
+          debugPrint(
+            'AnalyticsService: Failed to get recent transactions: ${failure.userMessage}',
+          );
         },
         (recentTransactions) async {
           if (recentTransactions.length < 5) {
@@ -38,12 +47,12 @@ class AnalyticsService {
           }
 
           double totalSpendingLast3Months = 0;
-          for (var tx in recentTransactions) {
+          for (final tx in recentTransactions) {
             totalSpendingLast3Months += tx.amountInBaseCurrency;
           }
-          double averageMonthlySpending = totalSpendingLast3Months / 3;
+          final averageMonthlySpending = totalSpendingLast3Months / 3;
 
-          final startOfCurrentMonth = DateTime(now.year, now.month, 1);
+          final startOfCurrentMonth = DateTime(now.year, now.month);
           final currentMonthSpendingEither = await _transactionRepo.getTotalAmount(
             walletId: walletId,
             startDate: startOfCurrentMonth,
@@ -54,23 +63,27 @@ class AnalyticsService {
 
           await currentMonthSpendingEither.fold(
             (failure) async {
-              debugPrint("AnalyticsService: Failed to get current month spending: ${failure.userMessage}");
+              debugPrint(
+                'AnalyticsService: Failed to get current month spending: ${failure.userMessage}',
+              );
             },
             (currentMonthSpending) async {
               if (averageMonthlySpending > 100 && currentMonthSpending > (averageMonthlySpending * 2.5)) {
-                final categoryNameEither = await _categoryRepo.getCategoryNameById(transaction.categoryId);
-                
+                final categoryNameEither =
+                    await _categoryRepo.getCategoryNameById(transaction.categoryId);
+
                 final categoryName = categoryNameEither.fold(
-                  (l) => "Невідома категорія", 
-                  (r) => r
+                  (l) => 'Невідома категорія',
+                  (r) => r,
                 );
 
                 final notificationId = 900000 + transaction.categoryId;
 
                 await _notificationService.showNotification(
-                  notificationId,
-                  "Незвична активність 📈",
-                  "Витрати в категорії \"$categoryName\" цього місяця значно вищі за середні. Все під контролем?",
+                  id: notificationId,
+                  title: 'Незвична активність 📈',
+                  body:
+                      'Витрати в категорії "$categoryName" цього місяця значно вищі за середні. Все під контролем?',
                   channelId: NotificationService.goalNotificationChannelId,
                 );
               }
@@ -78,8 +91,8 @@ class AnalyticsService {
           );
         },
       );
-    } catch (e) {
-      debugPrint("AnalyticsService Error: $e");
+    } on Exception catch (e) {
+      debugPrint('AnalyticsService Error: $e');
     }
   }
 }

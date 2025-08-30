@@ -1,61 +1,27 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { corsHeaders } from '../_shared/cors.ts'
+import { serve } from "std/http/server.ts";
+import { createClient } from "@supabase/supabase-js";
+import { corsHeaders } from "../_shared/cors.ts";
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
-  
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
-    const body = await req.json()
-    const walletId = parseInt(body.wallet_id, 10)
-    
-    if (isNaN(walletId)) {
-      throw new Error('Invalid Wallet ID format. Expected an integer.')
-    }
+    const { wallet_id } = await req.json();
+    if (!wallet_id) return new Response(JSON.stringify({ error: "wallet_id_required" }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 });
 
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_ANON_KEY')!,
-      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
-    )
+    const userClient = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, { global: { headers: { Authorization: req.headers.get("Authorization")! } } });
+    const { data: { user } } = await userClient.auth.getUser();
+    if (!user) return new Response(JSON.stringify({ error: "unauthorized" }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 });
 
-    const { data: { user } } = await supabaseClient.auth.getUser()
-    if (!user) {
-      throw new Error('User not authenticated');
-    }
+    const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SERVICE_ROLE_KEY")!);
+    const { data: membership, error: mErr } = await admin.from("wallet_users").select("role").eq("wallet_id", wallet_id).eq("user_id", user.id).maybeSingle();
+    if (mErr) return new Response(JSON.stringify({ error: mErr.message }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 });
+    if (!membership || !["owner","editor"].includes(membership.role)) return new Response(JSON.stringify({ error: "forbidden" }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 403 });
 
-    const { data: permission, error: permissionError } = await supabaseClient
-      .from('wallet_users')
-      .select('role')
-      .eq('user_id', user.id)
-      .eq('wallet_id', walletId)
-      .single()
+    const { data, error } = await admin.from("wallet_invites").insert({ wallet_id, created_by: user.id }).select("token").single();
+    if (error) return new Response(JSON.stringify({ error: error.message }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 });
 
-    if (permissionError) throw permissionError
-    
-    if (!permission || (permission.role !== 'owner' && permission.role !== 'editor')) {
-      throw new Error('Insufficient permissions');
-    }
-    
-    const { data: invite, error: inviteError } = await supabaseClient
-      .from('wallet_invites')
-      .insert({ wallet_id: walletId, created_by: user.id })
-      .select('token')
-      .single()
-
-    if (inviteError) throw inviteError
-
-    return new Response(JSON.stringify({ invite_token: invite.token }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 200,
-    })
-
-  } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 400,
-    })
+    return new Response(JSON.stringify({ token: data.token, invite_token: data.token }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 });
+  } catch (e) {
+    return new Response(JSON.stringify({ error: String(e) }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 });
   }
-})
+});

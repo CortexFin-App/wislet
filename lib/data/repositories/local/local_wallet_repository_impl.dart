@@ -1,53 +1,61 @@
 import 'package:fpdart/fpdart.dart';
+import 'package:sage_wallet_reborn/core/constants/app_constants.dart';
+import 'package:sage_wallet_reborn/core/error/failures.dart';
+import 'package:sage_wallet_reborn/data/repositories/wallet_repository.dart';
+import 'package:sage_wallet_reborn/data/static/default_categories.dart';
+import 'package:sage_wallet_reborn/models/user.dart';
+import 'package:sage_wallet_reborn/models/wallet.dart';
+import 'package:sage_wallet_reborn/services/error_monitoring_service.dart';
+import 'package:sage_wallet_reborn/utils/database_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
-import '../../../core/constants/app_constants.dart';
-import '../../../core/error/failures.dart';
-import '../../../models/wallet.dart';
-import '../../../models/user.dart';
-import '../../../services/error_monitoring_service.dart';
-import '../../../utils/database_helper.dart';
-import '../wallet_repository.dart';
-import '../../static/default_categories.dart';
 
 class LocalWalletRepositoryImpl implements WalletRepository {
-  final DatabaseHelper _dbHelper;
-
   LocalWalletRepositoryImpl(this._dbHelper);
 
-  Future<List<WalletUser>> _getMembersForWallet(DatabaseExecutor db, int walletId) async {
-    final List<Map<String, dynamic>> membersMaps = await db.rawQuery('''
+  final DatabaseHelper _dbHelper;
+
+  Future<List<WalletUser>> _getMembersForWallet(
+    DatabaseExecutor db,
+    int walletId,
+  ) async {
+    final membersMaps = await db.rawQuery(
+      '''
       SELECT wu.${DatabaseHelper.colWalletUsersRole}, u.${DatabaseHelper.colUserId}, u.${DatabaseHelper.colUserName}
       FROM ${DatabaseHelper.tableWalletUsers} wu
       JOIN ${DatabaseHelper.tableUsers} u ON wu.${DatabaseHelper.colWalletUsersUserId} = u.${DatabaseHelper.colUserId}
       WHERE wu.${DatabaseHelper.colWalletUsersWalletId} = ?
-    ''', [walletId]);
+    ''',
+      [walletId],
+    );
     return membersMaps.map((m) {
       return WalletUser(
         user: User.fromMap(m),
-        role: m[DatabaseHelper.colWalletUsersRole],
+        role: m[DatabaseHelper.colWalletUsersRole]! as String,
       );
     }).toList();
   }
 
   @override
-   Future<Either<AppFailure, List<Wallet>>> getAllWallets() async {
+  Future<Either<AppFailure, List<Wallet>>> getAllWallets() async {
     try {
       final db = await _dbHelper.database;
-      final List<Map<String, dynamic>> walletMaps = await db.query(
+      final walletMaps = await db.query(
         DatabaseHelper.tableWallets,
-        where: '${DatabaseHelper.colWalletIsDeleted} = 0'
+        where: '${DatabaseHelper.colWalletIsDeleted} = 0',
       );
-      final List<Wallet> wallets = [];
-      for (var walletMap in walletMaps) {
-        final members = await _getMembersForWallet(db, walletMap[DatabaseHelper.colWalletId]);
-        final wallet = Wallet.fromMap(walletMap);
-        wallet.members = members;
+      final wallets = <Wallet>[];
+      for (final walletMap in walletMaps) {
+        final members = await _getMembersForWallet(
+          db,
+          walletMap[DatabaseHelper.colWalletId]! as int,
+        );
+        final wallet = Wallet.fromMap(walletMap)..members = members;
         wallets.add(wallet);
       }
       return Right(wallets);
-    } catch (e, s) {
-      ErrorMonitoringService.capture(e, stackTrace: s);
+    } on Exception catch (e, s) {
+      await ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(DatabaseFailure(details: e.toString()));
     }
   }
@@ -56,29 +64,33 @@ class LocalWalletRepositoryImpl implements WalletRepository {
   Future<Either<AppFailure, Wallet?>> getWallet(int id) async {
     try {
       final db = await _dbHelper.database;
-      final List<Map<String, dynamic>> maps = await db.query(
+      final maps = await db.query(
         DatabaseHelper.tableWallets,
-        where: '${DatabaseHelper.colWalletId} = ? AND ${DatabaseHelper.colWalletIsDeleted} = 0',
+        where:
+            '${DatabaseHelper.colWalletId} = ? AND ${DatabaseHelper.colWalletIsDeleted} = 0',
         whereArgs: [id],
       );
       if (maps.isNotEmpty) {
-        final wallet = Wallet.fromMap(maps.first);
-        wallet.members = await _getMembersForWallet(db, id);
+        final wallet = Wallet.fromMap(maps.first)
+          ..members = await _getMembersForWallet(db, id);
         return Right(wallet);
       }
       return const Right(null);
-    } catch (e, s) {
-      ErrorMonitoringService.capture(e, stackTrace: s);
+    } on Exception catch (e, s) {
+      await ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(DatabaseFailure(details: e.toString()));
     }
   }
 
   @override
-  Future<Either<AppFailure, int>> createWallet(
-      {required String name, required String ownerUserId, bool isDefault = false}) async {
+  Future<Either<AppFailure, int>> createWallet({
+    required String name,
+    required String ownerUserId,
+    bool isDefault = false,
+  }) async {
     try {
       final db = await _dbHelper.database;
-      int newId = -1;
+      var newId = -1;
       await db.transaction((txn) async {
         final walletMap = {
           DatabaseHelper.colWalletName: name,
@@ -92,22 +104,26 @@ class LocalWalletRepositoryImpl implements WalletRepository {
         await txn.insert(DatabaseHelper.tableWalletUsers, {
           DatabaseHelper.colWalletUsersWalletId: newId,
           DatabaseHelper.colWalletUsersUserId: ownerUserId,
-          DatabaseHelper.colWalletUsersRole: 'owner'
+          DatabaseHelper.colWalletUsersRole: 'owner',
         });
 
-        for (var catData in defaultCategories) {
+        for (final catData in defaultCategories) {
           final categoryMap = {
             DatabaseHelper.colCategoryName: catData['name'],
             DatabaseHelper.colCategoryType: catData['type'],
             DatabaseHelper.colCategoryWalletId: newId,
             DatabaseHelper.colCategoryUserId: ownerUserId,
           };
-          await txn.insert(DatabaseHelper.tableCategories, categoryMap, conflictAlgorithm: ConflictAlgorithm.ignore);
+          await txn.insert(
+            DatabaseHelper.tableCategories,
+            categoryMap,
+            conflictAlgorithm: ConflictAlgorithm.ignore,
+          );
         }
       });
       return Right(newId);
-    } catch (e, s) {
-      ErrorMonitoringService.capture(e, stackTrace: s);
+    } on Exception catch (e, s) {
+      await ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(DatabaseFailure(details: e.toString()));
     }
   }
@@ -124,8 +140,8 @@ class LocalWalletRepositoryImpl implements WalletRepository {
         whereArgs: [wallet.id],
       );
       return Right(updatedRows);
-    } catch (e, s) {
-      ErrorMonitoringService.capture(e, stackTrace: s);
+    } on Exception catch (e, s) {
+      await ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(DatabaseFailure(details: e.toString()));
     }
   }
@@ -139,14 +155,14 @@ class LocalWalletRepositoryImpl implements WalletRepository {
         DatabaseHelper.tableWallets,
         {
           DatabaseHelper.colWalletIsDeleted: 1,
-          DatabaseHelper.colWalletUpdatedAt: now
+          DatabaseHelper.colWalletUpdatedAt: now,
         },
         where: '${DatabaseHelper.colWalletId} = ?',
         whereArgs: [walletId],
       );
       return Right(deletedRows);
-    } catch (e, s) {
-      ErrorMonitoringService.capture(e, stackTrace: s);
+    } on Exception catch (e, s) {
+      await ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(DatabaseFailure(details: e.toString()));
     }
   }
@@ -158,12 +174,15 @@ class LocalWalletRepositoryImpl implements WalletRepository {
       if (prefs.getBool(AppConstants.isInitialSetupComplete) ?? false) {
         return const Right(null);
       }
-      
+
       final db = await _dbHelper.database;
       await db.transaction((txn) async {
         await txn.insert(
           DatabaseHelper.tableUsers,
-          {DatabaseHelper.colUserName: 'Основний користувач', DatabaseHelper.colUserId: '1'},
+          {
+            DatabaseHelper.colUserName: 'Основний користувач',
+            DatabaseHelper.colUserId: '1',
+          },
           conflictAlgorithm: ConflictAlgorithm.ignore,
         );
 
@@ -175,36 +194,44 @@ class LocalWalletRepositoryImpl implements WalletRepository {
           DatabaseHelper.colWalletUpdatedAt: DateTime.now().toIso8601String(),
           DatabaseHelper.colWalletIsDeleted: 0,
         };
-        final newWalletId = await txn.insert(DatabaseHelper.tableWallets, walletMap);
+        final newWalletId =
+            await txn.insert(DatabaseHelper.tableWallets, walletMap);
 
         await txn.insert(DatabaseHelper.tableWalletUsers, {
           DatabaseHelper.colWalletUsersWalletId: newWalletId,
           DatabaseHelper.colWalletUsersUserId: userId,
-          DatabaseHelper.colWalletUsersRole: 'owner'
+          DatabaseHelper.colWalletUsersRole: 'owner',
         });
 
-        for (var catData in defaultCategories) {
+        for (final catData in defaultCategories) {
           final categoryMap = {
             DatabaseHelper.colCategoryName: catData['name'],
             DatabaseHelper.colCategoryType: catData['type'],
             DatabaseHelper.colCategoryWalletId: newWalletId,
             DatabaseHelper.colCategoryUserId: userId,
           };
-          await txn.insert(DatabaseHelper.tableCategories, categoryMap, conflictAlgorithm: ConflictAlgorithm.ignore);
+          await txn.insert(
+            DatabaseHelper.tableCategories,
+            categoryMap,
+            conflictAlgorithm: ConflictAlgorithm.ignore,
+          );
         }
       });
-      
+
       await prefs.setBool(AppConstants.isInitialSetupComplete, true);
       return const Right(null);
-
-    } catch (e, s) {
-      ErrorMonitoringService.capture(e, stackTrace: s);
+    } on Exception catch (e, s) {
+      await ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(DatabaseFailure(details: e.toString()));
     }
   }
 
   @override
-  Future<Either<AppFailure, void>> changeUserRole(int walletId, String userId, String newRole) async {
+  Future<Either<AppFailure, void>> changeUserRole(
+    int walletId,
+    String userId,
+    String newRole,
+  ) async {
     try {
       final db = await _dbHelper.database;
       await db.update(
@@ -215,14 +242,17 @@ class LocalWalletRepositoryImpl implements WalletRepository {
         whereArgs: [walletId, userId],
       );
       return const Right(null);
-    } catch (e, s) {
-      ErrorMonitoringService.capture(e, stackTrace: s);
+    } on Exception catch (e, s) {
+      await ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(DatabaseFailure(details: e.toString()));
     }
   }
 
   @override
-  Future<Either<AppFailure, void>> removeUserFromWallet(int walletId, String userId) async {
+  Future<Either<AppFailure, void>> removeUserFromWallet(
+    int walletId,
+    String userId,
+  ) async {
     try {
       final db = await _dbHelper.database;
       await db.delete(
@@ -232,8 +262,8 @@ class LocalWalletRepositoryImpl implements WalletRepository {
         whereArgs: [walletId, userId],
       );
       return const Right(null);
-    } catch (e, s) {
-      ErrorMonitoringService.capture(e, stackTrace: s);
+    } on Exception catch (e, s) {
+      await ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(DatabaseFailure(details: e.toString()));
     }
   }

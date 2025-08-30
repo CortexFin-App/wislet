@@ -1,0 +1,13 @@
+﻿id,hold_id,tier,email,provider,tx_id,amount_cents,currency,batch_id,created_at,is_test
+5,13,GF,vladkuhar27@gmail.com,stripe,legacy-5,75000,usd,2,2025-08-21T08:55:37.663134+00:00,false
+6,14,GF,vladkuhar27@gmail.com,stripe,legacy-6,75000,usd,2,2025-08-21T08:55:37.663134+00:00,false
+7,15,GF,vladkuhar27@gmail.com,stripe,legacy-7,75000,usd,2,2025-08-21T08:55:37.663134+00:00,false
+8,16,PF,vladkuhar27@gmail.com,stripe,legacy-8,150000,usd,1,2025-08-21T08:55:37.663134+00:00,false
+4,12,GF,vladkuhar27@gmail.com,stripe,legacy-4,75000,usd,2,2025-08-21T08:55:37.663134+00:00,false
+3,17,PF,vladkuhar27@gmail.com,stripe,legacy-3,150000,usd,1,2025-08-21T08:55:37.663134+00:00,false
+9,21,GF,test+1@gmail.com,manual,test-2025-08-22-001,100,usd,4,2025-08-22T09:42:16.577268+00:00,false
+10,5,GF,you@example.com,manual,2025-08-10,100,usd,4,2025-08-22T10:22:43.166445+00:00,false
+14,31,GF,test@example.com,manual,,100000,USD,2,2025-08-25T12:44:10.547+00:00,false
+15,30,GF,vladkuhar27@gmail.com,manual,,100000,USD,2,2025-08-25T14:05:37.982+00:00,false
+16,33,GF,fresh@example.com,manual,,100000,USD,2,2025-08-25T14:56:03.323+00:00,false
+17,32,GF,vladkuhar27@gmail.com,manual,,100000,USD,2,2025-08-25T17:09:35.58+00:00,false

@@ -1,46 +1,49 @@
-import 'package:sqflite/sqflite.dart';
+import 'package:sage_wallet_reborn/data/repositories/user_repository.dart';
 import 'package:sage_wallet_reborn/models/user.dart';
 import 'package:sage_wallet_reborn/utils/database_helper.dart';
-import 'package:sage_wallet_reborn/data/repositories/user_repository.dart';
+import 'package:sqflite/sqflite.dart';
 
 class LocalUserRepositoryImpl implements UserRepository {
-  final DatabaseHelper _dbHelper;
   LocalUserRepositoryImpl(this._dbHelper);
+
+  final DatabaseHelper _dbHelper;
 
   @override
   Future<int> createDefaultUser() async {
     final db = await _dbHelper.database;
-    return await db.insert(
+    return db.insert(
       DatabaseHelper.tableUsers,
-      {DatabaseHelper.colUserName: 'Основний користувач', DatabaseHelper.colUserId: '1'},
+      {
+        DatabaseHelper.colUserName: 'Основний користувач',
+        DatabaseHelper.colUserId: '1',
+      },
       conflictAlgorithm: ConflictAlgorithm.ignore,
     );
   }
-  
+
   @override
   Future<List<User>> getAllUsers() async {
     final db = await _dbHelper.database;
-    final List<Map<String, dynamic>> maps =
-        await db.query(DatabaseHelper.tableUsers);
-    return maps.map((map) => User.fromMap(map)).toList();
+    final maps = await db.query(DatabaseHelper.tableUsers);
+    return maps.map(User.fromMap).toList();
   }
 
   @override
   Future<List<User>> getUsersForWallet(int walletId) async {
     final db = await _dbHelper.database;
-    const String sql = '''
+    const sql = '''
       SELECT u.* FROM ${DatabaseHelper.tableUsers} u
       INNER JOIN ${DatabaseHelper.tableWalletUsers} wu ON u.${DatabaseHelper.colUserId} = wu.${DatabaseHelper.colWalletUsersUserId}
       WHERE wu.${DatabaseHelper.colWalletUsersWalletId} = ?
     ''';
-    final List<Map<String, dynamic>> maps = await db.rawQuery(sql, [walletId]);
-    return maps.map((map) => User.fromMap(map)).toList();
+    final maps = await db.rawQuery(sql, [walletId]);
+    return maps.map(User.fromMap).toList();
   }
 
   @override
   Future<int> addUserToWallet(int walletId, String userId, String role) async {
     final db = await _dbHelper.database;
-    return await db.insert(
+    return db.insert(
       DatabaseHelper.tableWalletUsers,
       {
         DatabaseHelper.colWalletUsersWalletId: walletId,
@@ -53,7 +56,7 @@ class LocalUserRepositoryImpl implements UserRepository {
   @override
   Future<int> removeUserFromWallet(int walletId, String userId) async {
     final db = await _dbHelper.database;
-    return await db.delete(
+    return db.delete(
       DatabaseHelper.tableWalletUsers,
       where:
           '${DatabaseHelper.colWalletUsersWalletId} = ? AND ${DatabaseHelper.colWalletUsersUserId} = ?',
@@ -63,9 +66,12 @@ class LocalUserRepositoryImpl implements UserRepository {
 
   @override
   Future<int> updateUserRoleInWallet(
-      int walletId, String userId, String newRole) async {
+    int walletId,
+    String userId,
+    String newRole,
+  ) async {
     final db = await _dbHelper.database;
-    return await db.update(
+    return db.update(
       DatabaseHelper.tableWalletUsers,
       {DatabaseHelper.colWalletUsersRole: newRole},
       where:

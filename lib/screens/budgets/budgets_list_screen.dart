@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:sage_wallet_reborn/core/di/injector.dart';
+import 'package:sage_wallet_reborn/data/repositories/budget_repository.dart';
+import 'package:sage_wallet_reborn/models/budget_models.dart';
+import 'package:sage_wallet_reborn/providers/wallet_provider.dart';
+import 'package:sage_wallet_reborn/screens/budgets/add_edit_budget_screen.dart';
+import 'package:sage_wallet_reborn/screens/budgets/budget_detail_screen.dart';
 import 'package:shimmer/shimmer.dart';
-import '../../core/di/injector.dart';
-import '../../models/budget_models.dart';
-import '../../providers/wallet_provider.dart';
-import '../../data/repositories/budget_repository.dart';
-import 'add_edit_budget_screen.dart';
-import 'budget_detail_screen.dart';
 
 class BudgetsListScreen extends StatefulWidget {
   const BudgetsListScreen({super.key});
@@ -53,9 +53,9 @@ class BudgetsListScreenState extends State<BudgetsListScreen> {
 
   Future<void> _navigateToBudgetDetails(Budget budget) async {
     await Navigator.push<bool>(
-        context,
-        MaterialPageRoute(
-            builder: (_) => BudgetDetailScreen(budget: budget)));
+      context,
+      MaterialPageRoute(builder: (_) => BudgetDetailScreen(budget: budget)),
+    );
   }
 
   IconData _getIconForStrategy(BudgetStrategyType type) {
@@ -86,7 +86,10 @@ class BudgetsListScreenState extends State<BudgetsListScreen> {
 
           if (snapshot.hasError) {
             return Center(
-                child: Text('Помилка завантаження бюджетів: ${snapshot.error}'));
+              child: Text(
+                'РџРѕРјРёР»РєР° Р·Р°РІР°РЅС‚Р°Р¶РµРЅРЅСЏ Р±СЋРґР¶РµС‚С–РІ: ${snapshot.error}',
+              ),
+            );
           }
 
           final budgets = snapshot.data ?? [];
@@ -95,19 +98,18 @@ class BudgetsListScreenState extends State<BudgetsListScreen> {
             return _buildEmptyState();
           }
           return ListView.builder(
-            padding: const EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 100.0),
+            padding: const EdgeInsets.fromLTRB(8, 8, 8, 100),
             itemCount: budgets.length,
             itemBuilder: (context, index) {
               final budget = budgets[index];
               return Card(
-                margin:
-                    const EdgeInsets.symmetric(vertical: 6.0, horizontal: 8.0),
+                margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
                 color: !budget.isActive
                     ? theme.colorScheme.surface.withAlpha(128)
                     : theme.colorScheme.surface,
                 child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(
-                      vertical: 10.0, horizontal: 20.0),
+                  contentPadding:
+                      const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
                   leading: CircleAvatar(
                     radius: 24,
                     backgroundColor: theme.colorScheme.primaryContainer,
@@ -126,14 +128,18 @@ class BudgetsListScreenState extends State<BudgetsListScreen> {
                     ),
                   ),
                   subtitle: Padding(
-                    padding: const EdgeInsets.only(top: 4.0),
+                    padding: const EdgeInsets.only(top: 4),
                     child: Text(
-                        "${DateFormat('dd.MM.yy', 'uk_UA').format(budget.startDate)} - ${DateFormat('dd.MM.yy', 'uk_UA').format(budget.endDate)}\n${budgetStrategyTypeToString(budget.strategyType)}",
-                        style: theme.textTheme.bodySmall
-                            ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                      '${DateFormat('dd.MM.yy', 'uk_UA').format(budget.startDate)} - ${DateFormat('dd.MM.yy', 'uk_UA').format(budget.endDate)}\n${budgetStrategyTypeToString(budget.strategyType)}',
+                      style: theme.textTheme.bodySmall
+                          ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    ),
                   ),
-                  trailing: Icon(Icons.arrow_forward_ios_rounded,
-                      size: 16, color: theme.colorScheme.onSurfaceVariant),
+                  trailing: Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 16,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                   isThreeLine: true,
                   onTap: () => _navigateToBudgetDetails(budget),
                 ),
@@ -144,7 +150,7 @@ class BudgetsListScreenState extends State<BudgetsListScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _navigateToAddBudget,
-        label: const Text('Новий Бюджет'),
+        label: const Text('РќРѕРІРёР№ Р‘СЋРґР¶РµС‚'),
         icon: const Icon(Icons.add_rounded),
       ),
     );
@@ -154,22 +160,24 @@ class BudgetsListScreenState extends State<BudgetsListScreen> {
     final theme = Theme.of(context);
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
-            Icon(Icons.inventory_2_outlined,
-                size: 80, color: theme.colorScheme.onSurface.withAlpha(77)),
+            Icon(
+              Icons.inventory_2_outlined,
+              size: 80,
+              color: theme.colorScheme.onSurface.withAlpha(77),
+            ),
             const SizedBox(height: 24),
             Text(
-              'Жодного бюджету ще не створено',
+              'Р–РѕРґРЅРѕРіРѕ Р±СЋРґР¶РµС‚Сѓ С‰Рµ РЅРµ СЃС‚РІРѕСЂРµРЅРѕ',
               style: theme.textTheme.headlineSmall,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
             Text(
-              'Створіть свій перший бюджет, щоб почати планувати фінанси за обраною стратегією.',
+              'РЎС‚РІРѕСЂС–С‚СЊ СЃРІС–Р№ РїРµСЂС€РёР№ Р±СЋРґР¶РµС‚, С‰РѕР± РїРѕС‡Р°С‚Рё РїР»Р°РЅСѓРІР°С‚Рё С„С–РЅР°РЅСЃРё Р·Р° РѕР±СЂР°РЅРѕСЋ СЃС‚СЂР°С‚РµРіС–С”СЋ.',
               style: theme.textTheme.bodyMedium
                   ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
               textAlign: TextAlign.center,
@@ -186,21 +194,22 @@ class BudgetsListScreenState extends State<BudgetsListScreen> {
       baseColor: theme.colorScheme.surface,
       highlightColor: theme.colorScheme.surfaceContainerHighest,
       child: ListView.builder(
-        padding: const EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 100.0),
+        padding: const EdgeInsets.fromLTRB(8, 8, 8, 100),
         itemCount: 5,
         itemBuilder: (_, __) => Card(
-          margin: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 8.0),
+          margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
           child: ListTile(
             contentPadding:
-                const EdgeInsets.symmetric(vertical: 10.0, horizontal: 20.0),
-            leading: const CircleAvatar(radius: 24, backgroundColor: Colors.white),
-            title:
-                Container(height: 16, color: Colors.white, width: 150),
+                const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+            leading:
+                const CircleAvatar(radius: 24, backgroundColor: Colors.white),
+            title: Container(height: 16, color: Colors.white, width: 150),
             subtitle: Container(
-                height: 12,
-                color: Colors.white,
-                width: 200,
-                margin: const EdgeInsets.only(top: 8)),
+              height: 12,
+              color: Colors.white,
+              width: 200,
+              margin: const EdgeInsets.only(top: 8),
+            ),
           ),
         ),
       ),

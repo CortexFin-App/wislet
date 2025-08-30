@@ -1,11 +1,6 @@
 import 'package:flutter/material.dart';
 
 class ScalePageRoute<T> extends PageRouteBuilder<T> {
-  final WidgetBuilder builder;
-  final Duration transitionDurationMs;
-  final Alignment alignment;
-  final Curve curve;
-
   ScalePageRoute({
     required this.builder,
     this.transitionDurationMs = const Duration(milliseconds: 300),
@@ -14,17 +9,18 @@ class ScalePageRoute<T> extends PageRouteBuilder<T> {
     super.settings,
   }) : super(
           pageBuilder: (
-            BuildContext context,
-            Animation<double> animation,
-            Animation<double> secondaryAnimation,
-          ) => builder(context),
+            context,
+            animation,
+            secondaryAnimation,
+          ) =>
+              builder(context),
           transitionsBuilder: (
-            BuildContext context,
-            Animation<double> animation,
-            Animation<double> secondaryAnimation,
-            Widget child,
+            context,
+            animation,
+            secondaryAnimation,
+            child,
           ) {
-            final CurvedAnimation curvedAnimation = CurvedAnimation(
+            final curvedAnimation = CurvedAnimation(
               parent: animation,
               curve: curve,
             );
@@ -39,4 +35,8 @@ class ScalePageRoute<T> extends PageRouteBuilder<T> {
           },
           transitionDuration: transitionDurationMs,
         );
+  final WidgetBuilder builder;
+  final Duration transitionDurationMs;
+  final Alignment alignment;
+  final Curve curve;
 }

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:sage_wallet_reborn/providers/dashboard_provider.dart';
-import 'orbital_painter.dart';
+import 'package:sage_wallet_reborn/widgets/home/orbital_painter.dart';
 
 class ZenithOrbitalDisplay extends StatefulWidget {
   const ZenithOrbitalDisplay({super.key});
@@ -43,7 +43,7 @@ class _ZenithOrbitalDisplayState extends State<ZenithOrbitalDisplay>
   Widget build(BuildContext context) {
     final provider = context.watch<DashboardProvider>();
     final currencyFormat =
-        NumberFormat.currency(locale: 'uk_UA', symbol: '₴', decimalDigits: 0);
+        NumberFormat.currency(locale: 'uk_UA', symbol: 'в‚ґ', decimalDigits: 0);
 
     if (provider.isLoading) {
       return const Center(child: CircularProgressIndicator());
@@ -72,7 +72,7 @@ class _ZenithOrbitalDisplayState extends State<ZenithOrbitalDisplay>
             balance: provider.health.balance,
             categories: provider.topCategories,
             goalProgress: goalProgress.isNaN || goalProgress.isInfinite
-                ? 0.0
+                ? 0
                 : goalProgress,
             activeCategoryIndex: _activeIndex,
             onCategoryTap: _onCategoryTap,
@@ -97,7 +97,9 @@ class _ZenithOrbitalDisplayState extends State<ZenithOrbitalDisplay>
                   fontWeight: FontWeight.bold,
                   shadows: [
                     Shadow(
-                        blurRadius: 20, color: _displayTextColor.withAlpha(128)),
+                      blurRadius: 20,
+                      color: _displayTextColor.withAlpha(128),
+                    ),
                   ],
                 ),
               ),

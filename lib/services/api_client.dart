@@ -1,29 +1,29 @@
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode;
 import 'package:http/http.dart' as http;
 import 'package:sage_wallet_reborn/core/di/injector.dart';
-import 'package:sage_wallet_reborn/services/token_storage_service.dart';
 import 'package:sage_wallet_reborn/services/auth_service.dart';
+import 'package:sage_wallet_reborn/services/token_storage_service.dart';
 
 class ApiException implements Exception {
+  ApiException({required this.message, required this.statusCode});
   final String message;
   final int statusCode;
-  ApiException({required this.message, required this.statusCode});
 
   @override
   String toString() => 'ApiException: $message (Status Code: $statusCode)';
 }
 
 class ApiClient {
+  ApiClient() : _baseUrl = _getBaseUrl();
   final String _baseUrl;
   String? _token;
   bool _isRefreshing = false;
 
-  ApiClient() : _baseUrl = _getBaseUrl();
-
   static String _getBaseUrl() {
-    const bool isDebugMode = !kReleaseMode;
+    const isDebugMode = !kReleaseMode;
     if (isDebugMode) {
       if (kIsWeb) {
         return 'http://localhost:8080';
@@ -46,9 +46,11 @@ class ApiClient {
     final refreshToken = await tokenStorage.readRefreshToken();
 
     if (refreshToken == null) {
-      // Використовуємо listen: false, щоб уникнути помилок під час виклику з фону
       await getIt<AuthService>().logout();
-      throw ApiException(message: 'Session expired. Please log in again.', statusCode: 401);
+      throw ApiException(
+        message: 'Session expired. Please log in again.',
+        statusCode: 401,
+      );
     }
 
     try {
@@ -59,19 +61,28 @@ class ApiClient {
       );
 
       if (response.statusCode == 200) {
-        final newTokens = jsonDecode(response.body);
+        final newTokens = jsonDecode(response.body) as Map<String, dynamic>;
         final newAccessToken = newTokens['access_token'] as String;
         final newRefreshToken = newTokens['refresh_token'] as String;
-        await tokenStorage.saveTokens(accessToken: newAccessToken, refreshToken: newRefreshToken);
+        await tokenStorage.saveTokens(
+          accessToken: newAccessToken,
+          refreshToken: newRefreshToken,
+        );
         setAuthToken(newAccessToken);
         return newAccessToken;
       } else {
         await getIt<AuthService>().logout();
-        throw ApiException(message: 'Failed to refresh session. Please log in again.', statusCode: response.statusCode);
+        throw ApiException(
+          message: 'Failed to refresh session. Please log in again.',
+          statusCode: response.statusCode,
+        );
       }
-    } catch (e) {
+    } on Exception {
       await getIt<AuthService>().logout();
-      throw ApiException(message: 'Network error during token refresh.', statusCode: 500);
+      throw ApiException(
+        message: 'Network error during token refresh.',
+        statusCode: 500,
+      );
     }
   }
 
@@ -85,10 +96,13 @@ class ApiClient {
     return headers;
   }
 
-  Future<dynamic> _request(String path, Future<http.Response> Function(Map<String, String> headers) requestFunc) async {
+  Future<dynamic> _request(
+    String path,
+    Future<http.Response> Function(Map<String, String> headers) requestFunc,
+  ) async {
     final isPublicRoute = path.startsWith('/auth/');
-    var headers = _getHeaders();
-    
+    final headers = _getHeaders();
+
     if (isPublicRoute) {
       headers.remove(HttpHeaders.authorizationHeader);
     }
@@ -100,7 +114,7 @@ class ApiClient {
         _isRefreshing = true;
         try {
           await _refreshToken();
-          var newHeaders = _getHeaders();
+          final newHeaders = _getHeaders();
           response = await requestFunc(newHeaders);
         } finally {
           _isRefreshing = false;
@@ -112,19 +126,28 @@ class ApiClient {
 
   Future<dynamic> get(String path, {Map<String, String>? queryParams}) async {
     return _request(path, (headers) {
-      final uri = Uri.parse('$_baseUrl$path').replace(queryParameters: queryParams);
+      final uri =
+          Uri.parse('$_baseUrl$path').replace(queryParameters: queryParams);
       return http.get(uri, headers: headers);
     });
   }
 
-  Future<dynamic> post(String path, {required Map<String, dynamic> body, Map<String, String>? queryParams}) async {
+  Future<dynamic> post(
+    String path, {
+    required Map<String, dynamic> body,
+    Map<String, String>? queryParams,
+  }) async {
     return _request(path, (headers) {
-      final uri = Uri.parse('$_baseUrl$path').replace(queryParameters: queryParams);
+      final uri =
+          Uri.parse('$_baseUrl$path').replace(queryParameters: queryParams);
       return http.post(uri, headers: headers, body: jsonEncode(body));
     });
   }
 
-  Future<dynamic> put(String path, {required Map<String, dynamic> body}) async {
+  Future<dynamic> put(
+    String path, {
+    required Map<String, dynamic> body,
+  }) async {
     return _request(path, (headers) {
       final uri = Uri.parse('$_baseUrl$path');
       return http.put(uri, headers: headers, body: jsonEncode(body));
@@ -134,7 +157,11 @@ class ApiClient {
   Future<void> delete(String path, {Map<String, dynamic>? body}) async {
     await _request(path, (headers) {
       final uri = Uri.parse('$_baseUrl$path');
-      return http.delete(uri, headers: headers, body: body != null ? jsonEncode(body) : null);
+      return http.delete(
+        uri,
+        headers: headers,
+        body: body != null ? jsonEncode(body) : null,
+      );
     });
   }
 
@@ -146,12 +173,12 @@ class ApiClient {
       dynamic errorBody;
       try {
         errorBody = jsonDecode(utf8.decode(response.bodyBytes));
-      } catch (e) {
+      } on Exception {
         errorBody = {'message': response.body};
       }
       throw ApiException(
         message: errorBody is Map
-            ? errorBody['message'] ?? 'An unknown error occurred'
+            ? errorBody['message'] as String? ?? 'An unknown error occurred'
             : errorBody.toString(),
         statusCode: response.statusCode,
       );

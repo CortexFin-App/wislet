@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:sage_wallet_reborn/core/constants/app_constants.dart';
+import 'package:sage_wallet_reborn/data/repositories/theme_repository.dart';
+import 'package:sage_wallet_reborn/data/static/default_theme_profiles.dart';
+import 'package:sage_wallet_reborn/models/theme_profile.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../models/theme_profile.dart';
-import '../data/static/default_theme_profiles.dart';
-import '../data/repositories/theme_repository.dart';
-import '../core/constants/app_constants.dart';
 
 class ThemeProvider with ChangeNotifier {
+  ThemeProvider(this._themeRepository) {
+    _loadThemeSettings();
+  }
+
   final ThemeRepository _themeRepository;
 
   List<ThemeProfile> _customProfiles = [];
@@ -17,10 +21,6 @@ class ThemeProvider with ChangeNotifier {
   ThemeMode get themeMode => _themeMode;
   Color get currentSeedColor => _currentProfile.seedColor;
 
-  ThemeProvider(this._themeRepository) {
-    _loadThemeSettings();
-  }
-
   Future<void> _loadThemeSettings() async {
     _customProfiles = await _themeRepository.getSavedThemes();
     _updateAllProfilesList();
@@ -31,10 +31,11 @@ class ThemeProvider with ChangeNotifier {
       (p) => p.name == profileName,
       orElse: () => defaultThemeProfiles.first,
     );
-    
-    final themeModeIndex = prefs.getInt(AppConstants.prefsKeyThemeMode) ?? ThemeMode.system.index;
+
+    final themeModeIndex =
+        prefs.getInt(AppConstants.prefsKeyThemeMode) ?? ThemeMode.system.index;
     _themeMode = ThemeMode.values[themeModeIndex];
-    
+
     notifyListeners();
   }
 

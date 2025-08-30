@@ -1,16 +1,17 @@
 import 'dart:convert';
+
 import 'package:fpdart/fpdart.dart';
-import '../../../core/error/failures.dart';
-import '../../../models/subscription_model.dart';
-import '../../../services/error_monitoring_service.dart';
-import '../../../utils/database_helper.dart';
-import '../subscription_repository.dart';
+import 'package:sage_wallet_reborn/core/error/failures.dart';
+import 'package:sage_wallet_reborn/data/repositories/subscription_repository.dart';
+import 'package:sage_wallet_reborn/models/subscription_model.dart';
+import 'package:sage_wallet_reborn/services/error_monitoring_service.dart';
+import 'package:sage_wallet_reborn/utils/database_helper.dart';
 
 class LocalSubscriptionRepositoryImpl implements SubscriptionRepository {
+  LocalSubscriptionRepositoryImpl(this._dbHelper);
+
   final DatabaseHelper _dbHelper;
 
-  LocalSubscriptionRepositoryImpl(this._dbHelper);
-  
   @override
   Stream<List<Subscription>> watchAllSubscriptions(int walletId) {
     return Stream.fromFuture(getAllSubscriptions(walletId))
@@ -18,28 +19,31 @@ class LocalSubscriptionRepositoryImpl implements SubscriptionRepository {
   }
 
   @override
-  Future<Either<AppFailure, int>> createSubscription(Subscription sub, int walletId) async {
+  Future<Either<AppFailure, int>> createSubscription(
+    Subscription sub,
+    int walletId,
+  ) async {
     try {
       final db = await _dbHelper.database;
-      int newId = -1;
+      var newId = -1;
       await db.transaction((txn) async {
         final map = sub.toMap();
         map.remove('id');
         map[DatabaseHelper.colSubWalletId] = walletId;
         newId = await txn.insert(DatabaseHelper.tableSubscriptions, map);
-        
+
         await txn.insert(DatabaseHelper.tableSyncQueue, {
           DatabaseHelper.colSyncEntityType: 'subscription',
           DatabaseHelper.colSyncEntityId: newId.toString(),
           DatabaseHelper.colSyncActionType: 'create',
           DatabaseHelper.colSyncPayload: jsonEncode(map..['id'] = newId),
           DatabaseHelper.colSyncTimestamp: DateTime.now().toIso8601String(),
-          DatabaseHelper.colSyncStatus: 'pending'
+          DatabaseHelper.colSyncStatus: 'pending',
         });
-       });
+      });
       return Right(newId);
-    } catch(e, s) {
-      ErrorMonitoringService.capture(e, stackTrace: s);
+    } on Exception catch (e, s) {
+      await ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(DatabaseFailure(details: e.toString()));
     }
   }
@@ -48,44 +52,52 @@ class LocalSubscriptionRepositoryImpl implements SubscriptionRepository {
   Future<Either<AppFailure, Subscription?>> getSubscription(int id) async {
     try {
       final db = await _dbHelper.database;
-      List<Map<String, dynamic>> maps = await db.query(
+      final List<Map<String, dynamic>> maps = await db.query(
         DatabaseHelper.tableSubscriptions,
-        where: '${DatabaseHelper.colSubId} = ? AND ${DatabaseHelper.colSubIsDeleted} = 0',
+        where:
+            '${DatabaseHelper.colSubId} = ? AND ${DatabaseHelper.colSubIsDeleted} = 0',
         whereArgs: [id],
       );
       if (maps.isNotEmpty) {
-       return Right(Subscription.fromMap(maps.first));
+        return Right(Subscription.fromMap(maps.first));
       }
       return const Right(null);
-    } catch(e, s) {
-      ErrorMonitoringService.capture(e, stackTrace: s);
+    } on Exception catch (e, s) {
+      await ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(DatabaseFailure(details: e.toString()));
     }
   }
 
   @override
-  Future<Either<AppFailure, List<Subscription>>> getAllSubscriptions(int walletId) async {
+  Future<Either<AppFailure, List<Subscription>>> getAllSubscriptions(
+    int walletId,
+  ) async {
     try {
       final db = await _dbHelper.database;
-      final List<Map<String, dynamic>> maps = await db.query(
+      final maps = await db.query(
         DatabaseHelper.tableSubscriptions,
-        where: '${DatabaseHelper.colSubWalletId} = ? AND ${DatabaseHelper.colSubIsDeleted} = 0',
+        where:
+            '${DatabaseHelper.colSubWalletId} = ? AND ${DatabaseHelper.colSubIsDeleted} = 0',
         whereArgs: [walletId],
         orderBy: '${DatabaseHelper.colSubNextPaymentDate} ASC',
       );
-      final subscriptions = List.generate(maps.length, (i) => Subscription.fromMap(maps[i]));
+      final subscriptions =
+          List.generate(maps.length, (i) => Subscription.fromMap(maps[i]));
       return Right(subscriptions);
-    } catch(e, s) {
-      ErrorMonitoringService.capture(e, stackTrace: s);
+    } on Exception catch (e, s) {
+      await ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(DatabaseFailure(details: e.toString()));
     }
   }
 
   @override
-  Future<Either<AppFailure, int>> updateSubscription(Subscription sub, int walletId) async {
+  Future<Either<AppFailure, int>> updateSubscription(
+    Subscription sub,
+    int walletId,
+  ) async {
     try {
       final db = await _dbHelper.database;
-      int updatedRows = 0;
+      var updatedRows = 0;
       await db.transaction((txn) async {
         final map = sub.toMap();
         map[DatabaseHelper.colSubWalletId] = walletId;
@@ -102,12 +114,12 @@ class LocalSubscriptionRepositoryImpl implements SubscriptionRepository {
           DatabaseHelper.colSyncActionType: 'update',
           DatabaseHelper.colSyncPayload: jsonEncode(map),
           DatabaseHelper.colSyncTimestamp: DateTime.now().toIso8601String(),
-          DatabaseHelper.colSyncStatus: 'pending'
+          DatabaseHelper.colSyncStatus: 'pending',
         });
       });
       return Right(updatedRows);
-    } catch(e, s) {
-      ErrorMonitoringService.capture(e, stackTrace: s);
+    } on Exception catch (e, s) {
+      await ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(DatabaseFailure(details: e.toString()));
     }
   }
@@ -116,7 +128,7 @@ class LocalSubscriptionRepositoryImpl implements SubscriptionRepository {
   Future<Either<AppFailure, int>> deleteSubscription(int id) async {
     try {
       final db = await _dbHelper.database;
-      int deletedRows = 0;
+      var deletedRows = 0;
       await db.transaction((txn) async {
         final now = DateTime.now().toIso8601String();
         deletedRows = await txn.update(
@@ -135,12 +147,12 @@ class LocalSubscriptionRepositoryImpl implements SubscriptionRepository {
           DatabaseHelper.colSyncActionType: 'delete',
           DatabaseHelper.colSyncPayload: jsonEncode({'id': id}),
           DatabaseHelper.colSyncTimestamp: now,
-          DatabaseHelper.colSyncStatus: 'pending'
+          DatabaseHelper.colSyncStatus: 'pending',
         });
       });
       return Right(deletedRows);
-    } catch(e, s) {
-      ErrorMonitoringService.capture(e, stackTrace: s);
+    } on Exception catch (e, s) {
+      await ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(DatabaseFailure(details: e.toString()));
     }
   }

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:sage_wallet_reborn/models/financial_story.dart';
+import 'package:sage_wallet_reborn/providers/reports_provider.dart';
+import 'package:sage_wallet_reborn/providers/wallet_provider.dart';
+import 'package:sage_wallet_reborn/screens/reports/widgets/story_cards.dart';
 import 'package:shimmer/shimmer.dart';
-import '../../models/financial_story.dart';
-import '../../providers/wallet_provider.dart';
-import '../../providers/reports_provider.dart';
-import 'widgets/story_cards.dart';
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -14,20 +14,26 @@ class ReportsScreen extends StatefulWidget {
 }
 
 class _ReportsScreenState extends State<ReportsScreen> {
+  late WalletProvider _wallet;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _wallet = context.read<WalletProvider>();
+  }
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadStories();
-      context.read<WalletProvider>().addListener(_onWalletChanged);
+      _wallet.addListener(_onWalletChanged);
     });
   }
 
   @override
   void dispose() {
-    if (mounted) {
-      context.read<WalletProvider>().removeListener(_onWalletChanged);
-    }
+    _wallet.removeListener(_onWalletChanged);
     super.dispose();
   }
 
@@ -39,9 +45,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
     if (!mounted) return;
     final walletProvider = context.read<WalletProvider>();
     final reportsProvider = context.read<ReportsProvider>();
-    if (walletProvider.currentWallet?.id != null) {
-      await reportsProvider.fetchStories(
-          walletId: walletProvider.currentWallet!.id!);
+    final id = walletProvider.currentWallet?.id;
+    if (id != null) {
+      await reportsProvider.fetchStories(walletId: id);
     }
   }
 
@@ -56,28 +62,27 @@ class _ReportsScreenState extends State<ReportsScreen> {
         child: Builder(
           builder: (context) {
             if (reportsProvider.isLoading) {
-              return _buildShimmerLoading();
+              return _buildShimmerLoading(context);
             }
-
             if (reportsProvider.stories.isEmpty) {
-              return _buildEmptyState();
+              return _buildEmptyState(context);
             }
-
             final stories = reportsProvider.stories;
             return ListView.builder(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(16),
               itemCount: stories.length,
               itemBuilder: (context, index) {
                 final story = stories[index];
                 switch (story.type) {
                   case StoryType.topExpenses:
-                    return TopExpenseStoryCard(story: story as TopExpensesStory);
+                    return TopExpenseStoryCard(
+                        story: story as TopExpensesStory);
                   case StoryType.comparison:
-                    return ComparisonStoryCard(
-                        story: story as ComparisonStory);
+                    return ComparisonStoryCard(story: story as ComparisonStory);
                   case StoryType.mostExpensiveDay:
                     return MostExpensiveDayStoryCard(
-                        story: story as MostExpensiveDayStory);
+                      story: story as MostExpensiveDayStory,
+                    );
                   case StoryType.aiTip:
                     return AiTipStoryCard(story: story as AiTipStory);
                 }
@@ -89,40 +94,18 @@ class _ReportsScreenState extends State<ReportsScreen> {
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.history_toggle_off,
-                size: 80, color: Theme.of(context).colorScheme.onSurfaceVariant),
-            const SizedBox(height: 24),
-            Text('Історій поки що немає',
-                style: Theme.of(context).textTheme.headlineSmall,
-                textAlign: TextAlign.center),
-            const SizedBox(height: 12),
-            Text(
-              'Додайте більше транзакцій, і ми почнемо знаходити для вас цікаві інсайти та закономірності.',
-              style: Theme.of(context).textTheme.bodyMedium,
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildShimmerLoading() {
-    return Shimmer.fromColors(
-      baseColor: Theme.of(context).colorScheme.surfaceContainer,
-      highlightColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-      child: ListView(
-        padding: const EdgeInsets.all(16.0),
-        children: List.generate(
-          3,
-          (_) => Container(
+  Widget _buildShimmerLoading(BuildContext context) {
+    final base =
+        Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.4);
+    final highlight = Theme.of(context).colorScheme.surfaceContainerHighest;
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: List.generate(
+        3,
+        (_) => Shimmer.fromColors(
+          baseColor: base,
+          highlightColor: highlight,
+          child: Container(
             height: 150,
             margin: const EdgeInsets.only(bottom: 16),
             decoration: BoxDecoration(
@@ -130,6 +113,36 @@ class _ReportsScreenState extends State<ReportsScreen> {
               borderRadius: BorderRadius.circular(16),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.history_toggle_off,
+              size: 80,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Історій поки що немає',
+              style: Theme.of(context).textTheme.headlineSmall,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Додайте більше транзакцій, щоби отримувати цікаві інсайти та закономірності.',
+              style: Theme.of(context).textTheme.bodyMedium,
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
       ),
     );

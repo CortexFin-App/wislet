@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:sage_wallet_reborn/models/currency_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../models/currency_model.dart';
 
 class CurrencyProvider with ChangeNotifier {
-  Currency _selectedCurrency = appCurrencies.first;
-
   CurrencyProvider() {
     _loadCurrency();
   }
+
+  Currency _selectedCurrency = appCurrencies.first;
 
   Currency get selectedCurrency => _selectedCurrency;
 

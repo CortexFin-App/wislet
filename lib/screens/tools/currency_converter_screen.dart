@@ -1,25 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../core/di/injector.dart';
-import '../../models/currency_model.dart';
-import '../../services/exchange_rate_service.dart';
-import '../../utils/app_palette.dart';
-import '../../widgets/scaffold/patterned_scaffold.dart';
+import 'package:sage_wallet_reborn/core/di/injector.dart';
+import 'package:sage_wallet_reborn/models/currency_model.dart';
+import 'package:sage_wallet_reborn/services/exchange_rate_service.dart';
+import 'package:sage_wallet_reborn/utils/app_palette.dart';
+import 'package:sage_wallet_reborn/widgets/scaffold/patterned_scaffold.dart';
 
 class CurrencyConverterScreen extends StatefulWidget {
   const CurrencyConverterScreen({super.key});
 
   @override
-  State<CurrencyConverterScreen> createState() => _CurrencyConverterScreenState();
+  State<CurrencyConverterScreen> createState() =>
+      _CurrencyConverterScreenState();
 }
 
 class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
   final ExchangeRateService _exchangeRateService = getIt<ExchangeRateService>();
-  final TextEditingController _amountController = TextEditingController(text: '100');
+  final TextEditingController _amountController =
+      TextEditingController(text: '100');
   Currency? _fromCurrency;
   Currency? _toCurrency;
   DateTime _selectedRateDate = DateTime.now();
-  String _convertedAmountStr = "";
+  String _convertedAmountStr = '';
   bool _isLoading = false;
   String? _errorMessage;
   String? _rateInfoMessage;
@@ -29,15 +31,31 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
   void initState() {
     super.initState();
     if (_availableCurrencies.isNotEmpty) {
-      _fromCurrency = _availableCurrencies.firstWhere((c) => c.code == "USD", orElse: () => _availableCurrencies.first);
-      _toCurrency = _availableCurrencies.firstWhere((c) => c.code == "UAH", orElse: () => _availableCurrencies.length > 1 ? _availableCurrencies[1] : _availableCurrencies.first);
+      _fromCurrency = _availableCurrencies.firstWhere(
+        (c) => c.code == 'USD',
+        orElse: () => _availableCurrencies.first,
+      );
+      _toCurrency = _availableCurrencies.firstWhere(
+        (c) => c.code == 'UAH',
+        orElse: () => _availableCurrencies.length > 1
+            ? _availableCurrencies[1]
+            : _availableCurrencies.first,
+      );
     }
     _amountController.addListener(_triggerConversion);
     _triggerConversion();
   }
 
+  @override
+  void dispose() {
+    _amountController
+      ..removeListener(_triggerConversion)
+      ..dispose();
+    super.dispose();
+  }
+
   Future<void> _pickRateDate() async {
-    final DateTime? pickedDate = await showDatePicker(
+    final pickedDate = await showDatePicker(
       context: context,
       initialDate: _selectedRateDate,
       firstDate: DateTime(2000),
@@ -54,14 +72,17 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
   }
 
   void _triggerConversion() {
-    final String amountText = _amountController.text.replaceAll(',', '.');
-    final double? amount = double.tryParse(amountText);
-    if (amount != null && amount > 0 && _fromCurrency != null && _toCurrency != null) {
+    final amountText = _amountController.text.replaceAll(',', '.');
+    final amount = double.tryParse(amountText);
+    if (amount != null &&
+        amount > 0 &&
+        _fromCurrency != null &&
+        _toCurrency != null) {
       _convertCurrency(amount);
     } else {
       if (mounted) {
         setState(() {
-          _convertedAmountStr = "";
+          _convertedAmountStr = '';
           _errorMessage = null;
           _rateInfoMessage = null;
         });
@@ -79,31 +100,35 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
     });
 
     try {
-      final ConversionRateInfo rateInfo = await _exchangeRateService.getConversionRate(
+      final rateInfo = await _exchangeRateService.getConversionRate(
         _fromCurrency!.code,
         _toCurrency!.code,
         date: _selectedRateDate,
       );
-      final double convertedValue = amount * rateInfo.rate;
-      
+      final convertedValue = amount * rateInfo.rate;
+
       final targetCurrencyFormat = NumberFormat.currency(
-        locale: _toCurrency!.locale, 
+        locale: _toCurrency!.locale,
         symbol: _toCurrency!.symbol,
-        decimalDigits: 2
+        decimalDigits: 2,
       );
-      String rateDateInfo = "(курс від ${DateFormat('dd.MM.yy').format(rateInfo.effectiveRateDate)})";
+      final rateDateInfo =
+          '(РєСѓСЂСЃ РІС–Рґ ${DateFormat('dd.MM.yy').format(rateInfo.effectiveRateDate)})';
 
       if (mounted) {
         setState(() {
           _convertedAmountStr = targetCurrencyFormat.format(convertedValue);
-          _rateInfoMessage = rateInfo.isRateStale ? "Використано кешований курс $rateDateInfo" : "Актуальний курс $rateDateInfo";
+          _rateInfoMessage = rateInfo.isRateStale
+              ? 'Р’РёРєРѕСЂРёСЃС‚Р°РЅРѕ РєРµС€РѕРІР°РЅРёР№ РєСѓСЂСЃ $rateDateInfo'
+              : 'РђРєС‚СѓР°Р»СЊРЅРёР№ РєСѓСЂСЃ $rateDateInfo';
         });
       }
-    } catch (e) {
+    } on Exception catch (e) {
       if (mounted) {
         setState(() {
-          _convertedAmountStr = "";
-          _errorMessage = "Помилка: ${e.toString().replaceFirst("Exception: ", "")}";
+          _convertedAmountStr = '';
+          _errorMessage =
+              'РџРѕРјРёР»РєР°: ${e.toString().replaceFirst('Exception: ', '')}';
           _rateInfoMessage = null;
         });
       }
@@ -118,9 +143,9 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
 
   void _swapCurrencies() {
     if (_fromCurrency == null && _toCurrency == null) return;
-    if(mounted){
+    if (mounted) {
       setState(() {
-        final Currency? temp = _fromCurrency;
+        final temp = _fromCurrency;
         _fromCurrency = _toCurrency;
         _toCurrency = temp;
       });
@@ -129,49 +154,51 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
   }
 
   @override
-  void dispose() {
-    _amountController.removeListener(_triggerConversion);
-    _amountController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return PatternedScaffold(
       appBar: AppBar(
-        title: const Text('Конвертер валют'),
+        title: const Text('РљРѕРЅРІРµСЂС‚РµСЂ РІР°Р»СЋС‚'),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             TextFormField(
               controller: _amountController,
               decoration: InputDecoration(
-                labelText: 'Сума для конвертації',
-                prefixIcon: _fromCurrency != null ? Padding(padding: const EdgeInsets.all(12.0), child: Text(_fromCurrency!.symbol, style: const TextStyle(fontSize: 18))) : null,
+                labelText: 'РЎСѓРјР° РґР»СЏ РєРѕРЅРІРµСЂС‚Р°С†С–С—',
+                prefixIcon: _fromCurrency != null
+                    ? Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Text(
+                          _fromCurrency!.symbol,
+                          style: const TextStyle(fontSize: 18),
+                        ),
+                      )
+                    : null,
               ),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
             ),
-            const SizedBox(height: 16.0),
+            const SizedBox(height: 16),
             Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Expanded(
                   child: DropdownButtonFormField<Currency>(
                     value: _fromCurrency,
-                    decoration: const InputDecoration(labelText: 'З валюти'),
+                    decoration:
+                        const InputDecoration(labelText: 'Р— РІР°Р»СЋС‚Рё'),
                     isExpanded: true,
-                    items: _availableCurrencies.map((Currency currency) {
+                    items: _availableCurrencies.map((currency) {
                       return DropdownMenuItem<Currency>(
                         value: currency,
                         child: Text('${currency.code} - ${currency.name}'),
                       );
                     }).toList(),
-                    onChanged: (Currency? newValue) {
+                    onChanged: (newValue) {
                       if (newValue != null) {
-                        if(mounted){
+                        if (mounted) {
                           setState(() {
                             _fromCurrency = newValue;
                           });
@@ -182,7 +209,8 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
                   child: IconButton(
                     icon: const Icon(Icons.swap_horiz, size: 28),
                     onPressed: _swapCurrencies,
@@ -191,53 +219,62 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
                 Expanded(
                   child: DropdownButtonFormField<Currency>(
                     value: _toCurrency,
-                    decoration: const InputDecoration(labelText: 'В валюту'),
+                    decoration:
+                        const InputDecoration(labelText: 'Р’ РІР°Р»СЋС‚Сѓ'),
                     isExpanded: true,
-                    items: _availableCurrencies.map((Currency currency) {
+                    items: _availableCurrencies.map((currency) {
                       return DropdownMenuItem<Currency>(
                         value: currency,
                         child: Text('${currency.code} - ${currency.name}'),
                       );
                     }).toList(),
-                    onChanged: (Currency? newValue) {
-                        if (newValue != null) {
-                          if(mounted){
-                            setState(() {
-                              _toCurrency = newValue;
-                            });
-                          }
-                          _triggerConversion();
+                    onChanged: (newValue) {
+                      if (newValue != null) {
+                        if (mounted) {
+                          setState(() {
+                            _toCurrency = newValue;
+                          });
                         }
+                        _triggerConversion();
+                      }
                     },
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16.0),
+            const SizedBox(height: 16),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              title: Text('Курс на дату: ${DateFormat('dd.MM.yyyy').format(_selectedRateDate)}'),
+              title: Text(
+                'РљСѓСЂСЃ РЅР° РґР°С‚Сѓ: ${DateFormat('dd.MM.yyyy').format(_selectedRateDate)}',
+              ),
               trailing: const Icon(Icons.calendar_today_outlined),
               onTap: _pickRateDate,
             ),
-            const SizedBox(height: 24.0),
+            const SizedBox(height: 24),
             if (_isLoading)
               const Center(child: CircularProgressIndicator())
             else if (_convertedAmountStr.isNotEmpty)
               Card(
                 color: AppPalette.darkPrimary.withAlpha(26),
                 child: Padding(
-                  padding: const EdgeInsets.all(24.0),
+                  padding: const EdgeInsets.all(24),
                   child: Column(
                     children: [
                       Text(
-                        'Результат:',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppPalette.darkSecondaryText),
+                        'Р РµР·СѓР»СЊС‚Р°С‚:',
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(color: AppPalette.darkSecondaryText),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         _convertedAmountStr,
-                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        style: Theme.of(context)
+                            .textTheme
+                            .headlineMedium
+                            ?.copyWith(
                               fontWeight: FontWeight.bold,
                               color: AppPalette.darkPrimary,
                             ),
@@ -247,12 +284,13 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
                         const SizedBox(height: 8),
                         Text(
                           _rateInfoMessage!,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppPalette.darkSecondaryText
-                          ),
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: AppPalette.darkSecondaryText,
+                                  ),
                           textAlign: TextAlign.center,
                         ),
-                      ]
+                      ],
                     ],
                   ),
                 ),
@@ -260,7 +298,10 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
             else if (_errorMessage != null)
               Text(
                 _errorMessage!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error, fontSize: 16),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.error,
+                  fontSize: 16,
+                ),
                 textAlign: TextAlign.center,
               ),
           ],

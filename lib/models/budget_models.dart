@@ -19,6 +19,32 @@ String budgetStrategyTypeToString(BudgetStrategyType type) {
 }
 
 class Budget {
+  Budget({
+    required this.name,
+    required this.startDate,
+    required this.endDate,
+    required this.strategyType,
+    this.id,
+    this.plannedIncomeInBaseCurrency,
+    this.isActive = true,
+    this.updatedAt,
+    this.isDeleted = false,
+  });
+
+  factory Budget.fromMap(Map<String, dynamic> map) {
+    return Budget(
+      id: map['id'] as int?,
+      name: map['name'] as String,
+      startDate: DateTime.parse(map['start_date'] as String),
+      endDate: DateTime.parse(map['end_date'] as String),
+      strategyType: BudgetStrategyType.values.byName(map['strategy_type'] as String),
+      plannedIncomeInBaseCurrency: (map['planned_income_in_base_currency'] as num?)?.toDouble(),
+      isActive: (map['is_active'] is bool) ? map['is_active'] as bool : (map['is_active'] as int? ?? 1) == 1,
+      updatedAt: map['updated_at'] != null ? DateTime.parse(map['updated_at'] as String) : null,
+      isDeleted: (map['is_deleted'] is bool) ? map['is_deleted'] as bool : (map['is_deleted'] as int? ?? 0) == 1,
+    );
+  }
+
   final int? id;
   final String name;
   final DateTime startDate;
@@ -28,18 +54,6 @@ class Budget {
   final bool isActive;
   final DateTime? updatedAt;
   final bool isDeleted;
-
-  Budget({
-    this.id,
-    required this.name,
-    required this.startDate,
-    required this.endDate,
-    required this.strategyType,
-    this.plannedIncomeInBaseCurrency,
-    this.isActive = true,
-    this.updatedAt,
-    this.isDeleted = false,
-  });
 
   Map<String, dynamic> toMap() {
     return {
@@ -53,23 +67,37 @@ class Budget {
       'is_deleted': isDeleted ? 1 : 0,
     };
   }
-
-  factory Budget.fromMap(Map<String, dynamic> map) {
-    return Budget(
-      id: map['id'],
-      name: map['name'],
-      startDate: DateTime.parse(map['start_date']),
-      endDate: DateTime.parse(map['end_date']),
-      strategyType: BudgetStrategyType.values.byName(map['strategy_type']),
-      plannedIncomeInBaseCurrency: (map['planned_income_in_base_currency'] as num?)?.toDouble(),
-      isActive: (map['is_active'] is bool) ? map['is_active'] : ((map['is_active'] as int? ?? 1) == 1),
-      updatedAt: map['updated_at'] != null ? DateTime.parse(map['updated_at'] as String) : null,
-      isDeleted: (map['is_deleted'] is bool) ? map['is_deleted'] : ((map['is_deleted'] as int? ?? 0) == 1),
-    );
-  }
 }
 
 class BudgetEnvelope {
+  BudgetEnvelope({
+    required this.budgetId,
+    required this.name,
+    required this.categoryId,
+    required this.originalPlannedAmount,
+    required this.originalCurrencyCode,
+    required this.plannedAmountInBaseCurrency,
+    this.id,
+    this.exchangeRateUsed,
+    this.updatedAt,
+    this.isDeleted = false,
+  });
+
+  factory BudgetEnvelope.fromMap(Map<String, dynamic> map) {
+    return BudgetEnvelope(
+      id: map['id'] as int?,
+      budgetId: map['budget_id'] as int,
+      name: map['name'] as String,
+      categoryId: map['category_id'] as int,
+      originalPlannedAmount: (map['original_planned_amount'] as num).toDouble(),
+      originalCurrencyCode: map['original_currency_code'] as String,
+      plannedAmountInBaseCurrency: (map['planned_amount_in_base_currency'] as num).toDouble(),
+      exchangeRateUsed: (map['exchange_rate_used'] as num?)?.toDouble(),
+      updatedAt: map['updated_at'] != null ? DateTime.parse(map['updated_at'] as String) : null,
+      isDeleted: (map['is_deleted'] is bool) ? map['is_deleted'] as bool : (map['is_deleted'] as int? ?? 0) == 1,
+    );
+  }
+
   final int? id;
   final int budgetId;
   final String name;
@@ -80,19 +108,6 @@ class BudgetEnvelope {
   final double? exchangeRateUsed;
   final DateTime? updatedAt;
   final bool isDeleted;
-
-  BudgetEnvelope({
-    this.id,
-    required this.budgetId,
-    required this.name,
-    required this.categoryId,
-    required this.originalPlannedAmount,
-    required this.originalCurrencyCode,
-    required this.plannedAmountInBaseCurrency,
-    this.exchangeRateUsed,
-    this.updatedAt,
-    this.isDeleted = false,
-  });
 
   Map<String, dynamic> toMap() {
     return {
@@ -106,20 +121,5 @@ class BudgetEnvelope {
       'exchange_rate_used': exchangeRateUsed,
       'is_deleted': isDeleted ? 1 : 0,
     };
-  }
-
-  factory BudgetEnvelope.fromMap(Map<String, dynamic> map) {
-    return BudgetEnvelope(
-      id: map['id'],
-      budgetId: map['budget_id'],
-      name: map['name'],
-      categoryId: map['category_id'],
-      originalPlannedAmount: (map['original_planned_amount'] as num).toDouble(),
-      originalCurrencyCode: map['original_currency_code'],
-      plannedAmountInBaseCurrency: (map['planned_amount_in_base_currency'] as num).toDouble(),
-      exchangeRateUsed: (map['exchange_rate_used'] as num?)?.toDouble(),
-      updatedAt: map['updated_at'] != null ? DateTime.parse(map['updated_at'] as String) : null,
-      isDeleted: (map['is_deleted'] is bool) ? map['is_deleted'] : ((map['is_deleted'] as int? ?? 0) == 1),
-    );
   }
 }

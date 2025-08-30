@@ -1,5 +1,5 @@
-import '../../../models/invitation_model.dart';
-import '../invitation_repository.dart';
+import 'package:sage_wallet_reborn/data/repositories/invitation_repository.dart';
+import 'package:sage_wallet_reborn/models/invitation_model.dart';
 
 class LocalInvitationRepositoryImpl implements InvitationRepository {
   @override
@@ -19,7 +19,9 @@ class LocalInvitationRepositoryImpl implements InvitationRepository {
 
   @override
   Future<void> respondToInvitation(
-      String invitationId, InvitationStatus status) async {
+    String invitationId,
+    InvitationStatus status,
+  ) async {
     throw UnimplementedError('Local invitations are not supported.');
   }
 }

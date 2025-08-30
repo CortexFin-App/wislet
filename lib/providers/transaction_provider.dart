@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:sage_wallet_reborn/core/di/injector.dart';
 import 'package:sage_wallet_reborn/models/category.dart' as fin_category;
-import '../core/di/injector.dart';
-import '../providers/wallet_provider.dart';
-import '../services/ai_categorization_service.dart';
-import '../utils/debouncer.dart';
+import 'package:sage_wallet_reborn/providers/wallet_provider.dart';
+import 'package:sage_wallet_reborn/services/ai_categorization_service.dart';
+import 'package:sage_wallet_reborn/utils/debouncer.dart';
 
 class TransactionProvider with ChangeNotifier {
   final AICategorizationService _aiService = getIt<AICategorizationService>();
@@ -22,10 +22,10 @@ class TransactionProvider with ChangeNotifier {
       notifyListeners();
       return;
     }
-    
+
     _isLoadingSuggestion = true;
     notifyListeners();
-    
+
     _debouncer.run(() async {
       final walletId = context.read<WalletProvider>().currentWallet?.id;
       if (walletId == null) {
@@ -33,7 +33,7 @@ class TransactionProvider with ChangeNotifier {
         notifyListeners();
         return;
       }
-      
+
       _suggestedCategory = await _aiService.suggestCategory(
         description: description,
         walletId: walletId,

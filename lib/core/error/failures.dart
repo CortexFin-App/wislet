@@ -1,26 +1,31 @@
 abstract class AppFailure {
+  AppFailure({required this.userMessage, this.debugDetails});
   final String userMessage;
   final dynamic debugDetails;
-
-  AppFailure({required this.userMessage, this.debugDetails});
 }
 
 class NetworkFailure extends AppFailure {
-  NetworkFailure({String message = 'Помилка мережі. Перевірте з\'єднання.', dynamic details})
-  : super(userMessage: message, debugDetails: details);
+  NetworkFailure({
+    String message = "Помилка мережі. Перевірте з'єднання.",
+    dynamic details,
+  }) : super(userMessage: message, debugDetails: details);
 }
 
 class DatabaseFailure extends AppFailure {
-  DatabaseFailure({String message = 'Помилка бази даних.', dynamic details})
-  : super(userMessage: message, debugDetails: details);
+  DatabaseFailure({
+    String message = 'Помилка бази даних.',
+    dynamic details,
+  }) : super(userMessage: message, debugDetails: details);
 }
 
 class AuthFailure extends AppFailure {
   AuthFailure({required String message, dynamic details})
-  : super(userMessage: message, debugDetails: details);
+      : super(userMessage: message, debugDetails: details);
 }
 
 class UnexpectedFailure extends AppFailure {
-  UnexpectedFailure({String message = 'Сталася непередбачувана помилка.', dynamic details})
-  : super(userMessage: message, debugDetails: details);
+  UnexpectedFailure({
+    String message = 'Сталася непередбачувана помилка.',
+    dynamic details,
+  }) : super(userMessage: message, debugDetails: details);
 }

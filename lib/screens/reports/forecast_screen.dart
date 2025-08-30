@@ -2,12 +2,12 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import '../../core/di/injector.dart';
-import '../../models/forecast_data_point.dart';
-import '../../providers/currency_provider.dart';
-import '../../providers/wallet_provider.dart';
-import '../../services/cashflow_forecast_service.dart';
-import '../../widgets/scaffold/patterned_scaffold.dart';
+import 'package:sage_wallet_reborn/core/di/injector.dart';
+import 'package:sage_wallet_reborn/models/forecast_data_point.dart';
+import 'package:sage_wallet_reborn/providers/currency_provider.dart';
+import 'package:sage_wallet_reborn/providers/wallet_provider.dart';
+import 'package:sage_wallet_reborn/services/cashflow_forecast_service.dart';
+import 'package:sage_wallet_reborn/widgets/scaffold/patterned_scaffold.dart';
 
 class ForecastScreen extends StatefulWidget {
   const ForecastScreen({super.key});
@@ -17,7 +17,8 @@ class ForecastScreen extends StatefulWidget {
 }
 
 class _ForecastScreenState extends State<ForecastScreen> {
-  final CashflowForecastService _forecastService = getIt<CashflowForecastService>();
+  final CashflowForecastService _forecastService =
+      getIt<CashflowForecastService>();
   Future<List<ForecastDataPoint>>? _forecastFuture;
   int _selectedDays = 30;
 
@@ -34,7 +35,10 @@ class _ForecastScreenState extends State<ForecastScreen> {
     final walletId = context.read<WalletProvider>().currentWallet?.id;
     if (walletId != null) {
       setState(() {
-        _forecastFuture = _forecastService.getForecast(walletId: walletId, days: _selectedDays);
+        _forecastFuture = _forecastService.getForecast(
+          walletId: walletId,
+          days: _selectedDays,
+        );
       });
     }
   }
@@ -46,20 +50,20 @@ class _ForecastScreenState extends State<ForecastScreen> {
 
     return PatternedScaffold(
       appBar: AppBar(
-        title: const Text('Прогноз Грошового Потоку'),
+        title: const Text('РџСЂРѕРіРЅРѕР· Р“СЂРѕС€РѕРІРѕРіРѕ РџРѕС‚РѕРєСѓ'),
       ),
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(16),
             child: SegmentedButton<int>(
               segments: const [
-                ButtonSegment(value: 30, label: Text('30 днів')),
-                ButtonSegment(value: 90, label: Text('90 днів')),
-                ButtonSegment(value: 180, label: Text('180 днів')),
+                ButtonSegment(value: 30, label: Text('30 РґРЅС–РІ')),
+                ButtonSegment(value: 90, label: Text('90 РґРЅС–РІ')),
+                ButtonSegment(value: 180, label: Text('180 РґРЅС–РІ')),
               ],
               selected: {_selectedDays},
-              onSelectionChanged: (Set<int> newSelection) {
+              onSelectionChanged: (newSelection) {
                 setState(() {
                   _selectedDays = newSelection.first;
                   _loadForecast();
@@ -75,30 +79,57 @@ class _ForecastScreenState extends State<ForecastScreen> {
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (snapshot.hasError) {
-                  return Center(child: Text('Помилка прогнозування: ${snapshot.error}'));
+                  return Center(
+                    child: Text(
+                      'РџРѕРјРёР»РєР° РїСЂРѕРіРЅРѕР·СѓРІР°РЅРЅСЏ: ${snapshot.error}',
+                    ),
+                  );
                 }
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(child: Text('Немає даних для прогнозу.'));
+                  return const Center(
+                    child:
+                        Text('РќРµРјР°С” РґР°РЅРёС… РґР»СЏ РїСЂРѕРіРЅРѕР·Сѓ.'),
+                  );
                 }
 
                 final forecastData = snapshot.data!;
-                final spots = forecastData.asMap().entries.map((e) {
-                  return FlSpot(e.key.toDouble(), e.value.balance);
-                }).toList();
-                
-                final minY = forecastData.map((p) => p.balance).reduce((a, b) => a < b ? a : b);
-                final maxY = forecastData.map((p) => p.balance).reduce((a, b) => a > b ? a : b);
+                final spots = forecastData
+                    .asMap()
+                    .entries
+                    .map((e) => FlSpot(e.key.toDouble(), e.value.balance))
+                    .toList();
+
+                final minY = forecastData
+                    .map((p) => p.balance)
+                    .reduce((a, b) => a < b ? a : b);
+                final maxY = forecastData
+                    .map((p) => p.balance)
+                    .reduce((a, b) => a > b ? a : b);
                 final buffer = (maxY - minY).abs() * 0.1;
 
                 return Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(16),
                   child: LineChart(
                     LineChartData(
                       gridData: FlGridData(
-                        show: true,
-                        drawVerticalLine: true,
-                        horizontalInterval: (maxY - minY).abs() > 0 ? (maxY - minY).abs() / 4 : 1,
+                        horizontalInterval: (maxY - minY).abs() > 0
+                            ? (maxY - minY).abs() / 4
+                            : 1,
                         verticalInterval: (_selectedDays / 5).roundToDouble(),
+                        getDrawingHorizontalLine: (value) => FlLine(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .outline
+                              .withAlpha(50),
+                          strokeWidth: 0.5,
+                        ),
+                        getDrawingVerticalLine: (value) => FlLine(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .outline
+                              .withAlpha(50),
+                          strokeWidth: 0.5,
+                        ),
                       ),
                       titlesData: FlTitlesData(
                         bottomTitles: AxisTitles(
@@ -111,7 +142,6 @@ class _ForecastScreenState extends State<ForecastScreen> {
                                 final date = forecastData[value.toInt()].date;
                                 return SideTitleWidget(
                                   axisSide: meta.axisSide,
-                                  space: 8.0,
                                   child: Text(DateFormat('dd.MM').format(date)),
                                 );
                               }
@@ -120,22 +150,27 @@ class _ForecastScreenState extends State<ForecastScreen> {
                           ),
                         ),
                         leftTitles: AxisTitles(
-                            sideTitles: SideTitles(
+                          sideTitles: SideTitles(
                             showTitles: true,
                             reservedSize: 60,
                             getTitlesWidget: (value, meta) {
-                                return SideTitleWidget(
-                                  axisSide: meta.axisSide,
-                                  space: 8.0,
-                                  child: Text(NumberFormat.compact().format(value)),
-                                );
+                              return SideTitleWidget(
+                                axisSide: meta.axisSide,
+                                child:
+                                    Text(NumberFormat.compact().format(value)),
+                              );
                             },
                           ),
                         ),
-                        topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                        rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        topTitles: const AxisTitles(),
+                        rightTitles: const AxisTitles(),
                       ),
-                      borderData: FlBorderData(show: true, border: Border.all(color: const Color(0xff37434d), width: 1)),
+                      borderData: FlBorderData(
+                        show: true,
+                        border: Border.all(
+                          color: const Color(0xff37434d),
+                        ),
+                      ),
                       minY: minY - buffer,
                       maxY: maxY + buffer,
                       lineBarsData: [
@@ -148,7 +183,10 @@ class _ForecastScreenState extends State<ForecastScreen> {
                           dotData: const FlDotData(show: false),
                           belowBarData: BarAreaData(
                             show: true,
-                            color: Theme.of(context).colorScheme.primary.withAlpha(51),
+                            color: Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withAlpha(51),
                           ),
                         ),
                       ],
@@ -159,7 +197,11 @@ class _ForecastScreenState extends State<ForecastScreen> {
                               final dataPoint = forecastData[spot.spotIndex];
                               return LineTooltipItem(
                                 '${DateFormat('dd.MM.yyyy').format(dataPoint.date)}\n${currencyFormatter.format(dataPoint.balance)}',
-                                TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontWeight: FontWeight.bold),
+                                TextStyle(
+                                  color:
+                                      Theme.of(context).colorScheme.onPrimary,
+                                  fontWeight: FontWeight.bold,
+                                ),
                                 textAlign: TextAlign.left,
                               );
                             }).toList();

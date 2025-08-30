@@ -1,12 +1,63 @@
-import 'user.dart';
+import 'package:flutter/foundation.dart';
+import 'package:sage_wallet_reborn/models/user.dart';
 
+@immutable
 class WalletUser {
+  const WalletUser({required this.user, required this.role});
+
   final User user;
   final String role;
-  WalletUser({required this.user, required this.role});
 }
 
 class Wallet {
+  Wallet({
+    required this.name,
+    required this.ownerUserId,
+    this.id,
+    this.isDefault = false,
+    this.currentUserRole,
+    this.members = const [],
+    this.updatedAt,
+    this.isDeleted = false,
+  });
+
+  factory Wallet.fromMap(Map<String, dynamic> map) {
+    var parsedMembers = <WalletUser>[];
+    if (map['wallet_users'] is List) {
+      final membersData = map['wallet_users'] as List<dynamic>;
+      parsedMembers = membersData
+          .map((m) {
+            final memberMap = m as Map<String, dynamic>;
+            final userMap = memberMap['users'];
+            if (userMap is Map<String, dynamic>) {
+              return WalletUser(
+                user: User.fromMap(userMap),
+                role: memberMap['role'] as String? ?? 'viewer',
+              );
+            }
+            return null;
+          })
+          .whereType<WalletUser>()
+          .toList();
+    }
+
+    return Wallet(
+      id: map['id'] as int?,
+      name: map['name'] as String,
+      ownerUserId: (map['owner_user_id'] ?? map['ownerUserId']).toString(),
+      isDefault: (map['is_default'] is bool)
+          ? map['is_default'] as bool
+          : (map['is_default'] as int? ?? 0) == 1,
+      members: parsedMembers,
+      updatedAt: map['updated_at'] != null
+          ? DateTime.parse(map['updated_at'] as String)
+          : null,
+      isDeleted: (map['is_deleted'] is bool)
+          ? map['is_deleted'] as bool
+          : (map['is_deleted'] as int? ?? 0) == 1,
+    );
+  }
+
   final int? id;
   final String name;
   final String ownerUserId;
@@ -16,24 +67,14 @@ class Wallet {
   final DateTime? updatedAt;
   final bool isDeleted;
 
-  Wallet({
-    this.id,
-    required this.name,
-    required this.ownerUserId,
-    this.isDefault = false,
-    this.currentUserRole,
-    this.members = const [],
-    this.updatedAt,
-    this.isDeleted = false,
-  });
-
   Map<String, dynamic> toMapForDb() {
     return {
       'id': id,
       'name': name,
       'owner_user_id': ownerUserId,
       'is_default': isDefault ? 1 : 0,
-      'updated_at': updatedAt?.toIso8601String() ?? DateTime.now().toIso8601String(),
+      'updated_at':
+          updatedAt?.toIso8601String() ?? DateTime.now().toIso8601String(),
       'is_deleted': isDeleted ? 1 : 0,
     };
   }
@@ -46,33 +87,6 @@ class Wallet {
       'owner_user_id': ownerUserId,
       'is_deleted': isDeleted,
     };
-  }
-
-  factory Wallet.fromMap(Map<String, dynamic> map) {
-    List<WalletUser> parsedMembers = [];
-    if (map['wallet_users'] is List) {
-      final List membersData = map['wallet_users'];
-      parsedMembers = membersData.map((m) {
-        final userMap = m['users'];
-        if (userMap is Map<String, dynamic>) {
-           return WalletUser(
-            user: User.fromMap(userMap),
-            role: m['role'] as String? ?? 'viewer',
-          );
-        }
-        return null;
-      }).where((item) => item != null).cast<WalletUser>().toList();
-    }
-    
-    return Wallet(
-      id: map['id'] as int?,
-      name: map['name'] as String,
-      ownerUserId: (map['owner_user_id'] ?? map['ownerUserId']).toString(),
-      isDefault: (map['is_default'] is bool) ? map['is_default'] : ((map['is_default'] as int? ?? 0) == 1),
-      members: parsedMembers,
-      updatedAt: map['updated_at'] != null ? DateTime.parse(map['updated_at'] as String) : null,
-      isDeleted: (map['is_deleted'] is bool) ? map['is_deleted'] : ((map['is_deleted'] as int? ?? 0) == 1),
-    );
   }
 
   @override

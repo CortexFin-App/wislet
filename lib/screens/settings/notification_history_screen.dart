@@ -1,21 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../core/di/injector.dart';
-import '../../data/repositories/notification_repository.dart';
-import '../../models/notification_history_item.dart';
-import '../../services/navigation_service.dart';
-import '../../screens/financial_goals/financial_goals_list_screen.dart';
-import '../../widgets/scaffold/patterned_scaffold.dart';
+import 'package:sage_wallet_reborn/core/di/injector.dart';
+import 'package:sage_wallet_reborn/data/repositories/notification_repository.dart';
+import 'package:sage_wallet_reborn/models/notification_history_item.dart';
+import 'package:sage_wallet_reborn/screens/financial_goals/financial_goals_list_screen.dart';
+import 'package:sage_wallet_reborn/services/navigation_service.dart';
+import 'package:sage_wallet_reborn/widgets/scaffold/patterned_scaffold.dart';
 
 class NotificationHistoryScreen extends StatefulWidget {
   const NotificationHistoryScreen({super.key});
 
   @override
-  State<NotificationHistoryScreen> createState() => _NotificationHistoryScreenState();
+  State<NotificationHistoryScreen> createState() =>
+      _NotificationHistoryScreenState();
 }
 
 class _NotificationHistoryScreenState extends State<NotificationHistoryScreen> {
-  final NotificationRepository _notificationRepository = getIt<NotificationRepository>();
+  final NotificationRepository _notificationRepository =
+      getIt<NotificationRepository>();
   late Future<List<NotificationHistoryItem>> _historyFuture;
 
   @override
@@ -32,7 +34,7 @@ class _NotificationHistoryScreenState extends State<NotificationHistoryScreen> {
     }
   }
 
-  void _handleNotificationTap(String? payload, int id) async {
+  Future<void> _handleNotificationTap(String? payload, int id) async {
     await _notificationRepository.markNotificationAsRead(id);
     _loadHistory();
     if (payload != null && payload.isNotEmpty) {
@@ -45,30 +47,41 @@ class _NotificationHistoryScreenState extends State<NotificationHistoryScreen> {
       if (path[0] == 'goal' && path.length > 1) {
         final goalId = int.tryParse(path[1]);
         if (goalId != null) {
-          Navigator.push(context, MaterialPageRoute(builder: (context) => FinancialGoalsListScreen(goalIdToHighlight: goalId)));
+          await Navigator.push<void>(
+            context,
+            MaterialPageRoute(
+              builder: (context) =>
+                  FinancialGoalsListScreen(goalIdToHighlight: goalId),
+            ),
+          );
         }
       }
     }
   }
 
   Future<void> _clearHistory() async {
-    final bool? confirm = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-              title: const Text('Очистити історію?'),
-              content: const Text('Вся історія сповіщень буде видалена. Цю дію неможливо скасувати.'),
-              actions: [
-                TextButton(
-                  child: const Text('Скасувати'),
-                  onPressed: () => Navigator.of(context).pop(false),
-                ),
-                TextButton(
-                  style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.error),
-                  child: const Text('Очистити'),
-                  onPressed: () => Navigator.of(context).pop(true),
-                ),
-              ],
-            ));
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('РћС‡РёСЃС‚РёС‚Рё С–СЃС‚РѕСЂС–СЋ?'),
+        content: const Text(
+          'Р’СЃСЏ С–СЃС‚РѕСЂС–СЏ СЃРїРѕРІС–С‰РµРЅСЊ Р±СѓРґРµ РІРёРґР°Р»РµРЅР°. Р¦СЋ РґС–СЋ РЅРµРјРѕР¶Р»РёРІРѕ СЃРєР°СЃСѓРІР°С‚Рё.',
+        ),
+        actions: [
+          TextButton(
+            child: const Text('РЎРєР°СЃСѓРІР°С‚Рё'),
+            onPressed: () => Navigator.of(context).pop(false),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: const Text('РћС‡РёСЃС‚РёС‚Рё'),
+            onPressed: () => Navigator.of(context).pop(true),
+          ),
+        ],
+      ),
+    );
 
     if (confirm == true) {
       await _notificationRepository.clearNotificationHistory();
@@ -80,11 +93,11 @@ class _NotificationHistoryScreenState extends State<NotificationHistoryScreen> {
   Widget build(BuildContext context) {
     return PatternedScaffold(
       appBar: AppBar(
-        title: const Text('Історія сповіщень'),
+        title: const Text('Р†СЃС‚РѕСЂС–СЏ СЃРїРѕРІС–С‰РµРЅСЊ'),
         actions: [
           IconButton(
             icon: const Icon(Icons.delete_sweep_outlined),
-            tooltip: 'Очистити історію',
+            tooltip: 'РћС‡РёСЃС‚РёС‚Рё С–СЃС‚РѕСЂС–СЋ',
             onPressed: _clearHistory,
           ),
         ],
@@ -96,18 +109,30 @@ class _NotificationHistoryScreenState extends State<NotificationHistoryScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(child: Text('Помилка завантаження історії: ${snapshot.error}'));
+            return Center(
+              child: Text(
+                'РџРѕРјРёР»РєР° Р·Р°РІР°РЅС‚Р°Р¶РµРЅРЅСЏ С–СЃС‚РѕСЂС–С—: ${snapshot.error}',
+              ),
+            );
           }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return Center(
               child: Padding(
-                padding: const EdgeInsets.all(24.0),
+                padding: const EdgeInsets.all(24),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.notifications_off_outlined, size: 80, color: Theme.of(context).colorScheme.onSurface.withAlpha(77)),
+                    Icon(
+                      Icons.notifications_off_outlined,
+                      size: 80,
+                      color:
+                          Theme.of(context).colorScheme.onSurface.withAlpha(77),
+                    ),
                     const SizedBox(height: 16),
-                    Text('Історія сповіщень порожня', style: Theme.of(context).textTheme.headlineSmall),
+                    Text(
+                      'Р†СЃС‚РѕСЂС–СЏ СЃРїРѕРІС–С‰РµРЅСЊ РїРѕСЂРѕР¶РЅСЏ',
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
                   ],
                 ),
               ),
@@ -116,22 +141,31 @@ class _NotificationHistoryScreenState extends State<NotificationHistoryScreen> {
 
           final notifications = snapshot.data!;
           return ListView.separated(
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.all(8),
             itemCount: notifications.length,
-            separatorBuilder: (context, index) => const Divider(height: 1, indent: 16, endIndent: 16),
+            separatorBuilder: (context, index) =>
+                const Divider(height: 1, indent: 16, endIndent: 16),
             itemBuilder: (context, index) {
               final notification = notifications[index];
               return ListTile(
                 leading: Icon(
-                  notification.isRead ? Icons.drafts_outlined : Icons.notifications_active,
-                  color: notification.isRead ? Theme.of(context).disabledColor : Theme.of(context).colorScheme.primary,
+                  notification.isRead
+                      ? Icons.drafts_outlined
+                      : Icons.notifications_active,
+                  color: notification.isRead
+                      ? Theme.of(context).disabledColor
+                      : Theme.of(context).colorScheme.primary,
                 ),
                 title: Text(
                   notification.title,
-                  style: TextStyle(fontWeight: notification.isRead ? FontWeight.normal : FontWeight.bold),
+                  style: TextStyle(
+                    fontWeight: notification.isRead
+                        ? FontWeight.normal
+                        : FontWeight.bold,
+                  ),
                 ),
                 subtitle: Text(
-                  "${notification.body}\n${DateFormat('dd.MM.yyyy HH:mm').format(notification.timestamp)}",
+                  '${notification.body}\n${DateFormat('dd.MM.yyyy HH:mm').format(notification.timestamp)}',
                 ),
                 isThreeLine: true,
                 onTap: () => _handleNotificationTap(

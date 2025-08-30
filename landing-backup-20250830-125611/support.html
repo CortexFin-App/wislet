@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+  <title>Support • CortexFin</title>
+  <meta name="description" content="Support CortexFin and Wislet development. Offline-first. Privacy. Shared wallets.">
+  <link rel="canonical" href="https://cortexfinapp.com/support">
+  <link rel="alternate" hreflang="en" href="https://cortexfinapp.com/support">
+  <link rel="alternate" hreflang="uk" href="https://cortexfinapp.com/support?lang=uk">
+
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Support • CortexFin">
+  <meta property="og:description" content="Help us ship Wislet faster.">
+  <meta property="og:image" content="/assets/og-default.png">
+  <meta property="og:url" content="https://cortexfinapp.com/support">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32.png">
+  <link rel="stylesheet" href="/assets/styles.css">
+  <style>
+    /* легкий глянець без лому існуючої теми */
+    .support-hero{padding:64px 0;background:radial-gradient(1200px 600px at 10% 0%,rgba(59,130,246,.15),transparent),radial-gradient(1000px 500px at 90% -10%,rgba(14,165,233,.12),transparent);}
+    .glass{backdrop-filter:blur(8px);background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:20px}
+    .grid-2{display:grid;gap:16px;grid-template-columns:1fr;}.qr{width:180px;height:180px;border-radius:16px}
+    @media(min-width:900px){.grid-2{grid-template-columns:1fr 1fr}}
+    .btn.big{font-size:18px;padding:14px 22px}
+    .pill{display:inline-flex;gap:8px;align-items:center;padding:6px 10px;border-radius:999px;background:rgba(14,165,233,.15);color:#7dd3fc;font-weight:600}
+    .copy{font-size:14px;opacity:.9}
+    .lang-switch{gap:8px}
+    .lang-switch a{opacity:.7} .lang-switch a.active{opacity:1;font-weight:700}
+    .don-sticky{position:fixed;right:16px;bottom:16px;z-index:60}
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="/"><img src="/assets/logo_full.png" alt="CortexFin" class="brand"></a>
+      <nav class="nav">
+        <a href="/product">Product</a>
+        <a href="/pricing">Pricing</a>
+        <a href="/auction">Auction</a>
+        <a href="/faq">FAQ</a>
+        <a href="/blog">Blog</a>
+        <a href="/security">Security</a>
+        <a class="lang" href="/ua" rel="alternate" hreflang="uk">UA</a>
+      </nav>
+      <div class="cta">
+        <a class="btn ghost" href="https://www.youtube.com/@CortexFinOfficial" target="_blank" rel="noopener">YouTube</a>
+        <a class="btn" href="/join">Join</a>
+      </div>
+    </div>
+  </header>
+
+  <section class="support-hero">
+    <div class="container">
+      <div class="lang-switch" style="display:flex;justify-content:flex-end">
+        <a href="/support" id="enL">EN</a>•<a href="/support?lang=uk" id="ukL">UA</a>
+      </div>
+
+      <h1 style="margin:8px 0 4px" id="t1">Support CortexFin</h1>
+      <p id="t2">Help us ship Wislet faster. Every coffee = more offline-first & privacy goodness ☕️</p>
+
+      <div class="grid-2" style="margin-top:24px">
+        <div class="glass" style="padding:20px">
+          <div class="pill" style="margin-bottom:12px">Monobank Jar</div>
+          <h3 id="t3" style="margin:0 0 8px">One-click donation</h3>
+          <p id="t4">Open the Monobank page in a new tab and choose any amount.</p>
+
+          <a class="btn big" id="donBtn" href="https://send.monobank.ua/jar/Z1TUkVerK" target="_blank" rel="noopener">Support via Monobank</a>
+          <div style="margin-top:10px" class="copy">
+            <span id="t5">Or copy the link:</span>
+            <code id="jarLink">https://send.monobank.ua/jar/Z1TUkVerK</code>
+            <button class="btn ghost" id="copyBtn" style="padding:6px 10px;margin-left:6px">Copy</button>
+          </div>
+        </div>
+
+        <div class="glass" style="padding:20px">
+          <h3 id="t6" style="margin:0 0 8px">Where funds go</h3>
+          <ul id="t7" style="opacity:.9;line-height:1.6">
+            <li>iOS/Android app development & infra</li>
+            <li>Security reviews & on-device AI/OCR</li>
+            <li>Founders Hall & community perks</li>
+          </ul>
+          <img class="qr" alt="Monobank QR" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https%3A%2F%2Fsend.monobank.ua%2Fjar%2FZ1TUkVerK" loading="lazy">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <div class="container grid-3">
+      <div><img src="/assets/logo_full.png" class="brand sm" alt="CortexFin"><p>Offline-first. Privacy. Shared wallets.</p></div>
+      <div><h4>Pages</h4><ul>
+        <li><a href="/product">Product</a></li><li><a href="/pricing">Pricing</a></li><li><a href="/auction">Auction</a></li>
+        <li><a href="/privacy">Privacy Policy</a></li><li><a href="/terms">Terms</a></li></ul></div>
+      <div><h4>Follow</h4><div class="socials"><a target="_blank" href="https://x.com/cortexfin_team">X</a><a target="_blank" href="https://instagram.com/cortexfin_team">Instagram</a><a target="_blank" href="https://www.youtube.com/@CortexFinOfficial">YouTube</a></div></div>
+    </div>
+    <div class="legal">© 2025 CortexFin</div>
+  </footer>
+
+  <!-- маленька плаваюча кнопка донату -->
+  <a class="btn don-sticky" href="https://send.monobank.ua/jar/Z1TUkVerK" target="_blank" rel="noopener">❤ Support</a>
+
+  <script>
+    // локалізація через ?lang=uk
+    const uk = {
+      t1:'Підтримка CortexFin',
+      t2:'Допоможи нам швидше випустити Wislet. Кожна кава = більше офлайн-first і приватності ☕️',
+      t3:'Донат в один клік',
+      t4:'Відкрий сторінку Монобанку у новій вкладці та обери суму.',
+      t5:'Або скопіюй лінк:',
+      t6:'На що підуть кошти',
+      t7:'Розробка iOS/Android та інфра; Безпека й on-device AI/OCR; Зала Засновників і комʼюніті-перки.'
+    };
+    const isUk = new URL(location.href).searchParams.get('lang') === 'uk';
+    if(isUk){
+      Object.entries(uk).forEach(([k,v])=>{ const el=document.getElementById(k); if(el) el.textContent=v; });
+      document.getElementById('enL').classList.remove('active'); document.getElementById('ukL').classList.add('active');
+      document.documentElement.lang='uk';
+    } else { document.getElementById('enL').classList.add('active'); }
+
+    // копіювання
+    document.getElementById('copyBtn').addEventListener('click', async () => {
+      try{
+        await navigator.clipboard.writeText(document.getElementById('jarLink').textContent.trim());
+        document.getElementById('copyBtn').textContent='Copied ✓';
+        setTimeout(()=>document.getElementById('copyBtn').textContent='Copy',1200);
+      }catch{}
+    });
+
+    // простий GA/gtag івент, якщо є
+    const donBtn=document.getElementById('donBtn');
+    donBtn.addEventListener('click', () => { try{ gtag('event','support_click',{method:'monobank'}); }catch{} });
+  </script>
+</body>
+</html>

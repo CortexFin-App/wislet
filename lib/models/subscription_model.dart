@@ -1,8 +1,59 @@
-import 'package:flutter/material.dart';
-
 enum BillingCycle { daily, weekly, monthly, quarterly, yearly, custom }
 
+extension BillingCycleX on BillingCycle {
+  static BillingCycle fromName(String name) =>
+      BillingCycle.values.byName(name);
+}
+
 class Subscription {
+  Subscription({
+    required this.name,
+    required this.amount,
+    required this.currencyCode,
+    required this.billingCycle,
+    required this.nextPaymentDate,
+    required this.startDate,
+    this.id,
+    this.categoryId,
+    this.paymentMethod,
+    this.notes,
+    this.isActive = true,
+    this.website,
+    this.reminderDaysBefore = 1,
+    this.updatedAt,
+    this.isDeleted = false,
+    this.subscriptionColor,
+  });
+
+  factory Subscription.fromMap(Map<String, dynamic> map) {
+    bool _bool(dynamic v, [bool def = false]) {
+      if (v is bool) return v;
+      if (v is num) return v != 0;
+      return def;
+    }
+
+    return Subscription(
+      id: map['id'] as int?,
+      name: map['name'] as String,
+      amount: (map['amount'] as num).toDouble(),
+      currencyCode: map['currency_code'] as String,
+      billingCycle: BillingCycleX.fromName(map['billing_cycle'] as String),
+      nextPaymentDate: DateTime.parse(map['next_payment_date'] as String),
+      startDate: DateTime.parse(map['start_date'] as String),
+      categoryId: map['category_id'] as int?,
+      paymentMethod: map['payment_method'] as String?,
+      notes: map['notes'] as String?,
+      isActive: _bool(map['is_active'], true),
+      website: map['website'] as String?,
+      reminderDaysBefore: (map['reminder_days_before'] as num?)?.toInt() ?? 1,
+      updatedAt: map['updated_at'] != null
+          ? DateTime.parse(map['updated_at'] as String)
+          : null,
+      isDeleted: _bool(map['is_deleted'], false),
+      subscriptionColor: map['subscription_color'] as int?, // ARGB int
+    );
+  }
+
   final int? id;
   final String name;
   final double amount;
@@ -18,24 +69,7 @@ class Subscription {
   final int? reminderDaysBefore;
   final DateTime? updatedAt;
   final bool isDeleted;
-
-  Subscription({
-    this.id,
-    required this.name,
-    required this.amount,
-    required this.currencyCode,
-    required this.billingCycle,
-    required this.nextPaymentDate,
-    required this.startDate,
-    this.categoryId,
-    this.paymentMethod,
-    this.notes,
-    this.isActive = true,
-    this.website,
-    this.reminderDaysBefore,
-    this.updatedAt,
-    this.isDeleted = false,
-  });
+  final int? subscriptionColor;
 
   Map<String, dynamic> toMap() {
     return {
@@ -53,31 +87,13 @@ class Subscription {
       'website': website,
       'reminder_days_before': reminderDaysBefore,
       'is_deleted': isDeleted ? 1 : 0,
+      'subscription_color': subscriptionColor,
     };
   }
 
-  factory Subscription.fromMap(Map<String, dynamic> map) {
-    return Subscription(
-      id: map['id'],
-      name: map['name'],
-      amount: (map['amount'] as num).toDouble(),
-      currencyCode: map['currency_code'],
-      billingCycle: BillingCycle.values.byName(map['billing_cycle']),
-      nextPaymentDate: DateTime.parse(map['next_payment_date']),
-      startDate: DateTime.parse(map['start_date']),
-      categoryId: map['category_id'],
-      paymentMethod: map['payment_method'],
-      notes: map['notes'],
-      isActive: (map['is_active'] is bool) ? map['is_active'] : ((map['is_active'] as int? ?? 1) == 1),
-      website: map['website'],
-      reminderDaysBefore: map['reminder_days_before'],
-      updatedAt: map['updated_at'] != null ? DateTime.parse(map['updated_at'] as String) : null,
-      isDeleted: (map['is_deleted'] is bool) ? map['is_deleted'] : ((map['is_deleted'] as int? ?? 0) == 1),
-    );
-  }
-
-  DateTime calculateNextPaymentDate(DateTime fromDate, BillingCycle cycle) {
-    switch (cycle) {
+  /// Обчислити дату наступного платежу від довільної дати.
+  static DateTime calculateNextPaymentDate(DateTime fromDate, BillingCycle c) {
+    switch (c) {
       case BillingCycle.daily:
         return fromDate.add(const Duration(days: 1));
       case BillingCycle.weekly:
@@ -91,22 +107,5 @@ class Subscription {
       case BillingCycle.custom:
         return fromDate.add(const Duration(days: 30));
     }
-  }
-}
-
-String billingCycleToString(BillingCycle cycle, BuildContext context) {
-  switch (cycle) {
-    case BillingCycle.daily:
-      return 'Щодня';
-    case BillingCycle.weekly:
-      return 'Щотижня';
-    case BillingCycle.monthly:
-      return 'Щомісяця';
-    case BillingCycle.quarterly:
-      return 'Щоквартально';
-    case BillingCycle.yearly:
-      return 'Щороку';
-    case BillingCycle.custom:
-      return 'Інше';
   }
 }

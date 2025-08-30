@@ -1,37 +1,43 @@
 import 'package:fpdart/fpdart.dart';
-import '../../../core/error/failures.dart';
-import '../../../models/asset.dart';
-import '../../../services/error_monitoring_service.dart';
-import '../../../utils/database_helper.dart';
-import '../asset_repository.dart';
+import 'package:sage_wallet_reborn/core/error/failures.dart';
+import 'package:sage_wallet_reborn/data/repositories/asset_repository.dart';
+import 'package:sage_wallet_reborn/models/asset.dart';
+import 'package:sage_wallet_reborn/services/error_monitoring_service.dart';
+import 'package:sage_wallet_reborn/utils/database_helper.dart';
 
 class LocalAssetRepositoryImpl implements AssetRepository {
-  final DatabaseHelper _dbHelper;
   LocalAssetRepositoryImpl(this._dbHelper);
+
+  final DatabaseHelper _dbHelper;
 
   @override
   Stream<List<Asset>> watchAllAssets(int walletId) {
     return Stream.fromFuture(getAllAssets(walletId))
         .map((either) => either.getOrElse((_) => []));
   }
-  
+
   Future<Either<AppFailure, List<Asset>>> getAllAssets(int walletId) async {
     try {
       final db = await _dbHelper.database;
       final maps = await db.query(
         DatabaseHelper.tableAssets,
-        where: '${DatabaseHelper.colAssetWalletId} = ? AND ${DatabaseHelper.colAssetIsDeleted} = 0',
+        where:
+            '${DatabaseHelper.colAssetWalletId} = ? AND ${DatabaseHelper.colAssetIsDeleted} = 0',
         whereArgs: [walletId],
       );
-      return Right(maps.map((map) => Asset.fromMap(map)).toList());
-    } catch (e, s) {
-      ErrorMonitoringService.capture(e, stackTrace: s);
+      return Right(maps.map(Asset.fromMap).toList());
+    } on Exception catch (e, s) {
+      await ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(DatabaseFailure(details: e.toString()));
     }
   }
 
   @override
-  Future<Either<AppFailure, int>> createAsset(Asset asset, int walletId, String userId) async {
+  Future<Either<AppFailure, int>> createAsset(
+    Asset asset,
+    int walletId,
+    String userId,
+  ) async {
     try {
       final db = await _dbHelper.database;
       final map = asset.toMap();
@@ -39,8 +45,8 @@ class LocalAssetRepositoryImpl implements AssetRepository {
       map[DatabaseHelper.colAssetUserId] = userId;
       final newId = await db.insert(DatabaseHelper.tableAssets, map);
       return Right(newId);
-    } catch(e, s) {
-      ErrorMonitoringService.capture(e, stackTrace: s);
+    } on Exception catch (e, s) {
+      await ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(DatabaseFailure(details: e.toString()));
     }
   }
@@ -57,12 +63,12 @@ class LocalAssetRepositoryImpl implements AssetRepository {
         whereArgs: [asset.id],
       );
       return Right(updatedId);
-    } catch(e, s) {
-      ErrorMonitoringService.capture(e, stackTrace: s);
+    } on Exception catch (e, s) {
+      await ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(DatabaseFailure(details: e.toString()));
     }
   }
-  
+
   @override
   Future<Either<AppFailure, int>> deleteAsset(int assetId) async {
     try {
@@ -72,14 +78,14 @@ class LocalAssetRepositoryImpl implements AssetRepository {
         DatabaseHelper.tableAssets,
         {
           DatabaseHelper.colAssetIsDeleted: 1,
-          DatabaseHelper.colAssetUpdatedAt: now
+          DatabaseHelper.colAssetUpdatedAt: now,
         },
         where: '${DatabaseHelper.colAssetId} = ?',
         whereArgs: [assetId],
       );
       return Right(deletedRows);
-    } catch(e, s) {
-      ErrorMonitoringService.capture(e, stackTrace: s);
+    } on Exception catch (e, s) {
+      await ErrorMonitoringService.capture(e, stackTrace: s);
       return Left(DatabaseFailure(details: e.toString()));
     }
   }

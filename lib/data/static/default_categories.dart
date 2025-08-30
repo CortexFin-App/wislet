@@ -5,7 +5,7 @@ const List<Map<String, String>> defaultCategories = [
   {'name': 'Кафе і ресторани', 'type': 'expense'},
   {'name': 'Комунальні послуги', 'type': 'expense'},
   {'name': 'Одяг та взуття', 'type': 'expense'},
-  {'name': 'Здоров\'я та медицина', 'type': 'expense'},
+  {'name': "Здоров'я та медицина", 'type': 'expense'},
   {'name': 'Хобі та розваги', 'type': 'expense'},
   {'name': 'Підписки', 'type': 'expense'},
   {'name': 'Перекази', 'type': 'expense'},

@@ -1,0 +1,14 @@
+﻿{
+    "gross_cents":  600000,
+    "est_fees_cents":  24000,
+    "net_cents":  576000,
+    "sold_pf":  2,
+    "sold_gf":  4,
+    "sold_se":  0,
+    "quota_pf":  5,
+    "quota_gf":  20,
+    "quota_se":  160,
+    "active_pf":  5,
+    "active_gf":  10,
+    "active_se":  160
+}

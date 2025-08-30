@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:provider/provider.dart';
-import '../../models/theme_profile.dart';
-import '../../providers/theme_provider.dart';
+import 'package:sage_wallet_reborn/models/theme_profile.dart';
+import 'package:sage_wallet_reborn/providers/theme_provider.dart';
 
 class ThemeEditorScreen extends StatefulWidget {
-  final ThemeProfile? initialProfile;
-
   const ThemeEditorScreen({super.key, this.initialProfile});
+  final ThemeProfile? initialProfile;
 
   @override
   State<ThemeEditorScreen> createState() => _ThemeEditorScreenState();
@@ -20,11 +19,13 @@ class _ThemeEditorScreenState extends State<ThemeEditorScreen> {
   @override
   void initState() {
     super.initState();
-    _editedProfile = widget.initialProfile ??
-        context.read<ThemeProvider>().currentProfile;
-    _nameController = TextEditingController(text: widget.initialProfile != null ? _editedProfile.name : '');
+    _editedProfile =
+        widget.initialProfile ?? context.read<ThemeProvider>().currentProfile;
+    _nameController = TextEditingController(
+      text: widget.initialProfile != null ? _editedProfile.name : '',
+    );
   }
-  
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -32,10 +33,10 @@ class _ThemeEditorScreenState extends State<ThemeEditorScreen> {
   }
 
   void _showColorPicker() {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Оберіть колір'),
+        title: const Text('РћР±РµСЂС–С‚СЊ РєРѕР»С–СЂ'),
         content: SingleChildScrollView(
           child: ColorPicker(
             pickerColor: _editedProfile.seedColor,
@@ -53,7 +54,7 @@ class _ThemeEditorScreenState extends State<ThemeEditorScreen> {
         ),
         actions: <Widget>[
           TextButton(
-            child: const Text('Готово'),
+            child: const Text('Р“РѕС‚РѕРІРѕ'),
             onPressed: () => Navigator.of(context).pop(),
           ),
         ],
@@ -82,14 +83,18 @@ class _ThemeEditorScreenState extends State<ThemeEditorScreen> {
       ),
       child: Scaffold(
         appBar: AppBar(
-          title: Text(widget.initialProfile == null ? 'Нова Тема' : 'Редактор Теми'),
+          title: Text(
+            widget.initialProfile == null
+                ? 'РќРѕРІР° РўРµРјР°'
+                : 'Р РµРґР°РєС‚РѕСЂ РўРµРјРё',
+          ),
           actions: [
             IconButton(
               icon: const Icon(Icons.save_outlined),
               onPressed: () {
                 final newName = _nameController.text.trim();
                 if (newName.isEmpty) return;
-                
+
                 final finalProfile = ThemeProfile(
                   name: newName,
                   seedColor: _editedProfile.seedColor,
@@ -109,13 +114,13 @@ class _ThemeEditorScreenState extends State<ThemeEditorScreen> {
             TextFormField(
               controller: _nameController,
               decoration: const InputDecoration(
-                labelText: 'Назва теми',
+                labelText: 'РќР°Р·РІР° С‚РµРјРё',
                 border: OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 16),
             ListTile(
-              title: const Text('Основний колір'),
+              title: const Text('РћСЃРЅРѕРІРЅРёР№ РєРѕР»С–СЂ'),
               trailing: CircleAvatar(backgroundColor: _editedProfile.seedColor),
               onTap: _showColorPicker,
               shape: RoundedRectangleBorder(
@@ -124,11 +129,12 @@ class _ThemeEditorScreenState extends State<ThemeEditorScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            Text('Радіус заокруглення: ${_editedProfile.borderRadius.toStringAsFixed(1)}'),
+            Text(
+              'Р Р°РґС–СѓСЃ Р·Р°РѕРєСЂСѓРіР»РµРЅРЅСЏ: ${_editedProfile.borderRadius.toStringAsFixed(1)}',
+            ),
             Slider(
               value: _editedProfile.borderRadius,
-              min: 0.0,
-              max: 24.0,
+              max: 24,
               divisions: 12,
               label: _editedProfile.borderRadius.toStringAsFixed(1),
               onChanged: (value) {
@@ -142,21 +148,23 @@ class _ThemeEditorScreenState extends State<ThemeEditorScreen> {
                 });
               },
             ),
-             const SizedBox(height: 16),
+            const SizedBox(height: 16),
             DropdownButtonFormField<String>(
               value: _editedProfile.fontFamily,
               decoration: const InputDecoration(
-                labelText: 'Шрифт',
+                labelText: 'РЁСЂРёС„С‚',
                 border: OutlineInputBorder(),
               ),
-              items: ['NotoSans', 'Roboto', 'Inter', 'SourceCodePro'].map((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value, style: TextStyle(fontFamily: value)),
-                );
-              }).toList(),
-              onChanged: (String? newValue) {
-                if(newValue != null) {
+              items: ['NotoSans', 'Roboto', 'Inter', 'SourceCodePro']
+                  .map(
+                    (value) => DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value, style: TextStyle(fontFamily: value)),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (newValue) {
+                if (newValue != null) {
                   setState(() {
                     _editedProfile = ThemeProfile(
                       name: _editedProfile.name,
@@ -171,12 +179,15 @@ class _ThemeEditorScreenState extends State<ThemeEditorScreen> {
             const SizedBox(height: 24),
             Card(
               child: Padding(
-                padding: const EdgeInsets.all(8.0),
+                padding: const EdgeInsets.all(8),
                 child: Column(
                   children: [
-                    const Text('Приклад картки'),
+                    const Text('РџСЂРёРєР»Р°Рґ РєР°СЂС‚РєРё'),
                     const SizedBox(height: 8),
-                    ElevatedButton(onPressed: () {}, child: const Text('Приклад кнопки')),
+                    ElevatedButton(
+                      onPressed: () {},
+                      child: const Text('РџСЂРёРєР»Р°Рґ РєРЅРѕРїРєРё'),
+                    ),
                   ],
                 ),
               ),

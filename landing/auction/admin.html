@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CortexFin · Admin Export</title>
+  <meta name="robots" content="noindex, nofollow, noarchive" />
+  <style>
+    :root { color-scheme: dark; }
+    body { margin:24px; font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto; background:#0b1220; color:#e5eaf3; }
+    h1 { font-size:18px; margin:0 0 16px; }
+    fieldset { border:1px solid #333; padding:12px; border-radius:10px; margin-bottom:16px; }
+    legend { padding:0 6px; color:#9aa; }
+    label { display:inline-flex; align-items:center; gap:6px; margin:6px 12px 6px 0; }
+    input, select, button { padding:8px 10px; border-radius:8px; border:1px solid #444; background:#111; color:#fff; }
+    input[type="date"] { background:#111; }
+    button { cursor:pointer; border:1px solid #555; }
+    .row { display:flex; flex-wrap:wrap; gap:12px; }
+    .w150 { width:150px; }
+    .w260 { width:260px; }
+    .muted { color:#9aa; font-size:12px; }
+    #out { margin-top:16px; }
+    table { border-collapse:collapse; width:100%; margin-top:10px; }
+    th, td { border-bottom:1px solid #333; padding:6px 8px; text-align:left; font-size:13px; }
+    th { color:#cbd5e1; }
+    .ok { color:#5ad17a; }
+    .err { color:#ff6b6b; white-space:pre-wrap; }
+    .bar { height:10px; background:#222; border-radius:999px; overflow:hidden; border:1px solid #333; }
+    .fill { height:100%; background:#19c5ff; width:0%; }
+    .kpis { display:flex; gap:16px; flex-wrap:wrap; font-size:13px; }
+    .kpi b { font-variant-numeric:tabular-nums; }
+  </style>
+</head>
+<body>
+  <h1>Admin Export</h1>
+
+  <fieldset>
+    <legend>Прогрес до $35k:</legend>
+    <div class="bar"><div id="m_fill" class="fill"></div></div>
+    <div class="muted">PF / GF / SE …</div>
+    <div class="row" style="margin-top:8px;">
+      <button id="reloadMetricsBtn">Оновити метрики</button>
+      <span id="m_note" class="ok">—</span>
+      <label>mode
+        <select id="mode">
+          <option value="live" selected>live</option>
+          <option value="test">test</option>
+        </select>
+      </label>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Доступ</legend>
+    <div class="row">
+      <label class="w260">Endpoint
+        <input id="endpoint" class="w260" value="https://xdofjorgomwdyawmwbcj.functions.supabase.co/admin-export" />
+      </label>
+      <label class="w260">x-admin-key
+        <input id="admkey" class="w260" type="password" placeholder="встав свій ключ" />
+      </label>
+      <button id="rememberBtn">Запам'ятати</button>
+      <span class="muted">Ключ і налаштування зберігаються у localStorage цього браузера.</span>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Фільтри</legend>
+    <div class="row">
+      <label>Формат
+        <select id="format">
+          <option value="json">JSON (переглянути нижче)</option>
+          <option value="csv">CSV (завантажити файл)</option>
+        </select>
+      </label>
+      <label>Tier
+        <select id="tier">
+          <option value="">— будь-який —</option>
+          <option>PF</option><option>GF</option><option>SE</option>
+        </select>
+      </label>
+      <label>Email містить
+        <input id="email" class="w260" placeholder="@gmail.com" />
+      </label>
+      <label>Платіж з
+        <input id="paid_since" type="date" class="w150" />
+      </label>
+      <label>Платіж по
+        <input id="paid_until" type="date" class="w150" />
+      </label>
+      <label>offset <input id="offset" type="number" class="w150" value="0" min="0" /></label>
+      <label>limit  <input id="limit"  type="number" class="w150" value="1000" min="1" max="5000" /></label>
+    </div>
+    <div class="row">
+      <button id="runBtn">Запустити</button>
+      <span id="status" class="muted"></span>
+    </div>
+  </fieldset>
+
+  <div id="out"></div>
+
+  <fieldset>
+    <legend>Ручне зарахування</legend>
+    <div class="row">
+      <label>hold_id <input id="m_hold" type="number" class="w150" /></label>
+      <label>tier
+        <select id="m_tier"><option>PF</option><option>GF</option><option>SE</option></select>
+      </label>
+      <label>provider <input id="m_provider" class="w150" value="manual"/></label>
+      <label>tx_id <input id="m_txid" class="w260" placeholder="референс/чек"/></label>
+      <label>amount_cents <input id="m_amount" type="number" class="w150" placeholder="(опц.)"/></label>
+      <label>currency <input id="m_curr" class="w150" value="usd"/></label>
+      <button id="m_run">Convert</button>
+    </div>
+    <div id="m_out" class="muted"></div>
+  </fieldset>
+
+<script>
+  // ПУБЛІЧНИЙ анонімний ключ (anon) — дозволено вшивати у фронтенд
+  const ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkb2Zqb3Jnb213ZHlhd213YmNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkzMzE0MTcsImV4cCI6MjA2NDkwNzQxN30.2i9ru8fXLZEYD_jNHoHd0ZJmN4k9gKcPOChdiuL_AMY";
+
+  // Дати за замовчуванням — останні 7 днів
+  (function setDefaultDates(){
+    const u = document.getElementById('paid_until');
+    const s = document.getElementById('paid_since');
+    const today = new Date();
+    const until = today.toISOString().slice(0,10);
+    const since = new Date(today.getTime() - 6*864e5).toISOString().slice(0,10);
+    u.value = until; s.value = since;
+  })();
+
+  // Пам'ять ключа/налаштувань
+  const LSKEY = 'cortexfin_admin_export';
+  (function restore(){
+    try {
+      const saved = JSON.parse(localStorage.getItem(LSKEY) || '{}');
+      for (const id of ['endpoint','admkey','format','tier','email','paid_since','paid_until','offset','limit','mode']) {
+        if (saved[id] != null) document.getElementById(id).value = saved[id];
+      }
+    } catch {}
+  })();
+  document.getElementById('rememberBtn').onclick = () => {
+    const payload = {};
+    for (const id of ['endpoint','admkey','format','tier','email','paid_since','paid_until','offset','limit','mode']) {
+      payload[id] = document.getElementById(id).value;
+    }
+    localStorage.setItem(LSKEY, JSON.stringify(payload));
+    ping('Збережено', true);
+    setTimeout(loadMetrics, 150);
+  };
+
+  function ping(msg, ok) {
+    const s = document.getElementById('status');
+    s.className = ok ? 'ok' : 'err';
+    s.textContent = msg;
+  }
+  function money(u) { return '$' + (Number(u||0)/100).toLocaleString('en-US', {maximumFractionDigits:2}); }
+
+  function headers(key) {
+    return {
+      'x-admin-key': key,
+      // додаємо публічні заголовки — допомагає CORS у браузері
+      'Authorization': `Bearer ${ANON}`,
+      'apikey': ANON
+    };
+  }
+
+  async function loadMetrics() {
+    const base = document.getElementById('endpoint').value.trim();
+    const key  = document.getElementById('admkey').value.trim();
+    const mode = document.getElementById('mode').value;
+    const url  = `${base}?metrics=1&mode=${encodeURIComponent(mode)}`;
+
+    try {
+      const r = await fetch(url, { headers: headers(key) });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data?.error || r.status);
+
+      const gross = Number(data.gross_cents||0);
+      const net   = Number(data.net_cents||0);
+      const fees  = Number(data.est_fees_cents||0);
+      const goal  = 3500000; // $35k у центах
+      const pct   = Math.max(0, Math.min(100, (net / goal) * 100));
+
+      document.getElementById('m_fill').style.width = pct.toFixed(2) + '%';
+      document.getElementById('m_note').textContent =
+        `Net ${money(net)} / $35,000 (${pct.toFixed(1)}%)`;
+    } catch (e) {
+      document.getElementById('m_note').textContent = 'Помилка метрик: ' + (e.message || e);
+    }
+  }
+  document.getElementById('reloadMetricsBtn').onclick = loadMetrics;
+  loadMetrics();
+
+  function buildURL() {
+    const base = document.getElementById('endpoint').value.trim();
+    const p = new URLSearchParams();
+    const q = (id) => document.getElementById(id).value.trim();
+    const add = (k,v) => { if (v) p.set(k, v); };
+    add('format', q('format'));
+    add('tier', q('tier'));
+    add('email', q('email'));             // підтримано на бекенді
+    add('paid_since', q('paid_since'));
+    add('paid_until', q('paid_until'));
+    add('offset', q('offset'));
+    add('limit', q('limit'));
+    // mode для експортів не обов'язковий, але хай буде — бек ігнорує
+    add('mode', q('mode'));
+    return `${base}?${p.toString()}`;
+  }
+
+  async function run() {
+    const url = buildURL();
+    const key = document.getElementById('admkey').value.trim();
+    const fmt = document.getElementById('format').value;
+    const out = document.getElementById('out');
+    out.innerHTML = '';
+    ping('Виконую запит…', true);
+
+    try {
+      const res = await fetch(url, { headers: headers(key) });
+      if (!res.ok) {
+        const text = await res.text();
+        ping(`Помилка ${res.status}: ${text}`, false);
+        return;
+      }
+
+      if (fmt === 'csv') {
+        const blob = await res.blob();
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'cards_export.csv';
+        a.click();
+        URL.revokeObjectURL(a.href);
+        ping('CSV завантажено ✓', true);
+      } else {
+        const data = await res.json();
+        ping(`Отримано ${data.length} рядків`, true);
+        if (data.length) {
+          const cols = Object.keys(data[0]);
+          const tbl = document.createElement('table');
+          const thead = document.createElement('thead');
+          thead.innerHTML = '<tr>' + cols.map(c=>`<th>${c}</th>`).join('') + '</tr>';
+          tbl.appendChild(thead);
+          const tb = document.createElement('tbody');
+          for (const row of data) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = cols.map(c=>`<td>${row[c] ?? ''}</td>`).join('');
+            tb.appendChild(tr);
+          }
+          tbl.appendChild(tb);
+          out.appendChild(tbl);
+        } else {
+          out.textContent = 'Порожньо';
+        }
+      }
+    } catch (e) {
+      ping(String(e), false);
+    }
+  }
+
+  document.getElementById('runBtn').onclick = run;
+
+  // Manual convert (ручне зарахування)
+  document.getElementById('m_run').onclick = async () => {
+    const base = document.getElementById('endpoint').value.replace(/\/admin-export.*/, '');
+    const key  = document.getElementById('admkey').value.trim();
+    const url  = base + '/admin-manual-convert';
+    const payload = {
+      hold_id: Number(document.getElementById('m_hold').value),
+      tier   : document.getElementById('m_tier').value,
+      provider: document.getElementById('m_provider').value || 'manual',
+      tx_id  : document.getElementById('m_txid').value || null,
+      amount_cents: Number(document.getElementById('m_amount').value) || null,
+      currency: document.getElementById('m_curr').value || 'usd'
+    };
+    const out = document.getElementById('m_out');
+    out.textContent = 'Виконую...';
+
+    try {
+      const res = await fetch(url, {
+        method:'POST',
+        headers: { 'content-type':'application/json', ...headers(key) },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      out.innerHTML = res.ok
+        ? `✓ ok. order_id=${data.order_id ?? '(?)'}; card=${JSON.stringify(data.card)}`
+        : `✖ ${data.error || JSON.stringify(data)}`;
+      loadMetrics();
+    } catch(e) {
+      out.textContent = String(e);
+    }
+  };
+</script>
+</body>
+</html>

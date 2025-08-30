@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Політика конфіденційності • CortexFin</title>
+  <meta name="description" content="Як ми обробляємо ваші персональні дані в продуктах CortexFin / Wislet."/>
+  <meta property="og:title" content="Політика конфіденційності • CortexFin" />
+  <meta property="og:description" content="Дані оплати, технічні дані браузера, строки зберігання та ваші права." />
+  <meta property="og:image" content="/assets/app-icon.png" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root{--bg:#0b1220;--text:#e2e8f0}
+    html,body{background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Arial}
+    .glass{background:rgba(255,255,255,.04);backdrop-filter:blur(12px)}
+    a{color:#67e8f9}
+  </style>
+  <link rel="icon" href="/assets/app-icon.png" />
+  <link rel="canonical" href="https://cortexfinapp.com/privacy" />
+</head>
+<body class="min-h-screen p-6">
+<header class="max-w-3xl mx-auto flex items-center justify-between py-3">
+  <a href="/" class="font-semibold opacity-80 hover:opacity-100">CortexFin</a>
+  <nav class="text-sm opacity-80">
+    <a class="mr-4 hover:opacity-100" href="/">Головна</a>
+    <a class="hover:opacity-100" href="/terms.html">Умови</a>
+  </nav>
+</header>
+
+<main class="max-w-3xl mx-auto mt-6 glass rounded-2xl p-8 border border-white/10">
+  <h1 class="text-3xl font-extrabold text-cyan-400">Політика конфіденційності</h1>
+  <p class="mt-3 opacity-80 text-sm">P25-08-27</span></p>
+
+  <section class="mt-6 space-y-4 leading-relaxed">
+    <h2 class="text-xl font-semibold">1. Які дані ми отримуємо</h2>
+    <ul class="list-disc pl-5 space-y-2">
+      <li>Контактні дані (email, ім’я), які ви вводите під час оплати.</li>
+      <li>Технічні дані (куки, IP, user-agent) — для аналітики та безпеки.</li>
+      <li>Події від платіжних сторінок (статус, ідентифікатори). Повних даних картки ми не зберігаємо.</li>
+    </ul>
+    <h2 class="text-xl font-semibold mt-6">2. Використання</h2>
+    <p>Обробка замовлень, доступів, квитанції, підтримка, поліпшення сервісу.</p>
+    <h2 class="text-xl font-semibold mt-6">3. Треті сторони</h2>
+    <p>Оплати — банківські перекази/monobank (банка) (<a href="https://www.monobank.ua/" target="_blank" rel="noopener">політика</a>).</p>
+    <h2 class="text-xl font-semibold mt-6">4. Зберігання</h2>
+    <p>Лише стільки, скільки потрібно для цілей вище та відповідно до закону.</p>
+    <h2 class="text-xl font-semibold mt-6">5. Ваші права</h2>
+    <p>Доступ/видалення: <a href="mailto:cortexfin.team@gmail.com">cortexfin.team@gmail.com</a>.</p>
+  </section>
+
+  <div class="mt-8 flex gap-3">
+    <a href="/" class="px-4 py-2 rounded-xl bg-cyan-500 text-black font-semibold">На головну</a>
+    <a href="mailto:cortexfin.team@gmail.com" class="px-4 py-2 rounded-xl border border-white/20">Підтримка</a>
+  </div>
+</main>
+
+<footer class="max-w-3xl mx-auto text-xs opacity-60 mt-6 text-center">
+  © <span id="y"></span> CortexFin.
+</footer>
+<script>document.getElementById('y').textContent=new Date().getFullYear()</script>
+</body>
+</html>

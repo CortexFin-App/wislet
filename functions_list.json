@@ -1,0 +1,32 @@
+{
+  "functions": [
+    "accept-invite",
+    "admin-export",
+    "admin-holds-to-chase",
+    "admin-manual-convert",
+    "admin-mark-chased",
+    "admin-mark-chased-bulk",
+    "admin-mint-founder",
+    "admin-ping-timeline",
+    "admin-stats",
+    "admin-update-hold",
+    "cancel",
+    "confirm-checkout",
+    "create-checkout",
+    "create-invite",
+    "fondy-webhook",
+    "founders-hall",
+    "generate-health-advice",
+    "invitations",
+    "lemon-webhook",
+    "login",
+    "mono-webhook",
+    "ocr",
+    "pay-fondy",
+    "pay-mono",
+    "public-metrics",
+    "register",
+    "stripe-webhook",
+    "thanks"
+  ]
+}

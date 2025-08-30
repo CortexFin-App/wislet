@@ -1,23 +1,24 @@
 import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:sage_wallet_reborn/providers/dashboard_provider.dart';
 
 class OrbitalPainter extends CustomPainter {
-  final Animation<double> repaint;
-  final double balance;
-  final List<SpendingCategory> categories;
-  final double goalProgress;
-  final int? activeCategoryIndex;
-  final Function(int) onCategoryTap;
-
   OrbitalPainter({
     required this.repaint,
     required this.balance,
     required this.categories,
     required this.goalProgress,
-    this.activeCategoryIndex,
     required this.onCategoryTap,
+    this.activeCategoryIndex,
   }) : super(repaint: repaint);
+
+  final Animation<double> repaint;
+  final double balance;
+  final List<SpendingCategory> categories;
+  final double goalProgress;
+  final int? activeCategoryIndex;
+  final void Function(int) onCategoryTap;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -32,8 +33,8 @@ class OrbitalPainter extends CustomPainter {
     canvas.drawCircle(center, radius * 0.7, backgroundPaint);
     canvas.drawCircle(center, radius, backgroundPaint);
 
-    double startAngle = -pi / 2;
-    for (int i = 0; i < categories.length; i++) {
+    var startAngle = -pi / 2;
+    for (var i = 0; i < categories.length; i++) {
       final category = categories[i];
       final sweepAngle = 2 * pi * category.percentage;
       final paint = Paint()
@@ -73,18 +74,18 @@ class OrbitalPainter extends CustomPainter {
 
   @override
   bool? hitTest(Offset position) {
-    const center = Offset(100.0, 100.0);
+    const center = Offset(100, 100);
     const radius = 100.0;
     final distance = (position - center).distance;
 
     if (distance > radius * 0.6 && distance < radius * 0.8) {
-      double angle = (position - center).direction;
+      var angle = (position - center).direction;
       if (angle < -pi / 2) {
         angle += 2 * pi;
       }
 
-      double startAngle = -pi / 2;
-      for (int i = 0; i < categories.length; i++) {
+      var startAngle = -pi / 2;
+      for (var i = 0; i < categories.length; i++) {
         final sweepAngle = 2 * pi * categories[i].percentage;
         if (angle >= startAngle && angle <= startAngle + sweepAngle) {
           onCategoryTap(i);

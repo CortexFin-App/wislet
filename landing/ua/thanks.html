@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Дякуємо за підтримку! • CortexFin</title>
+  <link rel="icon" href="/assets/app-icon.png"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+:root{color-scheme:dark}
+html,body{background:#0b1220;color:#e2e8f0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial}
+a{color:#67e8f9}
+.container{max-width:960px;margin:0 auto;padding:20px}
+.card{background:#0f172a;border:1px solid #20283a;border-radius:16px;padding:20px}
+.btn{display:inline-block;padding:10px 14px;border-radius:10px;background:#22d3ee;color:#00131a;text-decoration:none;font-weight:700}
+.btn.ghost{background:#1e293b;color:#e2e8f0;border:1px solid #334155}
+.muted{opacity:.85}
+header.nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+nav a{margin-left:12px;text-decoration:none}
+h1,h2,h3{margin:.3em 0}
+code{background:#0b1220;padding:2px 6px;border-radius:6px;border:1px solid #273142}
+</style>
+  
+</head>
+<body>
+  <div class="container">
+    <header class="nav">
+      <a href="/uk/index.html" class="muted" style="font-weight:600">CortexFin</a>
+      <nav class="muted">
+        <a href="/uk/index.html">Головна</a>
+        <a href="/uk/support.html">Підтримка</a>
+        <a href="/uk/terms.html">Умови</a>
+        <a href="/uk/privacy.html">Приватність</a>
+        <a href="/en/index.html" class="btn ghost" style="padding:6px 10px">EN</a>
+      </nav>
+    </header>
+    
+<div class="card">
+  <h1>Дякуємо! 🎉</h1>
+  <p id="p1" class="muted"></p>
+
+  <div id="claimBox" style="display:none">
+    <p class="muted">Якщо лист не надійшов протягом 15–30 хв — залиште email, ми звіримо платіж і видамо доступ вручну.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+      <input id="email" class="in" placeholder="email для доступу" style="padding:10px;border-radius:10px;border:1px solid #2b2f3a;background:#0b1220;color:#e2e8f0;min-width:260px"/>
+      <input id="note" class="in" placeholder="примітка (ім’я в банці/час/сума) — опц." style="padding:10px;border-radius:10px;border:1px solid #2b2f3a;background:#0b1220;color:#e2e8f0;min-width:260px"/>
+      <button id="send" class="btn">Надіслати запит</button>
+    </div>
+    <p id="sent" class="muted" style="display:none;margin-top:8px">Запит відправлено. Якщо що — напишіть у телеграм @cortexfin.</p>
+  </div>
+
+  <a class="btn ghost" href="/uk/index.html" style="margin-top:12px">Повернутися на головну</a>
+</div>
+
+<script>
+  const q = new URL(location.href).searchParams;
+  let tier   = q.get('tier')    || '—';
+  let holdId = q.get('hold_id') || '';
+  let emailQ = q.get('email')   || '';
+
+  if (!holdId || !emailQ || tier === '—') {
+    try {
+      const last = JSON.parse(sessionStorage.getItem('__last_hold') || '{}');
+      if (!holdId && last?.hold?.hold_id) holdId = last.hold.hold_id;
+      if (!emailQ && last?.email)         emailQ = last.email;
+      if (tier === '—' && last?.sku) {
+        const k = String(last.sku).startsWith('PF') ? 'PF' : String(last.sku);
+        tier = k.toLowerCase();
+      }
+    } catch (_) {}
+  }
+
+  document.getElementById('p1').textContent =
+    `Оплату прийнято/в процесі. Бронь № ${holdId || '—'} для тиру ${tier}. ` +
+    `Лист прийде на ${emailQ || 'вказаний email'} після звірки.`;
+
+  document.getElementById('claimBox').style.display = 'block';
+  const emailI = document.getElementById('email');
+  emailI.value = emailQ;
+  document.getElementById('send').onclick = () => {
+    const mail = (emailI.value || '').trim();
+    const note = (document.getElementById('note').value || '').trim();
+    const subj = encodeURIComponent(`[CortexFin] Claim: hold ${holdId || '—'} / ${tier}`);
+    const body = encodeURIComponent(`Email: ${mail}\nHold: ${holdId || '—'}\nTier: ${tier}\nNote: ${note}\nURL: ${location.href}`);
+    location.href = `mailto:cortexfin.team@gmail.com?subject=${subj}&body=${body}`;
+    document.getElementById('sent').style.display = 'block';
+  };
+</script>
+
+  </div>
+</body>
+</html>

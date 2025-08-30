@@ -1,129 +1,145 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'onboarding_page_widget.dart';
+import 'package:sage_wallet_reborn/l10n/app_localizations.dart' as sw;
+import 'package:sage_wallet_reborn/utils/l10n_helpers.dart';
 
 class OnboardingScreen extends StatefulWidget {
-  final VoidCallback onFinished;
   const OnboardingScreen({super.key, required this.onFinished});
+  final VoidCallback onFinished;
 
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
-  final PageController _pageController = PageController();
-  int _currentPage = 0;
+  final _controller = PageController();
+  int _index = 0;
 
-  static const _onboardingData = [
-    {
-      'icon': Icons.account_balance_wallet_outlined,
-      'title': 'Ласкаво просимо в Гаманець Мудреця!',
-      'description': 'Ваш персональний помічник для легкого та ефективного управління фінансами.',
-    },
-    {
-      'icon': Icons.track_changes_outlined,
-      'title': 'Відстежуйте Кожну Копійку',
-      'description': 'Легко додавайте доходи та витрати, щоб завжди знати, куди йдуть ваші гроші.',
-    },
-    {
-      'icon': Icons.auto_graph_outlined,
-      'title': 'Плануйте Своє Майбутнє',
-      'description': 'Створюйте бюджети, ставте фінансові цілі та спостерігайте за їх досягненням.',
-    },
-    {
-      'icon': Icons.insights_outlined,
-      'title': 'Аналізуйте та Оптимізуйте',
-      'description': 'Зрозумілі звіти та графіки допоможуть вам приймати мудрі фінансові рішення.',
-    }
+  final _pages = const [
+    _ObPage(
+      titleKey: 'onb_simple_welcome_title',
+      bodyKey: 'onb_simple_welcome_body',
+      icon: Icons.wallet_rounded,
+    ),
+    _ObPage(
+      titleKey: 'onb_simple_track_title',
+      bodyKey: 'onb_simple_track_body',
+      icon: Icons.show_chart_rounded,
+    ),
+    _ObPage(
+      titleKey: 'onb_simple_budget_title',
+      bodyKey: 'onb_simple_budget_body',
+      icon: Icons.savings_rounded,
+    ),
+    _ObPage(
+      titleKey: 'onb_simple_secure_title',
+      bodyKey: 'onb_simple_secure_body',
+      icon: Icons.verified_user_rounded,
+    ),
   ];
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final l = sw.AppLocalizations.of(context);
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              theme.colorScheme.surface,
-              theme.colorScheme.surfaceContainer,
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              Expanded(
-                child: PageView.builder(
-                  controller: _pageController,
-                  itemCount: _onboardingData.length,
-                  onPageChanged: (int page) {
-                    setState(() {
-                      _currentPage = page;
-                    });
-                  },
-                  itemBuilder: (context, index) {
-                    return OnboardingPage(
-                      icon: _onboardingData[index]['icon'] as IconData,
-                      title: _onboardingData[index]['title'] as String,
-                      description: _onboardingData[index]['description'] as String,
-                    );
-                  },
-                ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: widget.onFinished,
+                child: Text(l?.t('skip') ?? 'Skip'),
               ),
-              Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(
-                          _onboardingData.length,
-                              (index) => buildDot(index, context),
+            ),
+            Expanded(
+              child: PageView.builder(
+                controller: _controller,
+                onPageChanged: (i) => setState(() => _index = i),
+                itemCount: _pages.length,
+                itemBuilder: (_, i) => _pages[i],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+              child: Row(
+                children: [
+                  Row(
+                    children: List.generate(
+                      _pages.length,
+                      (i) => Container(
+                        width: 8,
+                        height: 8,
+                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: i == _index
+                              ? Theme.of(context).colorScheme.primary
+                              : Theme.of(context).colorScheme.outlineVariant,
+                        ),
                       ),
                     ),
-                    _currentPage == _onboardingData.length - 1
-                        ? ElevatedButton(
-                            onPressed: () {
-                              HapticFeedback.heavyImpact();
-                               widget.onFinished();
-                            },
-                            child: const Text('Почати'),
-                          )
-                        : TextButton(
-                            onPressed: () {
-                              HapticFeedback.lightImpact();
-                              _pageController.nextPage(
-                                duration: const Duration(milliseconds: 400),
-                                curve: Curves.easeInOut,
-                              );
-                            },
-                            child: const Text('Далі'),
-                          ),
-                  ],
-                ),
+                  ),
+                  const Spacer(),
+                  FilledButton(
+                    onPressed: () {
+                      if (_index == _pages.length - 1) {
+                        widget.onFinished();
+                      } else {
+                        _controller.nextPage(
+                          duration: const Duration(milliseconds: 250),
+                          curve: Curves.easeOut,
+                        );
+                      }
+                    },
+                    child: Text(
+                      _index == _pages.length - 1
+                          ? (l?.t('continue') ?? 'Continue')
+                          : (l?.t('next') ?? 'Next'),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
+}
 
-  Widget buildDot(int index, BuildContext context) {
-    final theme = Theme.of(context);
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOut,
-      margin: const EdgeInsets.only(right: 8),
-      height: 8,
-      width: _currentPage == index ? 24 : 8,
-      decoration: BoxDecoration(
-        color: _currentPage == index ? theme.colorScheme.primary : theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(5),
+class _ObPage extends StatelessWidget {
+  const _ObPage({
+    required this.titleKey,
+    required this.bodyKey,
+    required this.icon,
+  });
+
+  final String titleKey;
+  final String bodyKey;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = sw.AppLocalizations.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 96),
+          const SizedBox(height: 24),
+          Text(
+            l?.t(titleKey) ?? titleKey,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            l?.t(bodyKey) ?? bodyKey,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyLarge,
+          ),
+        ],
       ),
     );
   }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../models/theme_profile.dart';
+import 'package:sage_wallet_reborn/models/theme_profile.dart';
 
 final List<ThemeProfile> defaultThemeProfiles = [
   const ThemeProfile(
@@ -9,7 +9,7 @@ final List<ThemeProfile> defaultThemeProfiles = [
   const ThemeProfile(
     name: 'Лісова Свіжість',
     seedColor: Color(0xFF2d6a4f),
-    borderRadius: 8.0,
+    borderRadius: 8,
   ),
   const ThemeProfile(
     name: 'Захід Сонця',
@@ -18,7 +18,7 @@ final List<ThemeProfile> defaultThemeProfiles = [
   const ThemeProfile(
     name: 'Строгий Графіт',
     seedColor: Color(0xFF525252),
-    borderRadius: 4.0,
+    borderRadius: 4,
   ),
   const ThemeProfile(
     name: 'Королівський Аметист',

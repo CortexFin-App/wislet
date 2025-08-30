@@ -1,21 +1,31 @@
-import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:collection/collection.dart';
-import '../core/constants/app_constants.dart';
-import '../core/di/injector.dart';
-import '../data/repositories/wallet_repository.dart';
-import '../data/repositories/transaction_repository.dart';
-import '../data/repositories/category_repository.dart';
-import '../models/wallet.dart';
-import '../services/auth_service.dart';
-import 'app_mode_provider.dart';
+import 'package:flutter/foundation.dart';
+import 'package:sage_wallet_reborn/core/constants/app_constants.dart';
+import 'package:sage_wallet_reborn/core/di/injector.dart';
+import 'package:sage_wallet_reborn/data/repositories/category_repository.dart';
+import 'package:sage_wallet_reborn/data/repositories/transaction_repository.dart';
+import 'package:sage_wallet_reborn/data/repositories/wallet_repository.dart';
+import 'package:sage_wallet_reborn/models/wallet.dart';
+import 'package:sage_wallet_reborn/providers/app_mode_provider.dart';
+import 'package:sage_wallet_reborn/services/auth_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class WalletProvider with ChangeNotifier {
+  WalletProvider({
+    required AuthService authService,
+    required AppModeProvider appModeProvider,
+  })  : _authService = authService,
+        _appModeProvider = appModeProvider {
+    _authService.addListener(loadWallets);
+    loadWallets();
+  }
+
   AuthService _authService;
   final AppModeProvider _appModeProvider;
 
   WalletRepository get walletRepository => getIt<WalletRepository>();
-  TransactionRepository get transactionRepository => getIt<TransactionRepository>();
+  TransactionRepository get transactionRepository =>
+      getIt<TransactionRepository>();
   CategoryRepository get categoryRepository => getIt<CategoryRepository>();
 
   List<Wallet> _wallets = [];
@@ -43,15 +53,6 @@ class WalletProvider with ChangeNotifier {
     return myMembership.role == 'owner' || myMembership.role == 'editor';
   }
 
-  WalletProvider({
-    required AuthService authService,
-    required AppModeProvider appModeProvider,
-  })  : _authService = authService,
-        _appModeProvider = appModeProvider {
-    _authService.addListener(loadWallets);
-    loadWallets();
-  }
-
   void updateAuthService(AuthService newAuthService) {
     if (_authService != newAuthService) {
       _authService.removeListener(loadWallets);
@@ -73,8 +74,8 @@ class WalletProvider with ChangeNotifier {
 
     final result = await walletRepository.getAllWallets();
 
-    await result.fold(
-      (failure) async {
+    result.fold(
+      (failure) {
         _errorMessage = failure.userMessage;
         _wallets = [];
         _currentWallet = null;
@@ -84,15 +85,15 @@ class WalletProvider with ChangeNotifier {
         if (loadedWallets.isEmpty && !_appModeProvider.isOnline) {
           final localRepo = getIt<WalletRepository>(instanceName: 'local');
           final creationResult = await localRepo.createInitialWallet();
-          
+
           await creationResult.fold(
             (creationFailure) async {
-               _errorMessage = creationFailure.userMessage;
+              _errorMessage = creationFailure.userMessage;
             },
             (_) async {
               final reloadedResult = await localRepo.getAllWallets();
               loadedWallets = reloadedResult.getOrElse((_) => []);
-            }
+            },
           );
         }
         _wallets = loadedWallets;
@@ -109,17 +110,18 @@ class WalletProvider with ChangeNotifier {
       _currentWallet = null;
       return;
     }
-    
+
     final prefs = await SharedPreferences.getInstance();
     final lastWalletId = prefs.getInt(AppConstants.prefsKeySelectedWalletId);
-    
+
     Wallet? walletToSelect;
-    if(lastWalletId != null) {
+    if (lastWalletId != null) {
       walletToSelect = _wallets.firstWhereOrNull((w) => w.id == lastWalletId);
     }
-    
-    walletToSelect ??= _wallets.firstWhereOrNull((w) => w.isDefault) ?? _wallets.first;
-    
+
+    walletToSelect ??=
+        _wallets.firstWhereOrNull((w) => w.isDefault) ?? _wallets.first;
+
     if (walletToSelect.id != null) {
       await switchWallet(walletToSelect.id!, shouldNotify: false);
     }
@@ -133,7 +135,9 @@ class WalletProvider with ChangeNotifier {
         if (walletObject != null) {
           _currentWallet = walletObject;
           SharedPreferences.getInstance().then(
-            (prefs) => prefs.setInt(AppConstants.prefsKeySelectedWalletId, walletId));
+            (prefs) =>
+                prefs.setInt(AppConstants.prefsKeySelectedWalletId, walletId),
+          );
         }
       },
     );
@@ -143,9 +147,11 @@ class WalletProvider with ChangeNotifier {
   }
 
   Future<void> createWallet({required String name}) async {
-    final ownerId = _appModeProvider.isOnline ? _authService.currentUser?.id : '1';
+    final ownerId =
+        _appModeProvider.isOnline ? _authService.currentUser?.id : '1';
     if (ownerId == null) {
-      _errorMessage = "Не вдалося визначити власника гаманця.";
+      _errorMessage =
+          'РќРµ РІРґР°Р»РѕСЃСЏ РІРёР·РЅР°С‡РёС‚Рё РІР»Р°СЃРЅРёРєР° РіР°РјР°РЅС†СЏ.';
       notifyListeners();
       return;
     }
@@ -165,12 +171,16 @@ class WalletProvider with ChangeNotifier {
     }
     await loadWallets();
   }
-  
-  Future<void> changeUserRole(int walletId, String userId, String newRole) async {
+
+  Future<void> changeUserRole(
+    int walletId,
+    String userId,
+    String newRole,
+  ) async {
     await walletRepository.changeUserRole(walletId, userId, newRole);
     await loadWallets();
   }
-  
+
   Future<void> removeUserFromWallet(int walletId, String userId) async {
     await walletRepository.removeUserFromWallet(walletId, userId);
     await loadWallets();

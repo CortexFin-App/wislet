@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:sage_wallet_reborn/models/category.dart' as fin_category;
+import 'package:sage_wallet_reborn/models/currency_model.dart';
+import 'package:sage_wallet_reborn/models/transaction.dart' as fin_transaction;
+import 'package:sage_wallet_reborn/models/transaction_view_data.dart';
+import 'package:sage_wallet_reborn/providers/wallet_provider.dart';
+import 'package:sage_wallet_reborn/screens/transactions/add_edit_transaction_screen.dart';
 import 'package:shimmer/shimmer.dart';
-import '../../models/transaction_view_data.dart';
-import '../../providers/wallet_provider.dart';
-import '../../models/transaction.dart' as fin_transaction;
-import '../../models/category.dart' as fin_category;
-import '../../models/currency_model.dart';
-import 'transactions/add_edit_transaction_screen.dart';
 
 class TransactionsListScreen extends StatefulWidget {
   const TransactionsListScreen({super.key});
@@ -61,10 +61,12 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
     final currentWalletId = walletProvider.currentWallet?.id;
     if (currentWalletId == null) return;
 
-    final categoriesEither =
-        await walletProvider.categoryRepository.getAllCategories(currentWalletId);
-    categoriesEither.fold((l) => _allCategoriesForFilter = [],
-        (r) => _allCategoriesForFilter = r);
+    final categoriesEither = await walletProvider.categoryRepository
+        .getAllCategories(currentWalletId);
+    categoriesEither.fold(
+      (l) => _allCategoriesForFilter = [],
+      (r) => _allCategoriesForFilter = r,
+    );
 
     if (mounted) setState(() {});
   }
@@ -90,10 +92,10 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
     }
   }
 
-  void toggleSearchMode(bool searching) {
+  void toggleSearchMode({required bool isSearching}) {
     if (!mounted) return;
     setState(() {
-      isScreenSearching = searching;
+      isScreenSearching = isSearching;
       if (!isScreenSearching && _currentSearchQuery.isNotEmpty) {
         _searchController.clear();
       }
@@ -114,12 +116,14 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
     await Navigator.push<bool>(
       context,
       MaterialPageRoute(
-          builder: (context) => const AddEditTransactionScreen()),
+        builder: (context) => const AddEditTransactionScreen(),
+      ),
     );
   }
 
   Future<void> _navigateToEditTransaction(
-      TransactionViewData transactionData) async {
+    TransactionViewData transactionData,
+  ) async {
     await Navigator.push<bool>(
       context,
       MaterialPageRoute(
@@ -131,41 +135,47 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
   }
 
   Future<void> _confirmDeleteTransaction(
-      BuildContext context, TransactionViewData transactionData) async {
+    BuildContext context,
+    TransactionViewData transactionData,
+  ) async {
     if (!mounted) return;
     final messenger = ScaffoldMessenger.of(context);
     final walletProvider = context.read<WalletProvider>();
     final currency = appCurrencies.firstWhere(
-        (c) => c.code == transactionData.originalCurrencyCode,
-        orElse: () => Currency(
-            code: transactionData.originalCurrencyCode,
-            symbol: transactionData.originalCurrencyCode,
-            name: '',
-            locale: ''));
+      (c) => c.code == transactionData.originalCurrencyCode,
+      orElse: () => Currency(
+        code: transactionData.originalCurrencyCode,
+        symbol: transactionData.originalCurrencyCode,
+        name: '',
+        locale: '',
+      ),
+    );
     final formattedAmount = NumberFormat.currency(
-            locale: currency.locale,
-            symbol: currency.symbol,
-            decimalDigits: 2)
-        .format(transactionData.originalAmount);
-    bool? confirmDelete = await showDialog<bool>(
+      locale: currency.locale,
+      symbol: currency.symbol,
+      decimalDigits: 2,
+    ).format(transactionData.originalAmount);
+    final confirmDelete = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
-          title: const Text('Підтвердити видалення'),
+          title: const Text('РџС–РґС‚РІРµСЂРґРёС‚Рё РІРёРґР°Р»РµРЅРЅСЏ'),
           content: Text(
-              'Ви впевнені, що хочете видалити транзакцію на суму $formattedAmount (${transactionData.categoryName}) від ${DateFormat('dd.MM.yyyy').format(transactionData.date)}?'),
+            'Р’Рё РІРїРµРІРЅРµРЅС–, С‰Рѕ С…РѕС‡РµС‚Рµ РІРёРґР°Р»РёС‚Рё С‚СЂР°РЅР·Р°РєС†С–СЋ РЅР° СЃСѓРјСѓ $formattedAmount (${transactionData.categoryName}) РІС–Рґ ${DateFormat('dd.MM.yyyy').format(transactionData.date)}?',
+          ),
           actions: <Widget>[
             TextButton(
-              child: const Text('Скасувати'),
+              child: const Text('РЎРєР°СЃСѓРІР°С‚Рё'),
               onPressed: () {
                 Navigator.of(dialogContext).pop(false);
               },
             ),
             TextButton(
               style: TextButton.styleFrom(
-                  foregroundColor: Theme.of(context).colorScheme.error),
-              child: const Text('Видалити'),
+                foregroundColor: Theme.of(context).colorScheme.error,
+              ),
+              child: const Text('Р’РёРґР°Р»РёС‚Рё'),
               onPressed: () {
                 Navigator.of(dialogContext).pop(true);
               },
@@ -174,26 +184,27 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
         );
       },
     );
-    if (confirmDelete == true && mounted) {
+    if (confirmDelete ?? false) {
       await walletProvider.transactionRepository
           .deleteTransaction(transactionData.id);
       if (mounted) {
         messenger.showSnackBar(
           SnackBar(
-              content:
-                  Text('Транзакцію "${transactionData.categoryName}" видалено')),
+            content: Text(
+              'РўСЂР°РЅР·Р°РєС†С–СЋ "${transactionData.categoryName}" РІРёРґР°Р»РµРЅРѕ',
+            ),
+          ),
         );
       }
     }
   }
 
   void showFilterDialog() {
-    DateTime? tempStartDate = _filterStartDate;
-    DateTime? tempEndDate = _filterEndDate;
-    fin_transaction.TransactionType? tempTransactionType =
-        _filterTransactionType;
-    int? tempCategoryId = _filterCategoryId;
-    showModalBottomSheet(
+    var tempStartDate = _filterStartDate;
+    var tempEndDate = _filterEndDate;
+    var tempTransactionType = _filterTransactionType;
+    var tempCategoryId = _filterCategoryId;
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       builder: (BuildContext ctx) {
@@ -211,20 +222,26 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
-                    Text('Фільтри',
-                        style: Theme.of(context).textTheme.titleLarge),
+                    Text(
+                      'Р¤С–Р»СЊС‚СЂРё',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
                     const SizedBox(height: 16),
-                    Text('Період:',
-                        style: Theme.of(context).textTheme.titleMedium),
+                    Text(
+                      'РџРµСЂС–РѕРґ:',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
                     Row(
                       children: [
                         Expanded(
                           child: TextButton.icon(
                             icon: const Icon(Icons.calendar_today),
-                            label: Text(tempStartDate == null
-                                ? 'Дата початку'
-                                : DateFormat('dd.MM.yyyy')
-                                    .format(tempStartDate!)),
+                            label: Text(
+                              tempStartDate == null
+                                  ? 'Р”Р°С‚Р° РїРѕС‡Р°С‚РєСѓ'
+                                  : DateFormat('dd.MM.yyyy')
+                                      .format(tempStartDate!),
+                            ),
                             onPressed: () async {
                               final pickedDate = await showDatePicker(
                                 context: context,
@@ -234,7 +251,8 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
                               );
                               if (pickedDate != null) {
                                 setModalState(
-                                    () => tempStartDate = pickedDate);
+                                  () => tempStartDate = pickedDate,
+                                );
                               }
                             },
                           ),
@@ -243,10 +261,12 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
                         Expanded(
                           child: TextButton.icon(
                             icon: const Icon(Icons.calendar_today),
-                            label: Text(tempEndDate == null
-                                ? 'Дата кінця'
-                                : DateFormat('dd.MM.yyyy')
-                                    .format(tempEndDate!)),
+                            label: Text(
+                              tempEndDate == null
+                                  ? 'Р”Р°С‚Р° РєС–РЅС†СЏ'
+                                  : DateFormat('dd.MM.yyyy')
+                                      .format(tempEndDate!),
+                            ),
                             onPressed: () async {
                               final pickedDate = await showDatePicker(
                                 context: context,
@@ -265,29 +285,30 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    Text('Тип транзакції:',
-                        style: Theme.of(context).textTheme.titleMedium),
+                    Text(
+                      'РўРёРї С‚СЂР°РЅР·Р°РєС†С–С—:',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
                     DropdownButtonFormField<fin_transaction.TransactionType?>(
                       value: tempTransactionType,
-                      hint: const Text('Всі типи'),
+                      hint: const Text('Р’СЃС– С‚РёРїРё'),
                       isExpanded: true,
                       decoration:
                           const InputDecoration(border: OutlineInputBorder()),
                       items: [
                         const DropdownMenuItem<
                             fin_transaction.TransactionType?>(
-                          value: null,
-                          child: Text('Всі типи'),
+                          child: Text('Р’СЃС– С‚РёРїРё'),
                         ),
-                        ...fin_transaction.TransactionType.values
-                            .map((type) {
+                        ...fin_transaction.TransactionType.values.map((type) {
                           return DropdownMenuItem<
                               fin_transaction.TransactionType?>(
                             value: type,
-                            child: Text(type ==
-                                    fin_transaction.TransactionType.income
-                                ? 'Дохід'
-                                : 'Витрата'),
+                            child: Text(
+                              type == fin_transaction.TransactionType.income
+                                  ? 'Р”РѕС…С–Рґ'
+                                  : 'Р’РёС‚СЂР°С‚Р°',
+                            ),
                           );
                         }),
                       ],
@@ -296,18 +317,19 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
                       },
                     ),
                     const SizedBox(height: 16),
-                    Text('Категорія:',
-                        style: Theme.of(context).textTheme.titleMedium),
+                    Text(
+                      'РљР°С‚РµРіРѕСЂС–СЏ:',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
                     DropdownButtonFormField<int?>(
                       value: tempCategoryId,
-                      hint: const Text('Всі категорії'),
+                      hint: const Text('Р’СЃС– РєР°С‚РµРіРѕСЂС–С—'),
                       isExpanded: true,
                       decoration:
                           const InputDecoration(border: OutlineInputBorder()),
                       items: [
                         const DropdownMenuItem<int?>(
-                          value: null,
-                          child: Text('Всі категорії'),
+                          child: Text('Р’СЃС– РєР°С‚РµРіРѕСЂС–С—'),
                         ),
                         ..._allCategoriesForFilter
                             .map((fin_category.Category category) {
@@ -338,7 +360,7 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
                             _applyFiltersAndLoadTransactions();
                             Navigator.pop(ctx);
                           },
-                          child: const Text('Скинути фільтри'),
+                          child: const Text('РЎРєРёРЅСѓС‚Рё С„С–Р»СЊС‚СЂРё'),
                         ),
                         const SizedBox(width: 8),
                         ElevatedButton(
@@ -354,7 +376,7 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
                             _applyFiltersAndLoadTransactions();
                             Navigator.pop(ctx);
                           },
-                          child: const Text('Застосувати'),
+                          child: const Text('Р—Р°СЃС‚РѕСЃСѓРІР°С‚Рё'),
                         ),
                       ],
                     ),
@@ -370,21 +392,20 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
   }
 
   Widget _buildEmptyState(BuildContext context) {
-    bool localAreFiltersActive = areFiltersActive();
-    String title = localAreFiltersActive && _currentSearchQuery.isNotEmpty
-        ? 'За запитом "$_currentSearchQuery" нічого не знайдено'
+    final localAreFiltersActive = areFiltersActive();
+    final title = localAreFiltersActive && _currentSearchQuery.isNotEmpty
+        ? 'Р—Р° Р·Р°РїРёС‚РѕРј "$_currentSearchQuery" РЅС–С‡РѕРіРѕ РЅРµ Р·РЅР°Р№РґРµРЅРѕ'
         : (localAreFiltersActive
-            ? 'Транзакцій не знайдено'
-            : 'Транзакцій ще немає');
-    String message = localAreFiltersActive
-        ? 'Спробуйте змінити параметри фільтрації або пошуковий запит.'
-        : 'Додайте свою першу транзакцію, щоб почати відстежувати фінанси.';
+            ? 'РўСЂР°РЅР·Р°РєС†С–Р№ РЅРµ Р·РЅР°Р№РґРµРЅРѕ'
+            : 'РўСЂР°РЅР·Р°РєС†С–Р№ С‰Рµ РЅРµРјР°С”');
+    final message = localAreFiltersActive
+        ? 'РЎРїСЂРѕР±СѓР№С‚Рµ Р·РјС–РЅРёС‚Рё РїР°СЂР°РјРµС‚СЂРё С„С–Р»СЊС‚СЂР°С†С–С— Р°Р±Рѕ РїРѕС€СѓРєРѕРІРёР№ Р·Р°РїРёС‚.'
+        : 'Р”РѕРґР°Р№С‚Рµ СЃРІРѕСЋ РїРµСЂС€Сѓ С‚СЂР°РЅР·Р°РєС†С–СЋ, С‰РѕР± РїРѕС‡Р°С‚Рё РІС–РґСЃС‚РµР¶СѓРІР°С‚Рё С„С–РЅР°РЅСЃРё.';
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
             Icon(
               localAreFiltersActive
@@ -406,10 +427,9 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
             const SizedBox(height: 12),
             Text(
               message,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
@@ -421,7 +441,7 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
                         _filterCategoryId != null)))
               ElevatedButton.icon(
                 icon: const Icon(Icons.add_circle_outline),
-                label: const Text('Додати транзакцію'),
+                label: const Text('Р”РѕРґР°С‚Рё С‚СЂР°РЅР·Р°РєС†С–СЋ'),
                 onPressed: _navigateToAddTransaction,
               ),
             if (localAreFiltersActive &&
@@ -442,8 +462,8 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
                   }
                   _applyFiltersAndLoadTransactions();
                 },
-                child: const Text('Очистити фільтри'),
-              )
+                child: const Text('РћС‡РёСЃС‚РёС‚Рё С„С–Р»СЊС‚СЂРё'),
+              ),
           ],
         ),
       ),
@@ -451,10 +471,10 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
   }
 
   Widget _buildShimmerLoadingList() {
-    final Color baseColor = Theme.of(context).brightness == Brightness.light
+    final baseColor = Theme.of(context).brightness == Brightness.light
         ? Colors.grey[300]!
         : Colors.grey[700]!;
-    final Color highlightColor = Theme.of(context).brightness == Brightness.light
+    final highlightColor = Theme.of(context).brightness == Brightness.light
         ? Colors.grey[100]!
         : Colors.grey[500]!;
     return Shimmer.fromColors(
@@ -464,13 +484,12 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
         itemCount: 7,
         itemBuilder: (context, index) {
           return Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             child: Container(
-              padding: const EdgeInsets.all(12.0),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: baseColor,
-                borderRadius: BorderRadius.circular(12.0),
+                borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
                 children: [
@@ -488,22 +507,25 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Container(
-                            width: MediaQuery.of(context).size.width * 0.4,
-                            height: 14,
-                            color: Theme.of(context).cardColor),
+                          width: MediaQuery.of(context).size.width * 0.4,
+                          height: 14,
+                          color: Theme.of(context).cardColor,
+                        ),
                         const SizedBox(height: 6),
                         Container(
-                            width: MediaQuery.of(context).size.width * 0.25,
-                            height: 12,
-                            color: Theme.of(context).cardColor),
+                          width: MediaQuery.of(context).size.width * 0.25,
+                          height: 12,
+                          color: Theme.of(context).cardColor,
+                        ),
                       ],
                     ),
                   ),
                   const SizedBox(width: 12),
                   Container(
-                      width: 60,
-                      height: 16,
-                      color: Theme.of(context).cardColor),
+                    width: 60,
+                    height: 16,
+                    color: Theme.of(context).cardColor,
+                  ),
                 ],
               ),
             ),
@@ -529,48 +551,52 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
 
             if (snapshot.hasError) {
               return Center(
-                  child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                    'Помилка завантаження транзакцій: ${snapshot.error}\nБудь ласка, спробуйте ще раз.'),
-              ));
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    'РџРѕРјРёР»РєР° Р·Р°РІР°РЅС‚Р°Р¶РµРЅРЅСЏ С‚СЂР°РЅР·Р°РєС†С–Р№: ${snapshot.error}\nР‘СѓРґСЊ Р»Р°СЃРєР°, СЃРїСЂРѕР±СѓР№С‚Рµ С‰Рµ СЂР°Р·.',
+                  ),
+                ),
+              );
             }
 
             if (!snapshot.hasData || snapshot.data!.isEmpty) {
               return _buildEmptyState(context);
             }
             final transactions = snapshot.data!;
-            final TextTheme textTheme = Theme.of(context).textTheme;
-            final ColorScheme colorScheme = Theme.of(context).colorScheme;
+            final textTheme = Theme.of(context).textTheme;
+            final colorScheme = Theme.of(context).colorScheme;
             return SafeArea(
               child: ListView.builder(
-                padding: const EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 100.0),
+                padding: const EdgeInsets.fromLTRB(8, 8, 8, 100),
                 itemCount: transactions.length,
                 itemBuilder: (context, index) {
                   final transaction = transactions[index];
-                  final isIncome =
-                      transaction.type == fin_transaction.TransactionType.income;
+                  final isIncome = transaction.type ==
+                      fin_transaction.TransactionType.income;
                   final amountColor = isIncome
                       ? colorScheme.tertiary.withAlpha(230)
                       : colorScheme.error;
                   final amountPrefix = isIncome ? '+' : '-';
 
                   final currency = appCurrencies.firstWhere(
-                      (c) => c.code == transaction.originalCurrencyCode,
-                      orElse: () => Currency(
-                          code: transaction.originalCurrencyCode,
-                          symbol: transaction.originalCurrencyCode,
-                          name: '',
-                          locale: ''));
+                    (c) => c.code == transaction.originalCurrencyCode,
+                    orElse: () => Currency(
+                      code: transaction.originalCurrencyCode,
+                      symbol: transaction.originalCurrencyCode,
+                      name: '',
+                      locale: '',
+                    ),
+                  );
                   final formattedAmount = NumberFormat.currency(
-                          locale: currency.locale,
-                          symbol: currency.symbol,
-                          decimalDigits: 2)
-                      .format(transaction.originalAmount.abs());
-                  String subtitleText =
+                    locale: currency.locale,
+                    symbol: currency.symbol,
+                    decimalDigits: 2,
+                  ).format(transaction.originalAmount.abs());
+                  var subtitleText =
                       DateFormat('dd.MM.yyyy, HH:mm').format(transaction.date);
-                  bool hasDescription =
-                      transaction.description?.isNotEmpty == true;
+                  final hasDescription =
+                      transaction.description?.isNotEmpty ?? false;
                   if (hasDescription) {
                     subtitleText =
                         "${transaction.description!.replaceAll("\n", " ")}\n$subtitleText";
@@ -607,8 +633,9 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
                             child: Text(
                               '$amountPrefix$formattedAmount',
                               style: textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: amountColor),
+                                fontWeight: FontWeight.bold,
+                                color: amountColor,
+                              ),
                               textAlign: TextAlign.right,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -625,11 +652,11 @@ class TransactionsListScreenState extends State<TransactionsListScreen> {
                                 <PopupMenuEntry<String>>[
                               const PopupMenuItem<String>(
                                 value: 'edit',
-                                child: Text('Редагувати'),
+                                child: Text('Р РµРґР°РіСѓРІР°С‚Рё'),
                               ),
                               const PopupMenuItem<String>(
                                 value: 'delete',
-                                child: Text('Видалити'),
+                                child: Text('Р’РёРґР°Р»РёС‚Рё'),
                               ),
                             ],
                           ),
