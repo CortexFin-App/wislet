@@ -1,6 +1,6 @@
 {
-    "name": "sage_wallet_reborn",
-    "short_name": "sage_wallet_reborn",
+    "name": "wislet",
+    "short_name": "wislet",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

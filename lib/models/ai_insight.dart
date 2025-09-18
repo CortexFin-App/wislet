@@ -1,4 +1,4 @@
-import 'package:sage_wallet_reborn/models/category.dart';
+import 'package:wislet/models/category.dart';
 
 class AiInsight {
   AiInsight({required this.title, required this.content});

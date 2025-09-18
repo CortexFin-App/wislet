@@ -3,19 +3,20 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:sage_wallet_reborn/core/constants/app_constants.dart';
-import 'package:sage_wallet_reborn/core/di/injector.dart';
-import 'package:sage_wallet_reborn/providers/wallet_provider.dart';
-import 'package:sage_wallet_reborn/screens/auth/invitation_handler_screen.dart';
-import 'package:sage_wallet_reborn/screens/auth/pin_entry_screen.dart';
-import 'package:sage_wallet_reborn/screens/onboarding/interactive_onboarding_screen.dart';
-import 'package:sage_wallet_reborn/screens/onboarding/onboarding_screen.dart';
-import 'package:sage_wallet_reborn/services/auth_service.dart';
-import 'package:sage_wallet_reborn/services/navigation_service.dart';
-import 'package:sage_wallet_reborn/services/notification_service.dart';
-import 'package:sage_wallet_reborn/services/subscription_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uni_links/uni_links.dart';
+
+import 'package:wislet/core/constants/app_constants.dart';
+import 'package:wislet/core/di/injector.dart';
+import 'package:wislet/providers/wallet_provider.dart';
+import 'package:wislet/screens/auth/invitation_handler_screen.dart';
+import 'package:wislet/screens/auth/pin_entry_screen.dart';
+import 'package:wislet/screens/onboarding/interactive_onboarding_screen.dart';
+import 'package:wislet/screens/onboarding/onboarding_screen.dart';
+import 'package:wislet/services/auth_service.dart';
+import 'package:wislet/services/navigation_service.dart';
+import 'package:wislet/services/notification_service.dart';
+import 'package:wislet/services/subscription_service.dart';
 
 enum AuthStatus {
   loading,
@@ -169,13 +170,12 @@ class _AuthWrapperState extends State<AuthWrapper> {
   Widget build(BuildContext context) {
     switch (_status) {
       case AuthStatus.loading:
-        return const Scaffold(
-          body: Center(child: CircularProgressIndicator()),
-        );
+        return const Scaffold(body: Center(child: CircularProgressIndicator()));
       case AuthStatus.onboarding:
         return OnboardingScreen(onFinished: _handleOnboardingFinished);
       case AuthStatus.interactiveOnboarding:
-        return InteractiveOnboardingScreen(
+        // ВАЖЛИВО: клас називається InteractiveOnboarding
+        return InteractiveOnboarding(
           onFinished: _handleInteractiveOnboardingFinished,
         );
       case AuthStatus.authenticated:

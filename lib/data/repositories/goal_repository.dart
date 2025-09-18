@@ -1,6 +1,6 @@
 import 'package:fpdart/fpdart.dart';
-import 'package:sage_wallet_reborn/core/error/failures.dart';
-import 'package:sage_wallet_reborn/models/financial_goal.dart';
+import 'package:wislet/core/error/failures.dart';
+import 'package:wislet/models/financial_goal.dart';
 
 abstract class GoalRepository {
   Future<Either<AppFailure, int>> createFinancialGoal(

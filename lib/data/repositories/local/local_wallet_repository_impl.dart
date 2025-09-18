@@ -1,12 +1,12 @@
 import 'package:fpdart/fpdart.dart';
-import 'package:sage_wallet_reborn/core/constants/app_constants.dart';
-import 'package:sage_wallet_reborn/core/error/failures.dart';
-import 'package:sage_wallet_reborn/data/repositories/wallet_repository.dart';
-import 'package:sage_wallet_reborn/data/static/default_categories.dart';
-import 'package:sage_wallet_reborn/models/user.dart';
-import 'package:sage_wallet_reborn/models/wallet.dart';
-import 'package:sage_wallet_reborn/services/error_monitoring_service.dart';
-import 'package:sage_wallet_reborn/utils/database_helper.dart';
+import 'package:wislet/core/constants/app_constants.dart';
+import 'package:wislet/core/error/failures.dart';
+import 'package:wislet/data/repositories/wallet_repository.dart';
+import 'package:wislet/data/static/default_categories.dart';
+import 'package:wislet/models/user.dart';
+import 'package:wislet/models/wallet.dart';
+import 'package:wislet/services/error_monitoring_service.dart';
+import 'package:wislet/utils/database_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 

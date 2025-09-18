@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:sage_wallet_reborn/models/theme_profile.dart';
+import 'package:wislet/models/theme_profile.dart';
 
 final List<ThemeProfile> defaultThemeProfiles = [
   const ThemeProfile(

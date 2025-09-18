@@ -5,8 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:sage_wallet_reborn/models/transaction.dart' as fin_transaction;
-import 'package:sage_wallet_reborn/models/transaction_view_data.dart';
+import 'package:wislet/models/transaction.dart' as fin_transaction;
+import 'package:wislet/models/transaction_view_data.dart';
 
 class ReportGenerationService {
   Future<Uint8List> generateCsvBytes(

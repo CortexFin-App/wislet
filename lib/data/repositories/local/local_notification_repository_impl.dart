@@ -1,6 +1,6 @@
-import 'package:sage_wallet_reborn/data/repositories/notification_repository.dart';
-import 'package:sage_wallet_reborn/models/notification_history_item.dart';
-import 'package:sage_wallet_reborn/utils/database_helper.dart';
+import 'package:wislet/data/repositories/notification_repository.dart';
+import 'package:wislet/models/notification_history_item.dart';
+import 'package:wislet/utils/database_helper.dart';
 
 class LocalNotificationRepositoryImpl implements NotificationRepository {
   LocalNotificationRepositoryImpl(this._dbHelper);

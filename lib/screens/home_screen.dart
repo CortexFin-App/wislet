@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:sage_wallet_reborn/providers/dashboard_provider.dart';
-import 'package:sage_wallet_reborn/providers/wallet_provider.dart';
-import 'package:sage_wallet_reborn/widgets/home/health_score_widget.dart';
-import 'package:sage_wallet_reborn/widgets/home/main_goal_card_widget.dart';
-import 'package:sage_wallet_reborn/widgets/home/summary_card_widget.dart';
+import 'package:wislet/providers/dashboard_provider.dart';
+import 'package:wislet/providers/wallet_provider.dart';
+import 'package:wislet/widgets/home/health_score_widget.dart';
+import 'package:wislet/widgets/home/main_goal_card_widget.dart';
+import 'package:wislet/widgets/home/summary_card_widget.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

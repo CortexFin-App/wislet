@@ -1,5 +1,5 @@
 # pubspec.yaml
-name: sage_wallet_reborn
+name: wislet
 description: A new Flutter project for managing personal finances.
 publish_to: 'none'
 version: 1.0.0+1

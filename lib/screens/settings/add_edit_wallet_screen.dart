@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:sage_wallet_reborn/models/wallet.dart';
-import 'package:sage_wallet_reborn/providers/wallet_provider.dart';
+import 'package:wislet/models/wallet.dart';
+import 'package:wislet/providers/wallet_provider.dart';
 
 class AddEditWalletScreen extends StatefulWidget {
   const AddEditWalletScreen({

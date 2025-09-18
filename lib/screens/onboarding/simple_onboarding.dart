@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:sage_wallet_reborn/l10n/app_localizations.dart' as sw;
-import 'package:sage_wallet_reborn/utils/l10n_helpers.dart';
+
+import 'package:wislet/l10n/app_localizations.dart' as sw;
+import 'package:wislet/utils/l10n_helpers.dart';
 
 class SimpleOnboarding extends StatefulWidget {
   const SimpleOnboarding({required this.onFinished, super.key});

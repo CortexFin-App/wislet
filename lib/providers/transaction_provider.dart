@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:sage_wallet_reborn/core/di/injector.dart';
-import 'package:sage_wallet_reborn/models/category.dart' as fin_category;
-import 'package:sage_wallet_reborn/providers/wallet_provider.dart';
-import 'package:sage_wallet_reborn/services/ai_categorization_service.dart';
-import 'package:sage_wallet_reborn/utils/debouncer.dart';
+import 'package:wislet/core/di/injector.dart';
+import 'package:wislet/models/category.dart' as fin_category;
+import 'package:wislet/providers/wallet_provider.dart';
+import 'package:wislet/services/ai_categorization_service.dart';
+import 'package:wislet/utils/debouncer.dart';
 
 class TransactionProvider with ChangeNotifier {
   final AICategorizationService _aiService = getIt<AICategorizationService>();

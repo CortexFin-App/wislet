@@ -1,4 +1,4 @@
-import 'package:sage_wallet_reborn/core/constants/app_constants.dart';
+import 'package:wislet/core/constants/app_constants.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class Supa {

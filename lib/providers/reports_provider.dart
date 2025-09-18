@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:sage_wallet_reborn/core/di/injector.dart';
-import 'package:sage_wallet_reborn/models/financial_story.dart';
-import 'package:sage_wallet_reborn/services/financial_report_service.dart';
+import 'package:wislet/core/di/injector.dart';
+import 'package:wislet/models/financial_story.dart';
+import 'package:wislet/services/financial_report_service.dart';
 
 class ReportsProvider with ChangeNotifier {
   final FinancialReportService _reportService = getIt<FinancialReportService>();

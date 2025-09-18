@@ -1,4 +1,4 @@
-import 'package:sage_wallet_reborn/models/transaction.dart';
+import 'package:wislet/models/transaction.dart';
 
 enum Frequency { daily, weekly, monthly, yearly }
 

@@ -1,5 +1,5 @@
-import 'package:sage_wallet_reborn/models/category.dart';
-import 'package:sage_wallet_reborn/models/plan.dart';
+import 'package:wislet/models/category.dart';
+import 'package:wislet/models/plan.dart';
 
 class PlanViewData {
   PlanViewData({

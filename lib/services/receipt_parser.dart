@@ -1,5 +1,5 @@
 import 'package:intl/intl.dart';
-import 'package:sage_wallet_reborn/models/receipt_parse_result.dart';
+import 'package:wislet/models/receipt_parse_result.dart';
 
 class ReceiptParser {
   ParseResult parseQrCode(String qrData) {

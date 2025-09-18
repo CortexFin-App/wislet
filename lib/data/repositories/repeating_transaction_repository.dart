@@ -1,6 +1,6 @@
 import 'package:fpdart/fpdart.dart';
-import 'package:sage_wallet_reborn/core/error/failures.dart';
-import 'package:sage_wallet_reborn/models/repeating_transaction_model.dart';
+import 'package:wislet/core/error/failures.dart';
+import 'package:wislet/models/repeating_transaction_model.dart';
 
 abstract class RepeatingTransactionRepository {
   Future<Either<AppFailure, int>> createRepeatingTransaction(

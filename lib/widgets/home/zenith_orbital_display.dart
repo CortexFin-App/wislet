@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:sage_wallet_reborn/providers/dashboard_provider.dart';
-import 'package:sage_wallet_reborn/widgets/home/orbital_painter.dart';
+import 'package:wislet/providers/dashboard_provider.dart';
+import 'package:wislet/widgets/home/orbital_painter.dart';
 
 class ZenithOrbitalDisplay extends StatefulWidget {
   const ZenithOrbitalDisplay({super.key});

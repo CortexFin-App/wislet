@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:sage_wallet_reborn/core/di/injector.dart';
-import 'package:sage_wallet_reborn/models/currency_model.dart';
-import 'package:sage_wallet_reborn/services/exchange_rate_service.dart';
-import 'package:sage_wallet_reborn/utils/app_palette.dart';
-import 'package:sage_wallet_reborn/widgets/scaffold/patterned_scaffold.dart';
+import 'package:wislet/core/di/injector.dart';
+import 'package:wislet/models/currency_model.dart';
+import 'package:wislet/services/exchange_rate_service.dart';
+import 'package:wislet/utils/app_palette.dart';
+import 'package:wislet/widgets/scaffold/patterned_scaffold.dart';
 
 class CurrencyConverterScreen extends StatefulWidget {
   const CurrencyConverterScreen({super.key});

@@ -1,4 +1,4 @@
-import 'package:sage_wallet_reborn/models/notification_history_item.dart';
+import 'package:wislet/models/notification_history_item.dart';
 
 abstract class NotificationRepository {
   Future<void> addNotificationToHistory(

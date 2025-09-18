@@ -2,14 +2,14 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:sage_wallet_reborn/core/di/injector.dart';
-import 'package:sage_wallet_reborn/data/repositories/category_repository.dart';
-import 'package:sage_wallet_reborn/data/repositories/repeating_transaction_repository.dart';
-import 'package:sage_wallet_reborn/models/category.dart';
-import 'package:sage_wallet_reborn/models/currency_model.dart';
-import 'package:sage_wallet_reborn/models/repeating_transaction_model.dart';
-import 'package:sage_wallet_reborn/models/transaction.dart' as fin_transaction;
-import 'package:sage_wallet_reborn/providers/wallet_provider.dart';
+import 'package:wislet/core/di/injector.dart';
+import 'package:wislet/data/repositories/category_repository.dart';
+import 'package:wislet/data/repositories/repeating_transaction_repository.dart';
+import 'package:wislet/models/category.dart';
+import 'package:wislet/models/currency_model.dart';
+import 'package:wislet/models/repeating_transaction_model.dart';
+import 'package:wislet/models/transaction.dart' as fin_transaction;
+import 'package:wislet/providers/wallet_provider.dart';
 
 class AddEditRepeatingTransactionScreen extends StatefulWidget {
   const AddEditRepeatingTransactionScreen({this.template, super.key});

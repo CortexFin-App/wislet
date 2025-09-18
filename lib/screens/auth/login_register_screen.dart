@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:sage_wallet_reborn/core/di/injector.dart';
-import 'package:sage_wallet_reborn/data/repositories/invitation_repository.dart';
-import 'package:sage_wallet_reborn/providers/wallet_provider.dart';
-import 'package:sage_wallet_reborn/services/auth_service.dart';
-import 'package:sage_wallet_reborn/utils/app_palette.dart';
+import 'package:wislet/core/di/injector.dart';
+import 'package:wislet/data/repositories/invitation_repository.dart';
+import 'package:wislet/providers/wallet_provider.dart';
+import 'package:wislet/services/auth_service.dart';
+import 'package:wislet/utils/app_palette.dart';
 
 class LoginRegisterScreen extends StatefulWidget {
   const LoginRegisterScreen({this.invitationToken, super.key});

@@ -1,7 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:sage_wallet_reborn/providers/dashboard_provider.dart';
+import 'package:wislet/providers/dashboard_provider.dart';
 
 class OrbitalPainter extends CustomPainter {
   OrbitalPainter({

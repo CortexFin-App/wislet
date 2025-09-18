@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:provider/provider.dart';
-import 'package:sage_wallet_reborn/models/theme_profile.dart';
-import 'package:sage_wallet_reborn/providers/theme_provider.dart';
+import 'package:wislet/models/theme_profile.dart';
+import 'package:wislet/providers/theme_provider.dart';
 
 class ThemeEditorScreen extends StatefulWidget {
   const ThemeEditorScreen({super.key, this.initialProfile});

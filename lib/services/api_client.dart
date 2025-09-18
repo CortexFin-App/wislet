@@ -3,9 +3,9 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode;
 import 'package:http/http.dart' as http;
-import 'package:sage_wallet_reborn/core/di/injector.dart';
-import 'package:sage_wallet_reborn/services/auth_service.dart';
-import 'package:sage_wallet_reborn/services/token_storage_service.dart';
+import 'package:wislet/core/di/injector.dart';
+import 'package:wislet/services/auth_service.dart';
+import 'package:wislet/services/token_storage_service.dart';
 
 class ApiException implements Exception {
   ApiException({required this.message, required this.statusCode});

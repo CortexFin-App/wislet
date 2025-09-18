@@ -1,14 +1,14 @@
 import 'dart:convert';
 
 import 'package:fpdart/fpdart.dart';
-import 'package:sage_wallet_reborn/core/di/injector.dart';
-import 'package:sage_wallet_reborn/core/error/failures.dart';
-import 'package:sage_wallet_reborn/data/repositories/category_repository.dart';
-import 'package:sage_wallet_reborn/data/static/default_categories.dart';
-import 'package:sage_wallet_reborn/models/category.dart';
-import 'package:sage_wallet_reborn/services/auth_service.dart';
-import 'package:sage_wallet_reborn/services/error_monitoring_service.dart';
-import 'package:sage_wallet_reborn/utils/database_helper.dart';
+import 'package:wislet/core/di/injector.dart';
+import 'package:wislet/core/error/failures.dart';
+import 'package:wislet/data/repositories/category_repository.dart';
+import 'package:wislet/data/static/default_categories.dart';
+import 'package:wislet/models/category.dart';
+import 'package:wislet/services/auth_service.dart';
+import 'package:wislet/services/error_monitoring_service.dart';
+import 'package:wislet/utils/database_helper.dart';
 import 'package:sqflite/sqflite.dart';
 
 class LocalCategoryRepositoryImpl implements CategoryRepository {

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:sage_wallet_reborn/models/currency_model.dart';
-import 'package:sage_wallet_reborn/models/financial_goal.dart';
+import 'package:wislet/models/currency_model.dart';
+import 'package:wislet/models/financial_goal.dart';
 
 class MainGoalCard extends StatelessWidget {
   const MainGoalCard({required this.goal, super.key});

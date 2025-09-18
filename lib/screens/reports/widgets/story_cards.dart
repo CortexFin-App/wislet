@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:sage_wallet_reborn/models/financial_story.dart';
+import 'package:wislet/models/financial_story.dart';
 
 class TopExpenseStoryCard extends StatelessWidget {
   const TopExpenseStoryCard({required this.story, super.key});

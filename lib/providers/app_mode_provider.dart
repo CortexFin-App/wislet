@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'package:sage_wallet_reborn/services/auth_service.dart';
+import 'package:wislet/services/auth_service.dart';
 
 enum AppMode { local, online }
 

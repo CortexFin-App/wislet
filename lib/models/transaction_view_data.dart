@@ -1,6 +1,6 @@
-import 'package:sage_wallet_reborn/models/category.dart' as fin_category;
-import 'package:sage_wallet_reborn/models/transaction.dart' as fin_transaction;
-import 'package:sage_wallet_reborn/utils/database_helper.dart';
+import 'package:wislet/models/category.dart' as fin_category;
+import 'package:wislet/models/transaction.dart' as fin_transaction;
+import 'package:wislet/utils/database_helper.dart';
 
 class TransactionViewData {
   TransactionViewData({

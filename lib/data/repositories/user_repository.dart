@@ -1,4 +1,4 @@
-import 'package:sage_wallet_reborn/models/user.dart';
+import 'package:wislet/models/user.dart';
 
 abstract class UserRepository {
   Future<int> createDefaultUser();

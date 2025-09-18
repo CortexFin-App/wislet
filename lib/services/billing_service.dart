@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:sage_wallet_reborn/core/di/injector.dart';
-import 'package:sage_wallet_reborn/providers/pro_status_provider.dart';
-import 'package:sage_wallet_reborn/services/api_client.dart';
+import 'package:wislet/core/di/injector.dart';
+import 'package:wislet/providers/pro_status_provider.dart';
+import 'package:wislet/services/api_client.dart';
 
 abstract class BillingService {
   Future<void> init();

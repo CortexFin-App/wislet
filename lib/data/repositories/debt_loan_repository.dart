@@ -1,6 +1,6 @@
 import 'package:fpdart/fpdart.dart';
-import 'package:sage_wallet_reborn/core/error/failures.dart';
-import 'package:sage_wallet_reborn/models/debt_loan_model.dart';
+import 'package:wislet/core/error/failures.dart';
+import 'package:wislet/models/debt_loan_model.dart';
 
 abstract class DebtLoanRepository {
   Future<Either<AppFailure, int>> createDebtLoan(

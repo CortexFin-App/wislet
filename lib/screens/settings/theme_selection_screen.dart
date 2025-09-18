@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:sage_wallet_reborn/providers/theme_provider.dart';
-import 'package:sage_wallet_reborn/screens/settings/theme_editor_screen.dart';
-import 'package:sage_wallet_reborn/utils/app_palette.dart';
-import 'package:sage_wallet_reborn/widgets/scaffold/patterned_scaffold.dart';
+import 'package:wislet/providers/theme_provider.dart';
+import 'package:wislet/screens/settings/theme_editor_screen.dart';
+import 'package:wislet/utils/app_palette.dart';
+import 'package:wislet/widgets/scaffold/patterned_scaffold.dart';
 
 class ThemeSelectionScreen extends StatelessWidget {
   const ThemeSelectionScreen({super.key});

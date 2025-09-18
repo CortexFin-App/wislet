@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:sage_wallet_reborn/screens/budgets/budgets_list_screen.dart';
-import 'package:sage_wallet_reborn/screens/financial_goals/financial_goals_list_screen.dart';
-import 'package:sage_wallet_reborn/screens/planning/plans_calendar_view.dart';
-import 'package:sage_wallet_reborn/widgets/scaffold/patterned_scaffold.dart';
+import 'package:wislet/screens/budgets/budgets_list_screen.dart';
+import 'package:wislet/screens/financial_goals/financial_goals_list_screen.dart';
+import 'package:wislet/screens/planning/plans_calendar_view.dart';
+import 'package:wislet/widgets/scaffold/patterned_scaffold.dart';
 
 class PlanningScreen extends StatefulWidget {
   const PlanningScreen({super.key});

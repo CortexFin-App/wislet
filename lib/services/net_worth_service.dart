@@ -1,9 +1,9 @@
 import 'package:rxdart/rxdart.dart';
-import 'package:sage_wallet_reborn/core/di/injector.dart';
-import 'package:sage_wallet_reborn/data/repositories/asset_repository.dart';
-import 'package:sage_wallet_reborn/data/repositories/liability_repository.dart';
-import 'package:sage_wallet_reborn/models/asset.dart';
-import 'package:sage_wallet_reborn/models/liability.dart';
+import 'package:wislet/core/di/injector.dart';
+import 'package:wislet/data/repositories/asset_repository.dart';
+import 'package:wislet/data/repositories/liability_repository.dart';
+import 'package:wislet/models/asset.dart';
+import 'package:wislet/models/liability.dart';
 
 class NetWorthData {
   NetWorthData({

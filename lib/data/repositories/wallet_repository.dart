@@ -1,6 +1,6 @@
 import 'package:fpdart/fpdart.dart';
-import 'package:sage_wallet_reborn/core/error/failures.dart';
-import 'package:sage_wallet_reborn/models/wallet.dart';
+import 'package:wislet/core/error/failures.dart';
+import 'package:wislet/models/wallet.dart';
 
 abstract class WalletRepository {
   Future<Either<AppFailure, List<Wallet>>> getAllWallets();

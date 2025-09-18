@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:sage_wallet_reborn/features/invitations/ui/invite_actions_row.dart';
-import 'package:sage_wallet_reborn/providers/wallet_provider.dart';
+import 'package:wislet/features/invitations/ui/invite_actions_row.dart';
+import 'package:wislet/providers/wallet_provider.dart';
 
 class InviteActionsSection extends StatelessWidget {
   const InviteActionsSection({super.key});

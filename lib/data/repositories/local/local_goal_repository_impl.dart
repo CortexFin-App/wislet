@@ -1,13 +1,13 @@
 import 'dart:convert';
 
 import 'package:fpdart/fpdart.dart';
-import 'package:sage_wallet_reborn/core/error/failures.dart';
-import 'package:sage_wallet_reborn/data/repositories/goal_repository.dart';
-import 'package:sage_wallet_reborn/data/repositories/transaction_repository.dart';
-import 'package:sage_wallet_reborn/models/financial_goal.dart';
-import 'package:sage_wallet_reborn/services/error_monitoring_service.dart';
-import 'package:sage_wallet_reborn/services/notification_service.dart';
-import 'package:sage_wallet_reborn/utils/database_helper.dart';
+import 'package:wislet/core/error/failures.dart';
+import 'package:wislet/data/repositories/goal_repository.dart';
+import 'package:wislet/data/repositories/transaction_repository.dart';
+import 'package:wislet/models/financial_goal.dart';
+import 'package:wislet/services/error_monitoring_service.dart';
+import 'package:wislet/services/notification_service.dart';
+import 'package:wislet/utils/database_helper.dart';
 
 class LocalGoalRepositoryImpl implements GoalRepository {
   LocalGoalRepositoryImpl(

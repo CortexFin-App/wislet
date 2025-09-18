@@ -1,6 +1,6 @@
 import 'package:fpdart/fpdart.dart';
-import 'package:sage_wallet_reborn/core/error/failures.dart';
-import 'package:sage_wallet_reborn/models/asset.dart';
+import 'package:wislet/core/error/failures.dart';
+import 'package:wislet/models/asset.dart';
 
 abstract class AssetRepository {
   Stream<List<Asset>> watchAllAssets(int walletId);

@@ -1,8 +1,8 @@
 import 'package:fpdart/fpdart.dart';
-import 'package:sage_wallet_reborn/core/error/failures.dart';
-import 'package:sage_wallet_reborn/models/transaction.dart' as fin_transaction;
-import 'package:sage_wallet_reborn/models/transaction_view_data.dart';
-import 'package:sage_wallet_reborn/models/wallet.dart';
+import 'package:wislet/core/error/failures.dart';
+import 'package:wislet/models/transaction.dart' as fin_transaction;
+import 'package:wislet/models/transaction_view_data.dart';
+import 'package:wislet/models/wallet.dart';
 
 abstract class TransactionRepository {
   Future<Either<AppFailure, void>> createTransfer({

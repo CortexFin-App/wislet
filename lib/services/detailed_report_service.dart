@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:sage_wallet_reborn/core/di/injector.dart';
-import 'package:sage_wallet_reborn/data/repositories/category_repository.dart';
-import 'package:sage_wallet_reborn/data/repositories/plan_repository.dart';
-import 'package:sage_wallet_reborn/data/repositories/transaction_repository.dart';
-import 'package:sage_wallet_reborn/models/category.dart' as fin_category;
-import 'package:sage_wallet_reborn/models/currency_model.dart';
-import 'package:sage_wallet_reborn/models/transaction.dart' as fin_transaction;
-import 'package:sage_wallet_reborn/services/exchange_rate_service.dart';
-import 'package:sage_wallet_reborn/utils/app_palette.dart';
+import 'package:wislet/core/di/injector.dart';
+import 'package:wislet/data/repositories/category_repository.dart';
+import 'package:wislet/data/repositories/plan_repository.dart';
+import 'package:wislet/data/repositories/transaction_repository.dart';
+import 'package:wislet/models/category.dart' as fin_category;
+import 'package:wislet/models/currency_model.dart';
+import 'package:wislet/models/transaction.dart' as fin_transaction;
+import 'package:wislet/services/exchange_rate_service.dart';
+import 'package:wislet/utils/app_palette.dart';
 
 class DetailedReportService {
   final TransactionRepository _transactionRepository =

@@ -2,12 +2,12 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:sage_wallet_reborn/core/di/injector.dart';
-import 'package:sage_wallet_reborn/models/forecast_data_point.dart';
-import 'package:sage_wallet_reborn/providers/currency_provider.dart';
-import 'package:sage_wallet_reborn/providers/wallet_provider.dart';
-import 'package:sage_wallet_reborn/services/cashflow_forecast_service.dart';
-import 'package:sage_wallet_reborn/widgets/scaffold/patterned_scaffold.dart';
+import 'package:wislet/core/di/injector.dart';
+import 'package:wislet/models/forecast_data_point.dart';
+import 'package:wislet/providers/currency_provider.dart';
+import 'package:wislet/providers/wallet_provider.dart';
+import 'package:wislet/services/cashflow_forecast_service.dart';
+import 'package:wislet/widgets/scaffold/patterned_scaffold.dart';
 
 class ForecastScreen extends StatefulWidget {
   const ForecastScreen({super.key});

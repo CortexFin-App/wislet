@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:sage_wallet_reborn/core/di/injector.dart';
-import 'package:sage_wallet_reborn/data/repositories/invitation_repository.dart';
-import 'package:sage_wallet_reborn/utils/app_palette.dart';
+import 'package:wislet/core/di/injector.dart';
+import 'package:wislet/data/repositories/invitation_repository.dart';
+import 'package:wislet/utils/app_palette.dart';
 
 class AcceptInvitationScreen extends StatefulWidget {
   const AcceptInvitationScreen({this.invitationToken, super.key});

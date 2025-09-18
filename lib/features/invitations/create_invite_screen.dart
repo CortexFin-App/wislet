@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:sage_wallet_reborn/features/invitations/invitations_repository.dart';
+import 'package:wislet/features/invitations/invitations_repository.dart';
 
 class CreateInviteScreen extends StatefulWidget {
   const CreateInviteScreen({required this.walletId, super.key});

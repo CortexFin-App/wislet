@@ -1,12 +1,12 @@
 import 'package:fpdart/fpdart.dart';
-import 'package:sage_wallet_reborn/core/error/failures.dart';
-import 'package:sage_wallet_reborn/data/repositories/budget_repository.dart';
-import 'package:sage_wallet_reborn/data/repositories/transaction_repository.dart';
-import 'package:sage_wallet_reborn/models/budget_models.dart';
-import 'package:sage_wallet_reborn/models/transaction.dart' as fin_transaction;
-import 'package:sage_wallet_reborn/services/error_monitoring_service.dart';
-import 'package:sage_wallet_reborn/services/notification_service.dart';
-import 'package:sage_wallet_reborn/utils/database_helper.dart';
+import 'package:wislet/core/error/failures.dart';
+import 'package:wislet/data/repositories/budget_repository.dart';
+import 'package:wislet/data/repositories/transaction_repository.dart';
+import 'package:wislet/models/budget_models.dart';
+import 'package:wislet/models/transaction.dart' as fin_transaction;
+import 'package:wislet/services/error_monitoring_service.dart';
+import 'package:wislet/services/notification_service.dart';
+import 'package:wislet/utils/database_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LocalBudgetRepositoryImpl implements BudgetRepository {

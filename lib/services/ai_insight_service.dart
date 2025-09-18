@@ -1,7 +1,7 @@
 import 'package:collection/collection.dart';
-import 'package:sage_wallet_reborn/data/repositories/transaction_repository.dart';
-import 'package:sage_wallet_reborn/models/ai_insight.dart';
-import 'package:sage_wallet_reborn/models/transaction.dart';
+import 'package:wislet/data/repositories/transaction_repository.dart';
+import 'package:wislet/models/ai_insight.dart';
+import 'package:wislet/models/transaction.dart';
 
 class AiInsightService {
   Future<AiInsight?> getInsight(

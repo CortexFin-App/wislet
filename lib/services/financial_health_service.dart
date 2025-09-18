@@ -1,9 +1,9 @@
 import 'dart:math';
 
-import 'package:sage_wallet_reborn/core/di/injector.dart';
-import 'package:sage_wallet_reborn/data/repositories/debt_loan_repository.dart';
-import 'package:sage_wallet_reborn/data/repositories/transaction_repository.dart';
-import 'package:sage_wallet_reborn/models/transaction.dart' as fin_transaction;
+import 'package:wislet/core/di/injector.dart';
+import 'package:wislet/data/repositories/debt_loan_repository.dart';
+import 'package:wislet/data/repositories/transaction_repository.dart';
+import 'package:wislet/models/transaction.dart' as fin_transaction;
 
 class HealthScoreProfile {
   HealthScoreProfile({

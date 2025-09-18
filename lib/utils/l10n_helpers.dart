@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
-import 'package:sage_wallet_reborn/l10n/app_localizations.dart';
-import 'package:sage_wallet_reborn/models/budget_models.dart';
-import 'package:sage_wallet_reborn/models/subscription_model.dart';
+import 'package:wislet/l10n/app_localizations.dart';
+import 'package:wislet/models/budget_models.dart';
+import 'package:wislet/models/subscription_model.dart';
 
 extension AppLocalizationsT on AppLocalizations {
   /// Повертає локалізований рядок за ключем.
@@ -17,7 +17,7 @@ extension AppLocalizationsT on AppLocalizations {
 /// За потреби просто додай нові пари 'key': 'value'.
 const Map<String, String> _enStrings = {
   // Common / navigation
-  'app_title': 'Sage Wallet',
+  'app_title': 'Wislet',
   'home': 'Home',
   'wallets': 'Wallets',
   'settings': 'Settings',
@@ -63,7 +63,7 @@ const Map<String, String> _enStrings = {
 
 const Map<String, String> _ukStrings = {
   // Common / navigation
-  'app_title': 'Sage Wallet',
+  'app_title': 'Wislet',
   'home': 'Головна',
   'wallets': 'Гаманці',
   'settings': 'Налаштування',

@@ -2,13 +2,13 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:sage_wallet_reborn/core/di/injector.dart';
-import 'package:sage_wallet_reborn/models/asset.dart';
-import 'package:sage_wallet_reborn/models/liability.dart';
-import 'package:sage_wallet_reborn/providers/wallet_provider.dart';
-import 'package:sage_wallet_reborn/screens/net_worth/add_edit_asset_screen.dart';
-import 'package:sage_wallet_reborn/screens/net_worth/add_edit_liability_screen.dart';
-import 'package:sage_wallet_reborn/services/net_worth_service.dart';
+import 'package:wislet/core/di/injector.dart';
+import 'package:wislet/models/asset.dart';
+import 'package:wislet/models/liability.dart';
+import 'package:wislet/providers/wallet_provider.dart';
+import 'package:wislet/screens/net_worth/add_edit_asset_screen.dart';
+import 'package:wislet/screens/net_worth/add_edit_liability_screen.dart';
+import 'package:wislet/services/net_worth_service.dart';
 
 class NetWorthScreen extends StatefulWidget {
   const NetWorthScreen({super.key});

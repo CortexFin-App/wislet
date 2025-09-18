@@ -1,8 +1,8 @@
-import 'package:sage_wallet_reborn/data/repositories/repeating_transaction_repository.dart';
-import 'package:sage_wallet_reborn/data/repositories/subscription_repository.dart';
-import 'package:sage_wallet_reborn/data/repositories/transaction_repository.dart';
-import 'package:sage_wallet_reborn/models/forecast_data_point.dart';
-import 'package:sage_wallet_reborn/models/transaction.dart';
+import 'package:wislet/data/repositories/repeating_transaction_repository.dart';
+import 'package:wislet/data/repositories/subscription_repository.dart';
+import 'package:wislet/data/repositories/transaction_repository.dart';
+import 'package:wislet/models/forecast_data_point.dart';
+import 'package:wislet/models/transaction.dart';
 
 class CashflowForecastService {
   CashflowForecastService(

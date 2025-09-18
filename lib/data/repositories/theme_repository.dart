@@ -1,4 +1,4 @@
-import 'package:sage_wallet_reborn/models/theme_profile.dart';
+import 'package:wislet/models/theme_profile.dart';
 
 abstract class ThemeRepository {
   Future<void> saveTheme(ThemeProfile profile);

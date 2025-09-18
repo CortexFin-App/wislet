@@ -1,6 +1,6 @@
 import 'package:fpdart/fpdart.dart';
-import 'package:sage_wallet_reborn/core/error/failures.dart';
-import 'package:sage_wallet_reborn/models/category.dart';
+import 'package:wislet/core/error/failures.dart';
+import 'package:wislet/models/category.dart';
 
 abstract class CategoryRepository {
   Future<Either<AppFailure, int>> createCategory(

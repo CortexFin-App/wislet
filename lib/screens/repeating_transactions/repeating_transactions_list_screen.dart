@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:sage_wallet_reborn/core/di/injector.dart';
-import 'package:sage_wallet_reborn/data/repositories/category_repository.dart';
-import 'package:sage_wallet_reborn/data/repositories/repeating_transaction_repository.dart';
-import 'package:sage_wallet_reborn/models/currency_model.dart';
-import 'package:sage_wallet_reborn/models/repeating_transaction_model.dart';
-import 'package:sage_wallet_reborn/models/transaction.dart';
-import 'package:sage_wallet_reborn/providers/wallet_provider.dart';
-import 'package:sage_wallet_reborn/screens/repeating_transactions/add_edit_repeating_transaction_screen.dart';
-import 'package:sage_wallet_reborn/services/notification_service.dart';
-import 'package:sage_wallet_reborn/utils/fade_page_route.dart';
-import 'package:sage_wallet_reborn/widgets/scaffold/patterned_scaffold.dart';
+import 'package:wislet/core/di/injector.dart';
+import 'package:wislet/data/repositories/category_repository.dart';
+import 'package:wislet/data/repositories/repeating_transaction_repository.dart';
+import 'package:wislet/models/currency_model.dart';
+import 'package:wislet/models/repeating_transaction_model.dart';
+import 'package:wislet/models/transaction.dart';
+import 'package:wislet/providers/wallet_provider.dart';
+import 'package:wislet/screens/repeating_transactions/add_edit_repeating_transaction_screen.dart';
+import 'package:wislet/services/notification_service.dart';
+import 'package:wislet/utils/fade_page_route.dart';
+import 'package:wislet/widgets/scaffold/patterned_scaffold.dart';
 import 'package:shimmer/shimmer.dart';
 
 class RepeatingTransactionsListScreen extends StatefulWidget {

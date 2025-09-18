@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:sage_wallet_reborn/core/constants/app_constants.dart';
+import 'package:wislet/core/constants/app_constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ProStatusProvider with ChangeNotifier {

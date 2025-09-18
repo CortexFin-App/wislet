@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:sage_wallet_reborn/core/di/injector.dart';
-import 'package:sage_wallet_reborn/data/repositories/notification_repository.dart';
-import 'package:sage_wallet_reborn/models/notification_history_item.dart';
-import 'package:sage_wallet_reborn/screens/financial_goals/financial_goals_list_screen.dart';
-import 'package:sage_wallet_reborn/services/navigation_service.dart';
-import 'package:sage_wallet_reborn/widgets/scaffold/patterned_scaffold.dart';
+import 'package:wislet/core/di/injector.dart';
+import 'package:wislet/data/repositories/notification_repository.dart';
+import 'package:wislet/models/notification_history_item.dart';
+import 'package:wislet/screens/financial_goals/financial_goals_list_screen.dart';
+import 'package:wislet/services/navigation_service.dart';
+import 'package:wislet/widgets/scaffold/patterned_scaffold.dart';
 
 class NotificationHistoryScreen extends StatefulWidget {
   const NotificationHistoryScreen({super.key});

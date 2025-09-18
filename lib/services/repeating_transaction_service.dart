@@ -1,8 +1,8 @@
-import 'package:sage_wallet_reborn/data/repositories/repeating_transaction_repository.dart';
-import 'package:sage_wallet_reborn/data/repositories/transaction_repository.dart';
-import 'package:sage_wallet_reborn/data/repositories/wallet_repository.dart';
-import 'package:sage_wallet_reborn/models/repeating_transaction_model.dart';
-import 'package:sage_wallet_reborn/models/transaction.dart' as fin_transaction;
+import 'package:wislet/data/repositories/repeating_transaction_repository.dart';
+import 'package:wislet/data/repositories/transaction_repository.dart';
+import 'package:wislet/data/repositories/wallet_repository.dart';
+import 'package:wislet/models/repeating_transaction_model.dart';
+import 'package:wislet/models/transaction.dart' as fin_transaction;
 
 class RepeatingTransactionService {
   RepeatingTransactionService(

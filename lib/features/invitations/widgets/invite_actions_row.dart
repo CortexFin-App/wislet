@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:sage_wallet_reborn/features/invitations/invitations_repository.dart';
+import 'package:wislet/features/invitations/invitations_repository.dart';
 
 class InviteActionsRow extends StatelessWidget {
   const InviteActionsRow({required this.walletId, super.key});

@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:sage_wallet_reborn/core/di/injector.dart';
-import 'package:sage_wallet_reborn/data/repositories/invitation_repository.dart';
-import 'package:sage_wallet_reborn/models/wallet.dart';
-import 'package:sage_wallet_reborn/providers/app_mode_provider.dart';
-import 'package:sage_wallet_reborn/providers/wallet_provider.dart';
-import 'package:sage_wallet_reborn/screens/settings/add_edit_wallet_screen.dart';
-import 'package:sage_wallet_reborn/services/auth_service.dart';
-import 'package:sage_wallet_reborn/widgets/scaffold/patterned_scaffold.dart';
+import 'package:wislet/core/di/injector.dart';
+import 'package:wislet/data/repositories/invitation_repository.dart';
+import 'package:wislet/models/wallet.dart';
+import 'package:wislet/providers/app_mode_provider.dart';
+import 'package:wislet/providers/wallet_provider.dart';
+import 'package:wislet/screens/settings/add_edit_wallet_screen.dart';
+import 'package:wislet/services/auth_service.dart';
+import 'package:wislet/widgets/scaffold/patterned_scaffold.dart';
 import 'package:share_plus/share_plus.dart';
 
 class WalletsScreen extends StatefulWidget {

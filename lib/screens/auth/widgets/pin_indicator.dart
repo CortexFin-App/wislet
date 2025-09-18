@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:sage_wallet_reborn/utils/app_palette.dart';
+import 'package:wislet/utils/app_palette.dart';
 
 class PinIndicator extends StatelessWidget {
   const PinIndicator({

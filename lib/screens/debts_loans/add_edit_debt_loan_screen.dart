@@ -2,12 +2,12 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:sage_wallet_reborn/core/di/injector.dart';
-import 'package:sage_wallet_reborn/data/repositories/debt_loan_repository.dart';
-import 'package:sage_wallet_reborn/models/currency_model.dart';
-import 'package:sage_wallet_reborn/models/debt_loan_model.dart';
-import 'package:sage_wallet_reborn/providers/currency_provider.dart';
-import 'package:sage_wallet_reborn/providers/wallet_provider.dart';
+import 'package:wislet/core/di/injector.dart';
+import 'package:wislet/data/repositories/debt_loan_repository.dart';
+import 'package:wislet/models/currency_model.dart';
+import 'package:wislet/models/debt_loan_model.dart';
+import 'package:wislet/providers/currency_provider.dart';
+import 'package:wislet/providers/wallet_provider.dart';
 
 class AddEditDebtLoanScreen extends StatefulWidget {
   const AddEditDebtLoanScreen({this.debtLoanToEdit, super.key});

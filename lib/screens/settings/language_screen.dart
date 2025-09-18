@@ -1,7 +1,7 @@
 // lib/screens/settings/language_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:sage_wallet_reborn/providers/locale_provider.dart';
+import 'package:wislet/providers/locale_provider.dart';
 
 class LanguageScreen extends StatelessWidget {
   const LanguageScreen({super.key});

@@ -1,7 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
-import 'package:sage_wallet_reborn/features/invitations/invitations_repository.dart';
+import 'package:wislet/features/invitations/invitations_repository.dart';
 
 Future<void> onCreateInvitePressed(BuildContext context, int walletId) async {
   final repo = context.read<InvitationsRepository>();

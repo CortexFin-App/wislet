@@ -1,9 +1,9 @@
-import 'package:sage_wallet_reborn/data/repositories/subscription_repository.dart';
-import 'package:sage_wallet_reborn/data/repositories/transaction_repository.dart';
-import 'package:sage_wallet_reborn/data/repositories/wallet_repository.dart';
-import 'package:sage_wallet_reborn/models/subscription_model.dart';
-import 'package:sage_wallet_reborn/models/transaction.dart' as fin_transaction;
-import 'package:sage_wallet_reborn/services/notification_service.dart';
+import 'package:wislet/data/repositories/subscription_repository.dart';
+import 'package:wislet/data/repositories/transaction_repository.dart';
+import 'package:wislet/data/repositories/wallet_repository.dart';
+import 'package:wislet/models/subscription_model.dart';
+import 'package:wislet/models/transaction.dart' as fin_transaction;
+import 'package:wislet/services/notification_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SubscriptionService {

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:sage_wallet_reborn/models/financial_story.dart';
-import 'package:sage_wallet_reborn/providers/reports_provider.dart';
-import 'package:sage_wallet_reborn/providers/wallet_provider.dart';
-import 'package:sage_wallet_reborn/screens/reports/widgets/story_cards.dart';
+import 'package:wislet/models/financial_story.dart';
+import 'package:wislet/providers/reports_provider.dart';
+import 'package:wislet/providers/wallet_provider.dart';
+import 'package:wislet/screens/reports/widgets/story_cards.dart';
 import 'package:shimmer/shimmer.dart';
 
 class ReportsScreen extends StatefulWidget {

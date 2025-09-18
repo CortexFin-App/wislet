@@ -6,9 +6,9 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
-import 'package:sage_wallet_reborn/core/constants/app_constants.dart';
-import 'package:sage_wallet_reborn/models/user.dart' as fin_user;
-import 'package:sage_wallet_reborn/services/token_storage_service.dart';
+import 'package:wislet/core/constants/app_constants.dart';
+import 'package:wislet/models/user.dart' as fin_user;
+import 'package:wislet/services/token_storage_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 

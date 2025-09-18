@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:sage_wallet_reborn/providers/dashboard_provider.dart';
-import 'package:sage_wallet_reborn/services/financial_health_service.dart';
+import 'package:wislet/providers/dashboard_provider.dart';
+import 'package:wislet/services/financial_health_service.dart';
 
 class HealthScoreWidget extends StatelessWidget {
   const HealthScoreWidget({

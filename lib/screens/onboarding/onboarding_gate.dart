@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:sage_wallet_reborn/screens/onboarding/interactive_onboarding_screen.dart';
-import 'package:sage_wallet_reborn/screens/onboarding/simple_onboarding.dart';
+
+import 'package:wislet/screens/onboarding/interactive_onboarding_screen.dart';
+import 'package:wislet/screens/onboarding/simple_onboarding.dart';
 
 class OnboardingGate extends StatefulWidget {
-  const OnboardingGate({
-    required this.child,
-    super.key,
-  });
+  const OnboardingGate({required this.child, super.key});
 
   final Widget child;
 
@@ -60,9 +58,7 @@ class _OnboardingGateState extends State<OnboardingGate> {
       case _Stage.loading:
         return const MaterialApp(
           debugShowCheckedModeBanner: false,
-          home: Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          ),
+          home: Scaffold(body: Center(child: CircularProgressIndicator())),
         );
       case _Stage.simple:
         return MaterialApp(
@@ -74,9 +70,8 @@ class _OnboardingGateState extends State<OnboardingGate> {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
           theme: ThemeData(useMaterial3: true),
-          home: InteractiveOnboardingScreen(
-            onFinished: _onInteractiveDone,
-          ),
+          // Використовуємо InteractiveOnboarding з interactive_onboarding_screen.dart
+          home: InteractiveOnboarding(onFinished: _onInteractiveDone),
         );
       case _Stage.done:
         return widget.child;

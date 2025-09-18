@@ -1,22 +1,19 @@
-﻿// lib/screens/onboarding/interactive_onboarding_screen.dart
-import 'dart:convert';
+﻿import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:sage_wallet_reborn/core/di/injector.dart';
-import 'package:sage_wallet_reborn/l10n/app_localizations.dart' as sw;
-import 'package:sage_wallet_reborn/models/currency_model.dart' show Currency;
-import 'package:sage_wallet_reborn/screens/categories_screen.dart';
-import 'package:sage_wallet_reborn/screens/settings/wallets_screen.dart';
-import 'package:sage_wallet_reborn/services/sync_service.dart';
-import 'package:sage_wallet_reborn/utils/l10n_helpers.dart';
+import 'package:wislet/core/di/injector.dart';
+import 'package:wislet/data/app_currencies.dart' as data;
+import 'package:wislet/l10n/app_localizations.dart' as sw;
+import 'package:wislet/models/currency_model.dart' show Currency;
+import 'package:wislet/screens/categories_screen.dart';
+import 'package:wislet/screens/settings/wallets_screen.dart';
+import 'package:wislet/services/sync_service.dart';
+import 'package:wislet/utils/l10n_helpers.dart';
 
-// уникаємо конфлікту назв: appCurrencies беремо з data/* під alias `data`
-import 'package:sage_wallet_reborn/data/app_currencies.dart' as data;
-
-class InteractiveOnboardingScreen extends StatefulWidget {
-  const InteractiveOnboardingScreen({
+class InteractiveOnboarding extends StatefulWidget {
+  const InteractiveOnboarding({
     required this.onFinished,
     super.key,
   });
@@ -24,17 +21,16 @@ class InteractiveOnboardingScreen extends StatefulWidget {
   final VoidCallback onFinished;
 
   @override
-  State<InteractiveOnboardingScreen> createState() =>
-      _InteractiveOnboardingScreenState();
+  State<InteractiveOnboarding> createState() => _InteractiveOnboardingState();
 }
 
-class _InteractiveOnboardingScreenState
-    extends State<InteractiveOnboardingScreen> {
+class _InteractiveOnboardingState extends State<InteractiveOnboarding> {
   int _step = 0;
 
+  // Кроки
   Currency? _selectedCurrency;
-  final TextEditingController _walletNameCtrl = TextEditingController();
-  final TextEditingController _walletBalanceCtrl = TextEditingController();
+  final _walletNameCtrl = TextEditingController();
+  final _walletBalanceCtrl = TextEditingController();
 
   final Map<String, bool> _categories = <String, bool>{
     'Housing': true,
@@ -52,12 +48,8 @@ class _InteractiveOnboardingScreenState
 
   @override
   void dispose() {
-    _walletNameCtrl
-      ..removeListener(() {})
-      ..dispose();
-    _walletBalanceCtrl
-      ..removeListener(() {})
-      ..dispose();
+    _walletNameCtrl.dispose();
+    _walletBalanceCtrl.dispose();
     super.dispose();
   }
 
@@ -70,53 +62,49 @@ class _InteractiveOnboardingScreenState
       case 2:
         return _walletNameCtrl.text.trim().isNotEmpty;
       case 3:
-        return true; // категорії опціональні
+        return true; // категорії необов'язкові
       case 4:
-        return true; // PIN опціонально
+        return true; // безпека — вибір
       case 5:
-        return !_syncing; // можна далі, якщо не синкаться
+        return !_syncing; // далі можна, коли не синкиться
       default:
         return true;
     }
   }
 
   Future<void> _persistSelections() async {
-    final SharedPreferences p = await SharedPreferences.getInstance();
-
+    final p = await SharedPreferences.getInstance();
     if (_selectedCurrency != null) {
       await p.setString('selected_currency_code', _selectedCurrency!.code);
     }
-
     await p.setString('onboard_wallet_name', _walletNameCtrl.text.trim());
 
-    final double balRaw = double.tryParse(
+    final balRaw = double.tryParse(
           _walletBalanceCtrl.text.replaceAll(',', '.'),
         ) ??
         0.0;
     await p.setDouble('onboard_wallet_balance', balRaw);
     await p.setBool('onboard_wants_pin', _wantsPin);
 
-    final List<String> chosenCats = _categories.entries
-        .where((MapEntry<String, bool> e) => e.value)
-        .map((MapEntry<String, bool> e) => e.key)
-        .toList();
+    final chosenCats =
+        _categories.entries.where((e) => e.value).map((e) => e.key).toList();
     await p.setString('onboard_categories', jsonEncode(chosenCats));
   }
 
   Future<void> _runInitialSync() async {
     setState(() => _syncing = true);
     try {
-      final SyncService sync = getIt<SyncService>();
+      final sync = getIt<SyncService>();
       await sync.synchronize();
     } catch (_) {
-      // не падаємо майстер через помилку синку
+      // no-op: не валимо майстер
     } finally {
       if (mounted) setState(() => _syncing = false);
     }
   }
 
   List<Step> _buildSteps(BuildContext context) {
-    final sw.AppLocalizations? l = sw.AppLocalizations.of(context);
+    final l = sw.AppLocalizations.of(context);
 
     return <Step>[
       Step(
@@ -124,15 +112,15 @@ class _InteractiveOnboardingScreenState
         isActive: _step >= 0,
         content: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
+          children: [
             Text(
               l?.t('onb_int_goal_body') ??
-                  'Let’s tailor Sage Wallet for you: choose currency, add your first wallet, pick categories, security, and sync.',
+                  'Let’s tailor Wislet for you: choose currency, add your first wallet, pick categories, security, and sync.',
             ),
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,
-              children: const <Widget>[
+              children: const [
                 Chip(label: Text('Track expenses')),
                 Chip(label: Text('Budgeting')),
                 Chip(label: Text('Subscriptions')),
@@ -147,11 +135,11 @@ class _InteractiveOnboardingScreenState
         isActive: _step >= 1,
         content: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
+          children: [
             DropdownButtonFormField<Currency>(
               value: _selectedCurrency,
               items: data.appCurrencies
-                  .map<DropdownMenuItem<Currency>>(
+                  .map(
                     (Currency c) => DropdownMenuItem<Currency>(
                       value: c,
                       child: Text('${c.name} (${c.code}) — ${c.symbol}'),
@@ -174,11 +162,10 @@ class _InteractiveOnboardingScreenState
         ),
       ),
       Step(
-        title:
-            Text(l?.t('onb_int_wallet_title') ?? 'Create your first wallet'),
+        title: Text(l?.t('onb_int_wallet_title') ?? 'Create your first wallet'),
         isActive: _step >= 2,
         content: Column(
-          children: <Widget>[
+          children: [
             TextField(
               controller: _walletNameCtrl,
               decoration: InputDecoration(
@@ -218,15 +205,14 @@ class _InteractiveOnboardingScreenState
         ),
       ),
       Step(
-        title:
-            Text(l?.t('onb_int_categories_title') ?? 'Pick categories'),
+        title: Text(l?.t('onb_int_categories_title') ?? 'Pick categories'),
         isActive: _step >= 3,
         content: Column(
-          children: <Widget>[
+          children: [
             ..._categories.entries.map(
-              (MapEntry<String, bool> e) => CheckboxListTile(
+              (e) => CheckboxListTile(
                 value: e.value,
-                onChanged: (bool? v) =>
+                onChanged: (v) =>
                     setState(() => _categories[e.key] = v ?? false),
                 title: Text(e.key),
               ),
@@ -243,8 +229,7 @@ class _InteractiveOnboardingScreenState
                   );
                 },
                 label: Text(
-                  l?.t('configure_in_categories') ??
-                      'Open categories manager',
+                  l?.t('configure_in_categories') ?? 'Open categories manager',
                 ),
               ),
             ),
@@ -256,10 +241,10 @@ class _InteractiveOnboardingScreenState
         isActive: _step >= 4,
         content: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
+          children: [
             SwitchListTile.adaptive(
               value: _wantsPin,
-              onChanged: (bool v) => setState(() => _wantsPin = v),
+              onChanged: (v) => setState(() => _wantsPin = v),
               title: Text(l?.t('enable_pin') ?? 'Enable PIN'),
               subtitle: Text(
                 l?.t('onb_int_security_hint') ??
@@ -274,14 +259,14 @@ class _InteractiveOnboardingScreenState
         isActive: _step >= 5,
         content: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
+          children: [
             Text(
               l?.t('onb_int_sync_body') ??
                   'Run an initial sync to fetch remote data (if any). You can also do this later in Settings.',
             ),
             const SizedBox(height: 12),
             Row(
-              children: <Widget>[
+              children: [
                 FilledButton.icon(
                   onPressed: _syncing ? null : _runInitialSync,
                   icon: _syncing
@@ -294,8 +279,7 @@ class _InteractiveOnboardingScreenState
                   label: Text(l?.t('sync_now') ?? 'Sync now'),
                 ),
                 const SizedBox(width: 12),
-                if (_syncing)
-                  Text(l?.t('sync_running') ?? 'Syncing…'),
+                if (_syncing) Text(l?.t('sync_running') ?? 'Syncing…'),
               ],
             ),
           ],
@@ -306,10 +290,10 @@ class _InteractiveOnboardingScreenState
         isActive: _step >= 6,
         content: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
+          children: [
             Text(
               l?.t('onb_int_done_body') ??
-                  'You’re ready to use Sage Wallet. You can change anything later in Settings.',
+                  'You’re ready to use Wislet. You can change anything later in Settings.',
             ),
             const SizedBox(height: 12),
             FilledButton.icon(
@@ -328,22 +312,24 @@ class _InteractiveOnboardingScreenState
 
   @override
   Widget build(BuildContext context) {
-    final List<Step> steps = _buildSteps(context);
-    final bool isLast = _step == steps.length - 1;
-    final sw.AppLocalizations? l = sw.AppLocalizations.of(context);
+    final steps = _buildSteps(context);
+    final isLast = _step == steps.length - 1;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(l?.t('onboarding') ?? 'Onboarding'),
+        title: Text(
+          sw.AppLocalizations.of(context)?.t('onboarding') ?? 'Onboarding',
+        ),
       ),
       body: Stepper(
         currentStep: _step,
         steps: steps,
-        onStepTapped: (int i) => setState(() => _step = i),
+        onStepTapped: (i) => setState(() => _step = i),
         onStepCancel: _step == 0 ? null : () => setState(() => _step -= 1),
         onStepContinue: !_canContinue
             ? null
             : () async {
+                // На переході з 5-го кроку збережемо проміжні налаштування
                 if (_step == 5) {
                   await _persistSelections();
                 }
@@ -354,28 +340,23 @@ class _InteractiveOnboardingScreenState
                   setState(() => _step += 1);
                 }
               },
-        controlsBuilder: (BuildContext context, ControlsDetails details) {
-          final bool canBack = _step > 0;
-          final bool canNext = _canContinue;
-          final bool isLastLocal =
-              _step == _buildSteps(context).length - 1;
+        controlsBuilder: (context, details) {
+          final canBack = _step > 0;
+          final canNext = _canContinue;
+          final isLastLocal = _step == _buildSteps(context).length - 1;
 
           return Padding(
             padding: const EdgeInsets.only(top: 16),
             child: Row(
-              children: <Widget>[
+              children: [
                 FilledButton(
                   onPressed: canNext ? details.onStepContinue : null,
-                  child: Text(
-                    isLastLocal
-                        ? (l?.t('finish') ?? 'Finish')
-                        : (l?.t('continue') ?? 'Continue'),
-                  ),
+                  child: Text(isLastLocal ? 'Finish' : 'Continue'),
                 ),
                 const SizedBox(width: 12),
                 OutlinedButton(
                   onPressed: canBack ? details.onStepCancel : null,
-                  child: Text(l?.t('back') ?? 'Back'),
+                  child: const Text('Back'),
                 ),
               ],
             ),

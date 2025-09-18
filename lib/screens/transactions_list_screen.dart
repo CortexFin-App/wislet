@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:sage_wallet_reborn/models/category.dart' as fin_category;
-import 'package:sage_wallet_reborn/models/currency_model.dart';
-import 'package:sage_wallet_reborn/models/transaction.dart' as fin_transaction;
-import 'package:sage_wallet_reborn/models/transaction_view_data.dart';
-import 'package:sage_wallet_reborn/providers/wallet_provider.dart';
-import 'package:sage_wallet_reborn/screens/transactions/add_edit_transaction_screen.dart';
+import 'package:wislet/models/category.dart' as fin_category;
+import 'package:wislet/models/currency_model.dart';
+import 'package:wislet/models/transaction.dart' as fin_transaction;
+import 'package:wislet/models/transaction_view_data.dart';
+import 'package:wislet/providers/wallet_provider.dart';
+import 'package:wislet/screens/transactions/add_edit_transaction_screen.dart';
 import 'package:shimmer/shimmer.dart';
 
 class TransactionsListScreen extends StatefulWidget {

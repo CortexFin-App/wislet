@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:sage_wallet_reborn/core/constants/app_constants.dart';
-import 'package:sage_wallet_reborn/data/repositories/theme_repository.dart';
-import 'package:sage_wallet_reborn/data/static/default_theme_profiles.dart';
-import 'package:sage_wallet_reborn/models/theme_profile.dart';
+import 'package:wislet/core/constants/app_constants.dart';
+import 'package:wislet/data/repositories/theme_repository.dart';
+import 'package:wislet/data/static/default_theme_profiles.dart';
+import 'package:wislet/models/theme_profile.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ThemeProvider with ChangeNotifier {

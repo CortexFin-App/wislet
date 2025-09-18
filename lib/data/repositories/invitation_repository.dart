@@ -1,4 +1,4 @@
-import 'package:sage_wallet_reborn/models/invitation_model.dart';
+import 'package:wislet/models/invitation_model.dart';
 
 enum InvitationStatus { accepted, declined }
 

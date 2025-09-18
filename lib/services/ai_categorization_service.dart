@@ -1,10 +1,10 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
-import 'package:sage_wallet_reborn/core/di/injector.dart';
-import 'package:sage_wallet_reborn/data/repositories/category_repository.dart';
-import 'package:sage_wallet_reborn/models/category.dart' as fin_category;
-import 'package:sage_wallet_reborn/services/api_client.dart';
+import 'package:wislet/core/di/injector.dart';
+import 'package:wislet/data/repositories/category_repository.dart';
+import 'package:wislet/models/category.dart' as fin_category;
+import 'package:wislet/services/api_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AICategorizationService {

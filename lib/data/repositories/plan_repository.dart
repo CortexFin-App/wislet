@@ -1,7 +1,7 @@
 import 'package:fpdart/fpdart.dart';
-import 'package:sage_wallet_reborn/core/error/failures.dart';
-import 'package:sage_wallet_reborn/models/plan.dart';
-import 'package:sage_wallet_reborn/models/plan_view_data.dart';
+import 'package:wislet/core/error/failures.dart';
+import 'package:wislet/models/plan.dart';
+import 'package:wislet/models/plan_view_data.dart';
 
 abstract class PlanRepository {
   Future<Either<AppFailure, int>> createPlan(Plan plan, int walletId);

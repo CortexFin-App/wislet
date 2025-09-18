@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:sage_wallet_reborn/core/di/injector.dart';
-import 'package:sage_wallet_reborn/data/repositories/budget_repository.dart';
-import 'package:sage_wallet_reborn/data/repositories/category_repository.dart';
-import 'package:sage_wallet_reborn/models/budget_models.dart';
-import 'package:sage_wallet_reborn/providers/wallet_provider.dart';
+import 'package:wislet/core/di/injector.dart';
+import 'package:wislet/data/repositories/budget_repository.dart';
+import 'package:wislet/data/repositories/category_repository.dart';
+import 'package:wislet/models/budget_models.dart';
+import 'package:wislet/providers/wallet_provider.dart';
 
 class AddEditBudgetScreen extends StatefulWidget {
   const AddEditBudgetScreen({

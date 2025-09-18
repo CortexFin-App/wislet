@@ -1,26 +1,26 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
-import 'package:sage_wallet_reborn/data/repositories/budget_repository.dart';
-import 'package:sage_wallet_reborn/data/repositories/category_repository.dart';
-import 'package:sage_wallet_reborn/data/repositories/debt_loan_repository.dart';
-import 'package:sage_wallet_reborn/data/repositories/goal_repository.dart';
-import 'package:sage_wallet_reborn/data/repositories/plan_repository.dart';
-import 'package:sage_wallet_reborn/data/repositories/repeating_transaction_repository.dart';
-import 'package:sage_wallet_reborn/data/repositories/subscription_repository.dart';
-import 'package:sage_wallet_reborn/data/repositories/transaction_repository.dart';
-import 'package:sage_wallet_reborn/data/repositories/wallet_repository.dart';
-import 'package:sage_wallet_reborn/models/budget_models.dart' as fin_budget;
-import 'package:sage_wallet_reborn/models/category.dart' as fin_category;
-import 'package:sage_wallet_reborn/models/debt_loan_model.dart' as fin_debt;
-import 'package:sage_wallet_reborn/models/financial_goal.dart' as fin_goal;
-import 'package:sage_wallet_reborn/models/plan.dart' as fin_plan;
-import 'package:sage_wallet_reborn/models/repeating_transaction_model.dart'
+import 'package:wislet/data/repositories/budget_repository.dart';
+import 'package:wislet/data/repositories/category_repository.dart';
+import 'package:wislet/data/repositories/debt_loan_repository.dart';
+import 'package:wislet/data/repositories/goal_repository.dart';
+import 'package:wislet/data/repositories/plan_repository.dart';
+import 'package:wislet/data/repositories/repeating_transaction_repository.dart';
+import 'package:wislet/data/repositories/subscription_repository.dart';
+import 'package:wislet/data/repositories/transaction_repository.dart';
+import 'package:wislet/data/repositories/wallet_repository.dart';
+import 'package:wislet/models/budget_models.dart' as fin_budget;
+import 'package:wislet/models/category.dart' as fin_category;
+import 'package:wislet/models/debt_loan_model.dart' as fin_debt;
+import 'package:wislet/models/financial_goal.dart' as fin_goal;
+import 'package:wislet/models/plan.dart' as fin_plan;
+import 'package:wislet/models/repeating_transaction_model.dart'
     as fin_rt;
-import 'package:sage_wallet_reborn/models/subscription_model.dart' as fin_sub;
-import 'package:sage_wallet_reborn/models/transaction.dart' as fin_transaction;
-import 'package:sage_wallet_reborn/models/wallet.dart' as fin_wallet;
-import 'package:sage_wallet_reborn/utils/database_helper.dart';
+import 'package:wislet/models/subscription_model.dart' as fin_sub;
+import 'package:wislet/models/transaction.dart' as fin_transaction;
+import 'package:wislet/models/wallet.dart' as fin_wallet;
+import 'package:wislet/utils/database_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 

@@ -1,5 +1,5 @@
-import 'package:sage_wallet_reborn/data/repositories/user_repository.dart';
-import 'package:sage_wallet_reborn/models/user.dart' as fin_user;
+import 'package:wislet/data/repositories/user_repository.dart';
+import 'package:wislet/models/user.dart' as fin_user;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseUserRepositoryImpl implements UserRepository {

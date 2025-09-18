@@ -1,5 +1,5 @@
-import 'package:sage_wallet_reborn/data/repositories/invitation_repository.dart';
-import 'package:sage_wallet_reborn/models/invitation_model.dart';
+import 'package:wislet/data/repositories/invitation_repository.dart';
+import 'package:wislet/models/invitation_model.dart';
 
 class LocalInvitationRepositoryImpl implements InvitationRepository {
   @override

@@ -1,4 +1,4 @@
-import 'package:sage_wallet_reborn/models/currency_model.dart';
+import 'package:wislet/models/currency_model.dart';
 
 final List<Currency> appCurrencies = [
   // North America & Europe

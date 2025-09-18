@@ -1,4 +1,4 @@
-// C:\sage_wallet_reborn\android\build.gradle.kts
+// C:\wislet\android\build.gradle.kts
 
 buildscript {
     repositories {

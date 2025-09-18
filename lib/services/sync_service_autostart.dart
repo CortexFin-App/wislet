@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:sage_wallet_reborn/services/sync_service.dart';
+import 'package:wislet/services/sync_service.dart';
 
 final Expando<Timer> _autoSyncTimers = Expando<Timer>('autoSyncTimer');
 

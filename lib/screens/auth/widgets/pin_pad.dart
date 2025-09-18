@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:sage_wallet_reborn/utils/app_palette.dart';
+import 'package:wislet/utils/app_palette.dart';
 
 class PinPadWidget extends StatelessWidget {
   const PinPadWidget({

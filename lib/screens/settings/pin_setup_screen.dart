@@ -2,10 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:sage_wallet_reborn/core/di/injector.dart';
-import 'package:sage_wallet_reborn/screens/auth/widgets/pin_indicator.dart';
-import 'package:sage_wallet_reborn/screens/auth/widgets/pin_pad.dart';
-import 'package:sage_wallet_reborn/services/auth_service.dart';
+import 'package:wislet/core/di/injector.dart';
+import 'package:wislet/screens/auth/widgets/pin_indicator.dart';
+import 'package:wislet/screens/auth/widgets/pin_pad.dart';
+import 'package:wislet/services/auth_service.dart';
 
 enum _PinSetupStage { createNew, confirm }
 

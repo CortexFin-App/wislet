@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:sage_wallet_reborn/core/di/injector.dart';
-import 'package:sage_wallet_reborn/data/repositories/category_repository.dart';
-import 'package:sage_wallet_reborn/data/repositories/transaction_repository.dart';
-import 'package:sage_wallet_reborn/models/ai_insight.dart';
-import 'package:sage_wallet_reborn/models/category.dart' as fin_category;
-import 'package:sage_wallet_reborn/models/financial_story.dart';
-import 'package:sage_wallet_reborn/models/transaction.dart' as fin_transaction;
-import 'package:sage_wallet_reborn/services/ai_insight_service.dart';
+import 'package:wislet/core/di/injector.dart';
+import 'package:wislet/data/repositories/category_repository.dart';
+import 'package:wislet/data/repositories/transaction_repository.dart';
+import 'package:wislet/models/ai_insight.dart';
+import 'package:wislet/models/category.dart' as fin_category;
+import 'package:wislet/models/financial_story.dart';
+import 'package:wislet/models/transaction.dart' as fin_transaction;
+import 'package:wislet/services/ai_insight_service.dart';
 
 class FinancialReportService {
   final TransactionRepository _transactionRepo = getIt<TransactionRepository>();

@@ -3,15 +3,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:sage_wallet_reborn/core/di/injector.dart';
-import 'package:sage_wallet_reborn/data/repositories/goal_repository.dart';
-import 'package:sage_wallet_reborn/models/currency_model.dart';
-import 'package:sage_wallet_reborn/models/financial_goal.dart';
-import 'package:sage_wallet_reborn/providers/currency_provider.dart';
-import 'package:sage_wallet_reborn/providers/wallet_provider.dart';
-import 'package:sage_wallet_reborn/services/exchange_rate_service.dart';
-import 'package:sage_wallet_reborn/services/notification_service.dart';
-import 'package:sage_wallet_reborn/utils/app_palette.dart';
+import 'package:wislet/core/di/injector.dart';
+import 'package:wislet/data/repositories/goal_repository.dart';
+import 'package:wislet/models/currency_model.dart';
+import 'package:wislet/models/financial_goal.dart';
+import 'package:wislet/providers/currency_provider.dart';
+import 'package:wislet/providers/wallet_provider.dart';
+import 'package:wislet/services/exchange_rate_service.dart';
+import 'package:wislet/services/notification_service.dart';
+import 'package:wislet/utils/app_palette.dart';
 
 class AddEditFinancialGoalScreen extends StatefulWidget {
   const AddEditFinancialGoalScreen({this.goalToEdit, super.key});

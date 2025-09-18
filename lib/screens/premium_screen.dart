@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:sage_wallet_reborn/core/di/injector.dart';
-import 'package:sage_wallet_reborn/providers/pro_status_provider.dart';
-import 'package:sage_wallet_reborn/services/billing_service.dart';
-import 'package:sage_wallet_reborn/widgets/scaffold/patterned_scaffold.dart';
+import 'package:wislet/core/di/injector.dart';
+import 'package:wislet/providers/pro_status_provider.dart';
+import 'package:wislet/services/billing_service.dart';
+import 'package:wislet/widgets/scaffold/patterned_scaffold.dart';
 
 class PremiumScreen extends StatelessWidget {
   const PremiumScreen({super.key});

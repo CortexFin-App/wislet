@@ -1,11 +1,11 @@
 import 'dart:convert';
 
 import 'package:fpdart/fpdart.dart';
-import 'package:sage_wallet_reborn/core/error/failures.dart';
-import 'package:sage_wallet_reborn/data/repositories/debt_loan_repository.dart';
-import 'package:sage_wallet_reborn/models/debt_loan_model.dart';
-import 'package:sage_wallet_reborn/services/error_monitoring_service.dart';
-import 'package:sage_wallet_reborn/utils/database_helper.dart';
+import 'package:wislet/core/error/failures.dart';
+import 'package:wislet/data/repositories/debt_loan_repository.dart';
+import 'package:wislet/models/debt_loan_model.dart';
+import 'package:wislet/services/error_monitoring_service.dart';
+import 'package:wislet/utils/database_helper.dart';
 
 class LocalDebtLoanRepositoryImpl implements DebtLoanRepository {
   LocalDebtLoanRepositoryImpl(this._dbHelper);

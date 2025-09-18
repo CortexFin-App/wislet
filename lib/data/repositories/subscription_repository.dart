@@ -1,6 +1,6 @@
 import 'package:fpdart/fpdart.dart';
-import 'package:sage_wallet_reborn/core/error/failures.dart';
-import 'package:sage_wallet_reborn/models/subscription_model.dart';
+import 'package:wislet/core/error/failures.dart';
+import 'package:wislet/models/subscription_model.dart';
 
 abstract class SubscriptionRepository {
   Future<Either<AppFailure, int>> createSubscription(
