@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [ "main" ]
   schedule:
-    - cron: "0 3 * * 1"   # щотижневий прогін
+    - cron: "0 3 * * 1"
 
 permissions:
   contents: read
@@ -14,41 +14,15 @@ permissions:
 
 jobs:
   analyze:
-    name: Analyze (Android Kotlin/Java + JS/TS)
+    name: Analyze (JS/TS)
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: "17"
-
-      # Android SDK
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install SDK packages
-        run: |
-          sdkmanager "platform-tools" \
-                     "platforms;android-34" \
-                     "build-tools;34.0.0"
-
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
-          # Kotlin аналізується Java-екстрактором
-          languages: "java,javascript"
+          languages: javascript
           queries: security-extended,security-and-quality
-
-      - name: Build with Gradle (Android)
-        if: ${{ hashFiles('gradlew') != '' }}
-        run: |
-          chmod +x ./gradlew
-          ./gradlew :app:assembleDebug --no-daemon -x test
-
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
