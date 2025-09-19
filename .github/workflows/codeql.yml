@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [ "main" ]
   schedule:
-    - cron: '0 3 * * 1'   # щотижневий прогін
+    - cron: "0 3 * * 1"   # щотижневий прогін
 
 permissions:
   contents: read
@@ -14,32 +14,41 @@ permissions:
 
 jobs:
   analyze:
-    name: Analyze (Java/Kotlin + JS/TS)
+    name: Analyze (Android Kotlin/Java + JS/TS)
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 👉 для Android/Gradle збірки
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          distribution: temurin
+          java-version: "17"
+
+      # Android SDK
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install SDK packages
+        run: |
+          sdkmanager "platform-tools" \
+                     "platforms;android-34" \
+                     "build-tools;34.0.0"
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
-          # ВАЖЛИВО: для Kotlin використовується Java-екстрактор
-          languages: 'java,javascript'   # JS покриє і TS
+          # Kotlin аналізується Java-екстрактором
+          languages: "java,javascript"
           queries: security-extended,security-and-quality
 
-      # Скомпілювати проєкт, щоб CodeQL зібрав БД (для Kotlin обов’язково!)
       - name: Build with Gradle (Android)
+        if: ${{ hashFiles('gradlew') != '' }}
         run: |
           chmod +x ./gradlew
-          ./gradlew clean assembleDebug --no-daemon
+          ./gradlew :app:assembleDebug --no-daemon -x test
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
