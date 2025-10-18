@@ -14,15 +14,21 @@ permissions:
 
 jobs:
   analyze:
-    name: Analyze (JS/TS)
+    name: Analyze (Multi-Lang)
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
+
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
-          languages: typescript, javascript, cpp
+          languages: dart, html, typescript, javascript, cpp
           queries: security-extended,security-and-quality
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
