@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [ "main" ]
   schedule:
-    - cron: "0 3 * * 1" # щотижня у понеділок
+    - cron: "0 3 * * 1" # щопонеділка
 
 permissions:
   contents: read
@@ -17,33 +17,53 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  codeql-analyze:
-    name: CodeQL (JS/TS/CPP)
+  # ---------- CodeQL for JS/TS (завжди) ----------
+  codeql-js:
+    name: CodeQL (JS/TS)
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Initialize CodeQL
+      - name: Initialize CodeQL (JS/TS)
         uses: github/codeql-action/init@v3
         with:
-          languages: javascript, typescript, cpp
+          languages: javascript, typescript
           queries: security-extended,security-and-quality
 
-      # Для компільованих мов CodeQL пробує зібрати проєкт
       - name: Autobuild
         uses: github/codeql-action/autobuild@v3
 
-      - name: Perform CodeQL Analysis
+      - name: Analyze
         uses: github/codeql-action/analyze@v3
 
+  # ---------- CodeQL for C/C++ (лише якщо є такі файли) ----------
+  codeql-cpp:
+    name: CodeQL (C/C++)
+    runs-on: ubuntu-latest
+    if: ${{ hashFiles('/*.c', '/.cc', '**/.cpp', '/*.cxx', '/.h', '**/.hpp', '**/*.hxx') != '' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL (C/C++)
+        uses: github/codeql-action/init@v3
+        with:
+          languages: cpp
+          # без білду, щоб не падало якщо немає toolchain/скриптів білду
+          build-mode: none
+          queries: security-extended,security-and-quality
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@v3
+
+  # ---------- Flutter Analyze (лише якщо є pubspec.yaml) ----------
   flutter-analyze:
     name: Flutter Analyze
     runs-on: ubuntu-latest
-
+    if: ${{ hashFiles('/pubspec.yaml') != '' }}
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Set up Flutter
@@ -55,16 +75,13 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.pub-cache
-          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pub-
+          key: ${{ runner.os }}-pub-${{ hashFiles('/pubspec.yaml') }}
 
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Prebuild (optional, ignores conflicts)
+      - name: Prebuild (optional)
         run: flutter pub run build_runner build --delete-conflicting-outputs || true
 
-      # Робимо аналіз «м’яким», щоб ворнінги не валили CI
       - name: Analyze
         run: flutter analyze || true
