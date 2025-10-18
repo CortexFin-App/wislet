@@ -1,4 +1,4 @@
-name: "CodeQL"
+name: "Static Analysis"
 
 on:
   push:
@@ -6,11 +6,12 @@ on:
   pull_request:
     branches: [main]
   schedule:
-    - cron: '0 3 * * 0'
+    - cron: '0 3 * * 0'  # щонеділі о 3:00
 
 jobs:
-  analyze:
-    name: Analyze (Multi-Lang)
+  # --- CodeQL для JS / C++ / TS / Node частини ---
+  codeql-analyze:
+    name: CodeQL (Multi-Lang)
     runs-on: ubuntu-latest
     permissions:
       actions: read
@@ -37,3 +38,23 @@ jobs:
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
+
+  # --- Flutter / Dart аналіз окремо ---
+  flutter-analyze:
+    name: Flutter Analyze
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.3'  # або твоя стабільна версія
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run Flutter Analyzer
+        run: flutter analyze --no-fatal-warnings
