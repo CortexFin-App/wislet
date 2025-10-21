@@ -1,0 +1,38 @@
+name: Deploy (Vercel)
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: {}   # дозволяє вручну запускати з Actions
+
+permissions:
+  contents: read
+  deployments: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # (опційно) якщо збираєш фронт перед деплоєм
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Build
+        run: npm run build --if-present
+
+      # Деплой на Vercel
+      - name: Deploy with Vercel
+        uses: vercel/actions@v3
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          # якщо треба автопромо preview -> production:
+          # production: true
