@@ -12,8 +12,6 @@ const ADMIN_KEY     = Deno.env.get("ADMIN_KEY")!;
 const ANON          = Deno.env.get("ANON_PUBLIC")!;
 const LEMON_SECRET  = Deno.env.get("LEMON_SIGNING_SECRET")!;
 
-const supabase = createClient(SUPABASE_URL, SRK);
-
 // ── helpers ───────────────────────────────────────────────────────────────────
 function toHex(buf: ArrayBuffer) {
   return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
