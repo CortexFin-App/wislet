@@ -1,12 +1,13 @@
-name: Static Analysis
+name: "CodeQL"
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "develop" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "develop" ]
+  workflow_dispatch: {}
   schedule:
-    - cron: "0 3 * * 1" # щопонеділка
+    - cron: "0 3 * * 1" # щопонеділка о 03:00 UTC
 
 permissions:
   contents: read
@@ -17,7 +18,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # ---------- CodeQL for JS/TS (завжди) ----------
+  # ---------- CodeQL for JS/TS ----------
   codeql-js:
     name: CodeQL (JS/TS)
     runs-on: ubuntu-latest
@@ -41,7 +42,7 @@ jobs:
   codeql-cpp:
     name: CodeQL (C/C++)
     runs-on: ubuntu-latest
-    if: ${{ hashFiles('/*.c', '/.cc', '**/.cpp', '/*.cxx', '/.h', '**/.hpp', '**/*.hxx') != '' }}
+    if: ${{ hashFiles('**/*.c', '**/*.cc', '**/*.cpp', '**/*.cxx', '**/*.h', '**/*.hpp', '**/*.hxx') != '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -50,18 +51,17 @@ jobs:
         uses: github/codeql-action/init@v3
         with:
           languages: cpp
-          # без білду, щоб не падало якщо немає toolchain/скриптів білду
           build-mode: none
           queries: security-extended,security-and-quality
 
       - name: Analyze
         uses: github/codeql-action/analyze@v3
 
-  # ---------- Flutter Analyze (лише якщо є pubspec.yaml) ----------
+  # ---------- Flutter Analyze (опціонально, якщо є pubspec.yaml) ----------
   flutter-analyze:
     name: Flutter Analyze
     runs-on: ubuntu-latest
-    if: ${{ hashFiles('/pubspec.yaml') != '' }}
+    if: ${{ hashFiles('**/pubspec.yaml') != '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -75,7 +75,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.pub-cache
-          key: ${{ runner.os }}-pub-${{ hashFiles('/pubspec.yaml') }}
+          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock', '**/pubspec.yaml') }}
 
       - name: Install dependencies
         run: flutter pub get
