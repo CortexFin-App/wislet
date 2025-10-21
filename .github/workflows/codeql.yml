@@ -1,4 +1,4 @@
-name: Static Analysis
+﻿name: Static Analysis
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [ "main" ]
   schedule:
-    - cron: "0 3 * * 1" # щопонеділка
+    - cron: "0 3 * * 1" # С‰РѕРїРѕРЅРµРґС–Р»РєР°
 
 permissions:
   contents: read
@@ -17,7 +17,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # ---------- CodeQL for JS/TS (завжди) ----------
+  # ---------- CodeQL for JS/TS (Р·Р°РІР¶РґРё) ----------
   codeql-js:
     name: CodeQL (JS/TS)
     runs-on: ubuntu-latest
@@ -37,7 +37,7 @@ jobs:
       - name: Analyze
         uses: github/codeql-action/analyze@v3
 
-  # ---------- CodeQL for C/C++ (лише якщо є такі файли) ----------
+  # ---------- CodeQL for C/C++ (Р»РёС€Рµ СЏРєС‰Рѕ С” С‚Р°РєС– С„Р°Р№Р»Рё) ----------
   codeql-cpp:
     name: CodeQL (C/C++)
     runs-on: ubuntu-latest
@@ -50,14 +50,14 @@ jobs:
         uses: github/codeql-action/init@v3
         with:
           languages: cpp
-          # без білду, щоб не падало якщо немає toolchain/скриптів білду
+          # Р±РµР· Р±С–Р»РґСѓ, С‰РѕР± РЅРµ РїР°РґР°Р»Рѕ СЏРєС‰Рѕ РЅРµРјР°С” toolchain/СЃРєСЂРёРїС‚С–РІ Р±С–Р»РґСѓ
           build-mode: none
           queries: security-extended,security-and-quality
 
       - name: Analyze
         uses: github/codeql-action/analyze@v3
 
-  # ---------- Flutter Analyze (лише якщо є pubspec.yaml) ----------
+  # ---------- Flutter Analyze (Р»РёС€Рµ СЏРєС‰Рѕ С” pubspec.yaml) ----------
   flutter-analyze:
     name: Flutter Analyze
     runs-on: ubuntu-latest
@@ -85,3 +85,4 @@ jobs:
 
       - name: Analyze
         run: flutter analyze || true
+
