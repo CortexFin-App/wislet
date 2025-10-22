@@ -1,4 +1,4 @@
-name: Static Analysis
+﻿name: Static Analysis
 
 on:
   push:
@@ -6,8 +6,8 @@ on:
   pull_request:
     branches: [ "main", "develop" ]
   schedule:
-    - cron: "0 3 * * 1" # щопонеділка
-  workflow_dispatch: {}   # ← ручний запуск з UI/CLI
+    - cron: "0 3 * * 1"
+  workflow_dispatch: {}
 
 permissions:
   contents: read
@@ -18,7 +18,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # ---------- CodeQL для JS/TS ----------
+
   codeql-js:
     name: CodeQL (JS/TS)
     runs-on: ubuntu-latest
@@ -38,7 +38,7 @@ jobs:
       - name: Analyze
         uses: github/codeql-action/analyze@v3
 
-  # ---------- CodeQL для C/C++ (тільки якщо є такі файли) ----------
+
   codeql-cpp:
     name: CodeQL (C/C++)
     runs-on: ubuntu-latest
@@ -57,7 +57,7 @@ jobs:
       - name: Analyze
         uses: github/codeql-action/analyze@v3
 
-  # ---------- Flutter Analyze (тільки якщо є pubspec.yaml) ----------
+
   flutter-analyze:
     name: Flutter Analyze
     runs-on: ubuntu-latest
@@ -85,3 +85,4 @@ jobs:
 
       - name: Analyze
         run: flutter analyze || true
+
