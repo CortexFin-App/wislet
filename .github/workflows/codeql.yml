@@ -2,11 +2,11 @@
 
 on:
   push:
-    branches: [ "main", "develop", "**" ]   # тригеримо будь-які гілки
-  pull_request: {}                          # для всіх PR
+    branches: [ "main", "develop", "**" ]
+  pull_request: {}
   schedule:
-    - cron: "0 3 * * 1"                     # щопонеділка
-  workflow_dispatch: {}                     # ручний запуск
+    - cron: "0 3 * * 1"
+  workflow_dispatch: {}
 
 permissions:
   contents: read
@@ -24,54 +24,90 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Initialize CodeQL (JS/TS)
         uses: github/codeql-action/init@v3
         with:
           languages: javascript, typescript
           queries: security-extended,security-and-quality
+
       - name: Autobuild
         uses: github/codeql-action/autobuild@v3
+
       - name: Analyze
         uses: github/codeql-action/analyze@v3
 
-  # ---------- C/C++: тільки якщо є такі файли ----------
+  # ---------- C/C++: лише якщо є файли (перевірка на кроці) ----------
   codeql-cpp:
     name: CodeQL (C/C++)
     runs-on: ubuntu-latest
-    if: ${{ hashFiles('**/*.c','**/*.cc','**/*.cpp','**/*.cxx','**/*.h','**/*.hpp','**/*.hxx') != '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Detect C/C++ sources
+        id: detect_cpp
+        shell: bash
+        run: |
+          shopt -s nullglob globstar
+          files=(**/*.c **/*.cc **/*.cpp **/*.cxx **/*.h **/*.hpp **/*.hxx)
+          if [ ${#files[@]} -gt 0 ]; then
+            echo "has=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Initialize CodeQL (C/C++)
+        if: ${{ steps.detect_cpp.outputs.has == 'true' }}
         uses: github/codeql-action/init@v3
         with:
           languages: cpp
           build-mode: none
           queries: security-extended,security-and-quality
+
       - name: Analyze
+        if: ${{ steps.detect_cpp.outputs.has == 'true' }}
         uses: github/codeql-action/analyze@v3
 
-  # ---------- Flutter Analyze: якщо є pubspec.yaml ----------
+  # ---------- Flutter Analyze: лише якщо є pubspec.yaml (перевірка на кроці) ----------
   flutter-analyze:
     name: Flutter Analyze
     runs-on: ubuntu-latest
-    if: ${{ hashFiles('pubspec.yaml') != '' }}   # без ведучого слеша
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Detect Flutter project
+        id: detect_flutter
+        shell: bash
+        run: |
+          if [ -f "pubspec.yaml" ]; then
+            echo "has=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Set up Flutter
+        if: ${{ steps.detect_flutter.outputs.has == 'true' }}
         uses: subosito/flutter-action@v2
         with:
           flutter-version: "3.24.3"
+
       - name: Enable pub cache
+        if: ${{ steps.detect_flutter.outputs.has == 'true' }}
         uses: actions/cache@v4
         with:
           path: ~/.pub-cache
           key: ${{ runner.os }}-pub-${{ hashFiles('pubspec.yaml') }}
-      - name: Install dependencies
-        run: flutter pub get
-      - name: Prebuild (optional)
-        run: flutter pub run build_runner build --delete-conflicting-outputs || true
-      - name: Analyze
-        run: flutter analyze || true
 
+      - name: Install dependencies
+        if: ${{ steps.detect_flutter.outputs.has == 'true' }}
+        run: flutter pub get
+
+      - name: Prebuild (optional)
+        if: ${{ steps.detect_flutter.outputs.has == 'true' }}
+        run: flutter pub run build_runner build --delete-conflicting-outputs || true
+
+      - name: Analyze
+        if: ${{ steps.detect_flutter.outputs.has == 'true' }}
+        run: flutter analyze || true
