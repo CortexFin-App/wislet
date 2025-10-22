@@ -2,11 +2,11 @@ name: Static Analysis
 
 on:
   push:
-    branches: [ "main", "develop", "**" ]   # на всі гілки
-  pull_request: {}                          # на всі PR
+    branches: [ "main", "develop", "**" ]   # тригеримо будь-які гілки
+  pull_request: {}                          # для всіх PR
   schedule:
     - cron: "0 3 * * 1"                     # щопонеділка
-  workflow_dispatch: {}                      # ручний запуск
+  workflow_dispatch: {}                     # ручний запуск
 
 permissions:
   contents: read
@@ -17,11 +17,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # ---------- CodeQL для JS/TS (лише якщо є файли) ----------
+  # ---------- JS/TS: завжди ----------
   codeql-js:
     name: CodeQL (JS/TS)
     runs-on: ubuntu-latest
-    if: ${{ hashFiles('**/*.js','**/*.jsx','**/*.ts','**/*.tsx') != '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -35,7 +34,7 @@ jobs:
       - name: Analyze
         uses: github/codeql-action/analyze@v3
 
-  # ---------- CodeQL для C/C++ (лише якщо є файли) ----------
+  # ---------- C/C++: тільки якщо є такі файли ----------
   codeql-cpp:
     name: CodeQL (C/C++)
     runs-on: ubuntu-latest
@@ -52,11 +51,11 @@ jobs:
       - name: Analyze
         uses: github/codeql-action/analyze@v3
 
-  # ---------- Flutter Analyze (лише якщо є pubspec.yaml) ----------
+  # ---------- Flutter Analyze: якщо є pubspec.yaml ----------
   flutter-analyze:
     name: Flutter Analyze
     runs-on: ubuntu-latest
-    if: ${{ hashFiles('pubspec.yaml') != '' }}
+    if: ${{ hashFiles('pubspec.yaml') != '' }}   # без ведучого слеша
     steps:
       - name: Checkout
         uses: actions/checkout@v4
