@@ -2,12 +2,11 @@ name: Static Analysis
 
 on:
   push:
-    # запускаємо аналіз на всіх гілках (main, develop та інші)
-    branches: [ "main", "develop", "**" ]
-  pull_request: {}         # аналіз для всіх PR
+    branches: [ "main", "develop", "**" ]   # на всі гілки
+  pull_request: {}                          # на всі PR
   schedule:
-    - cron: "0 3 * * 1"    # щопонеділка о 03:00 UTC
-  workflow_dispatch: {}     # дозволяє ручний запуск через GitHub UI/CLI
+    - cron: "0 3 * * 1"                     # щопонеділка
+  workflow_dispatch: {}                      # ручний запуск
 
 permissions:
   contents: read
@@ -18,43 +17,38 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # ---------- CodeQL для JS/TS ----------
+  # ---------- CodeQL для JS/TS (лише якщо є файли) ----------
   codeql-js:
     name: CodeQL (JS/TS)
     runs-on: ubuntu-latest
+    if: ${{ hashFiles('**/*.js','**/*.jsx','**/*.ts','**/*.tsx') != '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Initialize CodeQL (JS/TS)
         uses: github/codeql-action/init@v3
         with:
           languages: javascript, typescript
           queries: security-extended,security-and-quality
-
       - name: Autobuild
         uses: github/codeql-action/autobuild@v3
-
       - name: Analyze
         uses: github/codeql-action/analyze@v3
 
-  # ---------- CodeQL для C/C++ (лише якщо є такі файли) ----------
+  # ---------- CodeQL для C/C++ (лише якщо є файли) ----------
   codeql-cpp:
     name: CodeQL (C/C++)
     runs-on: ubuntu-latest
-    # виправлені глоби: шукаємо в усіх підтеках
     if: ${{ hashFiles('**/*.c','**/*.cc','**/*.cpp','**/*.cxx','**/*.h','**/*.hpp','**/*.hxx') != '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Initialize CodeQL (C/C++)
         uses: github/codeql-action/init@v3
         with:
           languages: cpp
-          build-mode: none         # без обов'язкового білду
+          build-mode: none
           queries: security-extended,security-and-quality
-
       - name: Analyze
         uses: github/codeql-action/analyze@v3
 
@@ -62,28 +56,22 @@ jobs:
   flutter-analyze:
     name: Flutter Analyze
     runs-on: ubuntu-latest
-    # без ведучого слеша, щоб hashFiles працював коректно
     if: ${{ hashFiles('pubspec.yaml') != '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: "3.24.3"
-
       - name: Enable pub cache
         uses: actions/cache@v4
         with:
           path: ~/.pub-cache
           key: ${{ runner.os }}-pub-${{ hashFiles('pubspec.yaml') }}
-
       - name: Install dependencies
         run: flutter pub get
-
       - name: Prebuild (optional)
         run: flutter pub run build_runner build --delete-conflicting-outputs || true
-
       - name: Analyze
         run: flutter analyze || true
