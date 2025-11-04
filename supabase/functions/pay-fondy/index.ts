@@ -70,6 +70,14 @@ Deno.serve(async (req) => {
 
   } catch (e) {
     console.error("pay-fondy fatal", e);
-    return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: cors });
+
+    const msg =
+        e instanceof Error
+         ? e.message
+          : typeof e === "string"
+           ? e
+           : "Unknown error";
+
+    return new Response(JSON.stringify({ error: msg }), { status: 500, headers: cors });
   }
 });
