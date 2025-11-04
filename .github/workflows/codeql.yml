@@ -2,11 +2,11 @@ name: Static Analysis
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "develop", "**" ]   # тригеримо будь-які гілки
+  pull_request: {}                          # для всіх PR
   schedule:
-    - cron: "0 3 * * 1" # щопонеділка
+    - cron: "0 3 * * 1"                     # щопонеділка
+  workflow_dispatch: {}                     # ручний запуск
 
 permissions:
   contents: read
@@ -17,7 +17,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # ---------- CodeQL for JS/TS (завжди) ----------
+  # ---------- JS/TS: завжди ----------
   codeql-js:
     name: CodeQL (JS/TS)
     runs-on: ubuntu-latest
@@ -37,11 +37,11 @@ jobs:
       - name: Analyze
         uses: github/codeql-action/analyze@v3
 
-  # ---------- CodeQL for C/C++ (лише якщо є такі файли) ----------
+  # ---------- C/C++: тільки якщо є такі файли ----------
   codeql-cpp:
     name: CodeQL (C/C++)
     runs-on: ubuntu-latest
-    if: ${{ hashFiles('/*.c', '/.cc', '**/.cpp', '/*.cxx', '/.h', '**/.hpp', '**/*.hxx') != '' }}
+    if: ${{ hashFiles('**/*.c', '**/*.cc', '**/*.cpp', '**/*.cxx', '**/*.h', '**/*.hpp', '**/*.hxx') != '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -50,18 +50,17 @@ jobs:
         uses: github/codeql-action/init@v3
         with:
           languages: cpp
-          # без білду, щоб не падало якщо немає toolchain/скриптів білду
           build-mode: none
           queries: security-extended,security-and-quality
 
       - name: Analyze
         uses: github/codeql-action/analyze@v3
 
-  # ---------- Flutter Analyze (лише якщо є pubspec.yaml) ----------
+  # ---------- Flutter Analyze: якщо є pubspec.yaml ----------
   flutter-analyze:
     name: Flutter Analyze
     runs-on: ubuntu-latest
-    if: ${{ hashFiles('/pubspec.yaml') != '' }}
+    if: ${{ hashFiles('pubspec.yaml') != '' }}   # або '**/pubspec.yaml', якщо файл у підтеці
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -75,7 +74,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.pub-cache
-          key: ${{ runner.os }}-pub-${{ hashFiles('/pubspec.yaml') }}
+          key: ${{ runner.os }}-pub-${{ hashFiles('pubspec.yaml') }}
 
       - name: Install dependencies
         run: flutter pub get
