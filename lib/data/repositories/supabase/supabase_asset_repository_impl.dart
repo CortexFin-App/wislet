@@ -1,9 +1,9 @@
 import 'package:fpdart/fpdart.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:wislet/core/error/failures.dart';
 import 'package:wislet/data/repositories/asset_repository.dart';
 import 'package:wislet/models/asset.dart';
 import 'package:wislet/services/error_monitoring_service.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseAssetRepositoryImpl implements AssetRepository {
   SupabaseAssetRepositoryImpl(this._client);

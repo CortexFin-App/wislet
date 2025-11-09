@@ -1,6 +1,8 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sqflite/sqflite.dart';
 import 'package:wislet/data/repositories/budget_repository.dart';
 import 'package:wislet/data/repositories/category_repository.dart';
 import 'package:wislet/data/repositories/debt_loan_repository.dart';
@@ -15,14 +17,11 @@ import 'package:wislet/models/category.dart' as fin_category;
 import 'package:wislet/models/debt_loan_model.dart' as fin_debt;
 import 'package:wislet/models/financial_goal.dart' as fin_goal;
 import 'package:wislet/models/plan.dart' as fin_plan;
-import 'package:wislet/models/repeating_transaction_model.dart'
-    as fin_rt;
+import 'package:wislet/models/repeating_transaction_model.dart' as fin_rt;
 import 'package:wislet/models/subscription_model.dart' as fin_sub;
 import 'package:wislet/models/transaction.dart' as fin_transaction;
 import 'package:wislet/models/wallet.dart' as fin_wallet;
 import 'package:wislet/utils/database_helper.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:sqflite/sqflite.dart';
 
 class SyncService {
   SyncService(

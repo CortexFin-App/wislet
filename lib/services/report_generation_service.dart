@@ -1,5 +1,4 @@
-import 'dart:convert';
-
+﻿import 'dart:convert';
 import 'package:csv/csv.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -12,33 +11,24 @@ class ReportGenerationService {
   Future<Uint8List> generateCsvBytes(
     List<TransactionViewData> transactions,
   ) async {
-    final rows = <List<dynamic>>[];
-    rows.add(
-      [
-        'Р”Р°С‚Р°',
-        'Р§Р°СЃ',
-        'РљР°С‚РµРіРѕСЂС–СЏ',
-        'РћРїРёСЃ',
-        'РЎСѓРјР°',
-        'Р’Р°Р»СЋС‚Р°',
-        'РўРёРї',
-      ],
-    );
+    final rows = <List<dynamic>>[
+      ['Дата', 'Час', 'Категорія', 'Опис', 'Сума', 'Валюта', 'Тип'],
+      ...transactions.map(
+        (tx) => [
+          DateFormat('dd.MM.yyyy').format(tx.date),
+          DateFormat('HH:mm').format(tx.date),
+          tx.categoryName,
+          tx.description ?? '',
+          tx.originalAmount,
+          tx.originalCurrencyCode,
+          if (tx.type == fin_transaction.TransactionType.income)
+            'Дохід'
+          else
+            'Витрата',
+        ],
+      ),
+    ];
 
-    for (final tx in transactions) {
-      rows.add([
-        DateFormat('dd.MM.yyyy').format(tx.date),
-        DateFormat('HH:mm').format(tx.date),
-        tx.categoryName,
-        tx.description ?? '',
-        tx.originalAmount,
-        tx.originalCurrencyCode,
-        if (tx.type == fin_transaction.TransactionType.income)
-          'Р”РѕС…С–Рґ'
-        else
-          'Р’РёС‚СЂР°С‚Р°',
-      ]);
-    }
     final csv = const ListToCsvConverter().convert(rows);
     return Uint8List.fromList(utf8.encode(csv));
   }
@@ -55,7 +45,7 @@ class ReportGenerationService {
     final ttf = pw.Font.ttf(fontData);
     final boldTtf = pw.Font.ttf(boldFontData);
 
-    final headers = ['Р”Р°С‚Р°', 'РљР°С‚РµРіРѕСЂС–СЏ', 'РћРїРёСЃ', 'РЎСѓРјР°'];
+    final headers = ['Дата', 'Категорія', 'Опис', 'Сума'];
 
     final data = transactions.map((tx) {
       final amountPrefix =
@@ -85,7 +75,7 @@ class ReportGenerationService {
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
                   pw.Text(
-                    'Р¤С–РЅР°РЅСЃРѕРІРёР№ Р·РІС–С‚',
+                    'Фінансовий звіт',
                     style: pw.TextStyle(font: boldTtf, fontSize: 20),
                   ),
                   pw.Text(period, style: pw.TextStyle(font: ttf, fontSize: 12)),
@@ -124,7 +114,7 @@ class ReportGenerationService {
             alignment: pw.Alignment.centerRight,
             margin: const pw.EdgeInsets.only(top: 1.0 * PdfPageFormat.cm),
             child: pw.Text(
-              'РЎС‚РѕСЂС–РЅРєР° ${context.pageNumber} Р· ${context.pagesCount}',
+              'Сторінка ${context.pageNumber} з ${context.pagesCount}',
               style: pw.Theme.of(context)
                   .defaultTextStyle
                   .copyWith(color: PdfColors.grey),

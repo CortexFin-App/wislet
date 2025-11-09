@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:wislet/core/di/injector.dart';
 import 'package:wislet/data/repositories/notification_repository.dart';
@@ -63,27 +63,27 @@ class _NotificationHistoryScreenState extends State<NotificationHistoryScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('РћС‡РёСЃС‚РёС‚Рё С–СЃС‚РѕСЂС–СЋ?'),
+        title: const Text('Очистити історію?'),
         content: const Text(
-          'Р’СЃСЏ С–СЃС‚РѕСЂС–СЏ СЃРїРѕРІС–С‰РµРЅСЊ Р±СѓРґРµ РІРёРґР°Р»РµРЅР°. Р¦СЋ РґС–СЋ РЅРµРјРѕР¶Р»РёРІРѕ СЃРєР°СЃСѓРІР°С‚Рё.',
+          'Вся історія сповіщень буде видалена. Цю дію неможливо скасувати.',
         ),
         actions: [
           TextButton(
-            child: const Text('РЎРєР°СЃСѓРІР°С‚Рё'),
+            child: const Text('Скасувати'),
             onPressed: () => Navigator.of(context).pop(false),
           ),
           TextButton(
             style: TextButton.styleFrom(
               foregroundColor: Theme.of(context).colorScheme.error,
             ),
-            child: const Text('РћС‡РёСЃС‚РёС‚Рё'),
+            child: const Text('Очистити'),
             onPressed: () => Navigator.of(context).pop(true),
           ),
         ],
       ),
     );
 
-    if (confirm == true) {
+    if (confirm ?? false) {
       await _notificationRepository.clearNotificationHistory();
       _loadHistory();
     }
@@ -93,11 +93,11 @@ class _NotificationHistoryScreenState extends State<NotificationHistoryScreen> {
   Widget build(BuildContext context) {
     return PatternedScaffold(
       appBar: AppBar(
-        title: const Text('Р†СЃС‚РѕСЂС–СЏ СЃРїРѕРІС–С‰РµРЅСЊ'),
+        title: const Text('Історія сповіщень'),
         actions: [
           IconButton(
             icon: const Icon(Icons.delete_sweep_outlined),
-            tooltip: 'РћС‡РёСЃС‚РёС‚Рё С–СЃС‚РѕСЂС–СЋ',
+            tooltip: 'Очистити історію',
             onPressed: _clearHistory,
           ),
         ],
@@ -111,7 +111,7 @@ class _NotificationHistoryScreenState extends State<NotificationHistoryScreen> {
           if (snapshot.hasError) {
             return Center(
               child: Text(
-                'РџРѕРјРёР»РєР° Р·Р°РІР°РЅС‚Р°Р¶РµРЅРЅСЏ С–СЃС‚РѕСЂС–С—: ${snapshot.error}',
+                'Помилка завантаження історії: ${snapshot.error}',
               ),
             );
           }
@@ -130,7 +130,7 @@ class _NotificationHistoryScreenState extends State<NotificationHistoryScreen> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Р†СЃС‚РѕСЂС–СЏ СЃРїРѕРІС–С‰РµРЅСЊ РїРѕСЂРѕР¶РЅСЏ',
+                      'Історія сповіщень порожня',
                       style: Theme.of(context).textTheme.headlineSmall,
                     ),
                   ],

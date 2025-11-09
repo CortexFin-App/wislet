@@ -75,9 +75,7 @@ class _SimpleOnboardingState extends State<SimpleOnboarding> {
                           shape: BoxShape.circle,
                           color: i == _index
                               ? Theme.of(context).colorScheme.primary
-                              : Theme.of(context)
-                                  .colorScheme
-                                  .outlineVariant,
+                              : Theme.of(context).colorScheme.outlineVariant,
                         ),
                       ),
                     ),

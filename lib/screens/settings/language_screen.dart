@@ -1,4 +1,4 @@
-// lib/screens/settings/language_screen.dart
+﻿// lib/screens/settings/language_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:wislet/providers/locale_provider.dart';
@@ -12,18 +12,26 @@ class LanguageScreen extends StatelessWidget {
     final current = lp.locale.languageCode;
     return Scaffold(
       appBar: AppBar(title: const Text('Мова')),
-      body: ListView(
-        children: lp.supportedLocales
-            .map(
-              (l) => RadioListTile<String>(
-                value: l.languageCode,
-                groupValue: current,
-                title: Text(l.languageCode == 'uk' ? 'Українська' : 'English'),
-                onChanged: (_) => lp.setLocale(l),
-              ),
-            )
-            .toList(),
-      ),
-    );
-  }
+      body: RadioGroup<String>(
+        groupValue: current,
+        onChanged: (value) {
+          final locale = lp.supportedLocales
+              .firstWhere((l) => l.languageCode == value);
+          lp.setLocale(locale);
+        },
+        child: ListView(
+          children: lp.supportedLocales
+              .map(
+                (l) => RadioListTile<String>(
+                  value: l.languageCode,
+                  title: Text(
+                    l.languageCode == 'uk' ? 'Українська' : 'English',
+                  ),
+                ),
+              )
+              .toList(),
+            ),
+         ),
+      );
+    }
 }

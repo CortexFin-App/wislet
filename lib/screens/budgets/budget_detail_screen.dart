@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:wislet/core/di/injector.dart';
 import 'package:wislet/data/repositories/budget_repository.dart';
@@ -46,7 +46,7 @@ class _BudgetDetailScreenState extends State<BudgetDetailScreen> {
         await _budgetRepository.getEnvelopesForBudget(widget.budget.id!);
 
     return envelopesEither.fold(
-      (failure) => throw failure,
+      (failure) => throw Exception(failure.toString()),
       (envelopes) async {
         double totalPlannedInBase = 0;
         double totalActualInBase = 0;
@@ -100,7 +100,7 @@ class _BudgetDetailScreenState extends State<BudgetDetailScreen> {
                       AddEditBudgetScreen(budgetToEdit: widget.budget),
                 ),
               );
-              if (result == true) {
+              if (result ?? false) {
                 navigator.pop(true);
               }
             },
@@ -113,9 +113,9 @@ class _BudgetDetailScreenState extends State<BudgetDetailScreen> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
-            return Center(child: Text('РџРѕРјРёР»РєР°: ${snapshot.error}'));
+            return Center(child: Text('Помилка: ${snapshot.error}'));
           } else if (!snapshot.hasData) {
-            return const Center(child: Text('РќРµРјР°С” РґР°РЅРёС….'));
+            return const Center(child: Text('Немає даних.'));
           }
           final data = snapshot.data!;
           return _buildOverviewTab(context, data);
@@ -130,11 +130,11 @@ class _BudgetDetailScreenState extends State<BudgetDetailScreen> {
                   AddEditEnvelopeScreen(budgetId: widget.budget.id!),
             ),
           );
-          if (result == true) {
+          if (result ?? false) {
             _loadDetails();
           }
         },
-        label: const Text('РќРѕРІРёР№ РєРѕРЅРІРµСЂС‚'),
+        label: const Text('Новий конверт'),
         icon: const Icon(Icons.add),
       ),
     );
@@ -150,7 +150,7 @@ class _BudgetDetailScreenState extends State<BudgetDetailScreen> {
     if (envelopes.isEmpty) {
       return const Center(
         child: Text(
-          'Р”РѕРґР°Р№С‚Рµ РєРѕРЅРІРµСЂС‚Рё РґР»СЏ С†СЊРѕРіРѕ Р±СЋРґР¶РµС‚Сѓ.',
+          'Додайте конверти для цього бюджету.',
         ),
       );
     }
@@ -187,7 +187,7 @@ class _BudgetDetailScreenState extends State<BudgetDetailScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Р—Р°РїР»Р°РЅРѕРІР°РЅРѕ:'),
+                    const Text('Заплановано:'),
                     Text(
                       currencyFormatter.format(plannedAmount),
                       style: const TextStyle(fontWeight: FontWeight.bold),
@@ -197,7 +197,7 @@ class _BudgetDetailScreenState extends State<BudgetDetailScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Р’РёС‚СЂР°С‡РµРЅРѕ:'),
+                    const Text('Витрачено:'),
                     Text(
                       currencyFormatter.format(actualSpent),
                       style: TextStyle(
@@ -211,7 +211,7 @@ class _BudgetDetailScreenState extends State<BudgetDetailScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Р—Р°Р»РёС€РѕРє:'),
+                    const Text('Залишок:'),
                     Text(
                       currencyFormatter.format(difference),
                       style: theme.textTheme.titleMedium?.copyWith(

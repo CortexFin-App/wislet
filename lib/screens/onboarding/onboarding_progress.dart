@@ -1,4 +1,4 @@
-import 'package:flutter/widgets.dart';
+﻿import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class OnboardingProgress {
@@ -8,7 +8,7 @@ class OnboardingProgress {
   static Future<void> markBasicDone([BuildContext? context]) async {
     final p = await SharedPreferences.getInstance();
     await p.setBool(_kBasic, true);
-    if (context != null && Navigator.of(context).canPop()) {
+    if (context != null && context.mounted && Navigator.of(context).canPop()) {
       Navigator.of(context).pop(true);
     }
   }
@@ -16,7 +16,7 @@ class OnboardingProgress {
   static Future<void> markInteractiveDone([BuildContext? context]) async {
     final p = await SharedPreferences.getInstance();
     await p.setBool(_kInteractive, true);
-    if (context != null && Navigator.of(context).canPop()) {
+    if (context != null && context.mounted && Navigator.of(context).canPop()) {
       Navigator.of(context).pop(true);
     }
   }

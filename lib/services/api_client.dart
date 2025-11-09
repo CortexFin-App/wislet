@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode;
@@ -37,10 +37,6 @@ class ApiClient {
     }
   }
 
-  void setAuthToken(String? token) {
-    _token = token;
-  }
-
   Future<dynamic> _refreshToken() async {
     final tokenStorage = getIt<TokenStorageService>();
     final refreshToken = await tokenStorage.readRefreshToken();
@@ -68,7 +64,7 @@ class ApiClient {
           accessToken: newAccessToken,
           refreshToken: newRefreshToken,
         );
-        setAuthToken(newAccessToken);
+        _token = newAccessToken;
         return newAccessToken;
       } else {
         await getIt<AuthService>().logout();

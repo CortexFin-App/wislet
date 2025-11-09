@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:wislet/core/di/injector.dart';
 import 'package:wislet/data/repositories/invitation_repository.dart';
 import 'package:wislet/utils/app_palette.dart';
@@ -24,8 +24,7 @@ class _AcceptInvitationScreenState extends State<AcceptInvitationScreen> {
   void initState() {
     super.initState();
     if (_isDeepLink) {
-      _linkController.text =
-          'С‚РѕРєРµРЅ РѕС‚СЂРёРјР°РЅРѕ Р· РїРѕСЃРёР»Р°РЅРЅСЏ';
+      _linkController.text = 'Токен отримано з посилання';
     }
   }
 
@@ -52,13 +51,13 @@ class _AcceptInvitationScreenState extends State<AcceptInvitationScreen> {
       messenger.showSnackBar(
         const SnackBar(
           content: Text(
-            'Р—Р°РїСЂРѕС€РµРЅРЅСЏ СѓСЃРїС–С€РЅРѕ РїСЂРёР№РЅСЏС‚Рѕ! Р“Р°РјР°РЅРµС†СЊ РґРѕРґР°РЅРѕ РґРѕ РІР°С€РѕРіРѕ СЃРїРёСЃРєСѓ.',
+            'Запрошення успішно прийнято! Гаманець додано до вашого списку.',
           ),
         ),
       );
       navigator.pop();
     } on Exception catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text('РџРѕРјРёР»РєР°: $e')));
+      messenger.showSnackBar(SnackBar(content: Text('Помилка: $e')));
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -69,8 +68,7 @@ class _AcceptInvitationScreenState extends State<AcceptInvitationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar:
-          AppBar(title: const Text('РџСЂРёР№РЅСЏС‚Рё Р·Р°РїСЂРѕС€РµРЅРЅСЏ')),
+      appBar: AppBar(title: const Text('Прийняти запрошення')),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -84,11 +82,10 @@ class _AcceptInvitationScreenState extends State<AcceptInvitationScreen> {
                 TextFormField(
                   controller: _linkController,
                   decoration: const InputDecoration(
-                    labelText:
-                        'РџРѕСЃРёР»Р°РЅРЅСЏ-Р·Р°РїСЂРѕС€РµРЅРЅСЏ Р°Р±Рѕ РєРѕРґ',
+                    labelText: 'Посилання-запрошення або код',
                   ),
                   validator: (val) => val == null || val.isEmpty
-                      ? 'Р’СЃС‚Р°РІС‚Рµ РїРѕСЃРёР»Р°РЅРЅСЏ'
+                      ? 'Вставте посилання'
                       : null,
                 ),
               const SizedBox(height: 20),
@@ -100,7 +97,7 @@ class _AcceptInvitationScreenState extends State<AcceptInvitationScreen> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.check_circle_outline),
-                label: const Text('РџСЂРёР№РЅСЏС‚Рё'),
+                label: const Text('Прийняти'),
                 onPressed: _isLoading ? null : _acceptInvite,
               ),
             ],
@@ -124,7 +121,7 @@ class _AcceptInvitationScreenState extends State<AcceptInvitationScreen> {
           const SizedBox(width: 16),
           const Expanded(
             child: Text(
-              'Р—Р°РїСЂРѕС€РµРЅРЅСЏ РѕС‚СЂРёРјР°РЅРѕ Р· РїРѕСЃРёР»Р°РЅРЅСЏ. РќР°С‚РёСЃРЅС–С‚СЊ "РџСЂРёР№РЅСЏС‚Рё", С‰РѕР± РїСЂРѕРґРѕРІР¶РёС‚Рё.',
+              'Запрошення отримано з посилання. Натисніть "Прийняти", щоб продовжити.',
               style: TextStyle(fontSize: 16),
             ),
           ),

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 @immutable
 class ThemeProfile {
@@ -25,7 +25,7 @@ class ThemeProfile {
   Map<String, dynamic> toMap() {
     return {
       'name': name,
-      'seedColor': seedColor.value,
+      'seedColor': seedColor.toARGB32(),
       'fontFamily': fontFamily,
       'borderRadius': borderRadius,
     };

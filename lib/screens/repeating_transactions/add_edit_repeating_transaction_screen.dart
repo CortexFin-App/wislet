@@ -1,4 +1,4 @@
-import 'package:collection/collection.dart';
+﻿import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -44,13 +44,13 @@ class _AddEditRepeatingTransactionScreenState
   List<int> _selectedWeekDays = [];
   List<bool> _selectedToggleButtons = List<bool>.filled(7, false);
   final List<String> _weekDayLabels = [
-    'РџРЅ',
-    'Р’С‚',
-    'РЎСЂ',
-    'Р§С‚',
-    'РџС‚',
-    'РЎР±',
-    'РќРґ',
+    'Пн',
+    'Вт',
+    'Ср',
+    'Чт',
+    'Пт',
+    'Сб',
+    'Нд',
   ];
 
   MonthlyRepeatType _monthlyType = MonthlyRepeatType.specificDay;
@@ -59,18 +59,18 @@ class _AddEditRepeatingTransactionScreenState
   int? _selectedYearNumericDay;
 
   final List<String> _monthLabels = [
-    'РЎС–С‡РµРЅСЊ',
-    'Р›СЋС‚РёР№',
-    'Р‘РµСЂРµР·РµРЅСЊ',
-    'РљРІС–С‚РµРЅСЊ',
-    'РўСЂР°РІРµРЅСЊ',
-    'Р§РµСЂРІРµРЅСЊ',
-    'Р›РёРїРµРЅСЊ',
-    'РЎРµСЂРїРµРЅСЊ',
-    'Р’РµСЂРµСЃРµРЅСЊ',
-    'Р–РѕРІС‚РµРЅСЊ',
-    'Р›РёСЃС‚РѕРїР°Рґ',
-    'Р“СЂСѓРґРµРЅСЊ',
+    'Січень',
+    'Лютий',
+    'Березень',
+    'Квітень',
+    'Травень',
+    'Червень',
+    'Липень',
+    'Серпень',
+    'Вересень',
+    'Жовтень',
+    'Листопад',
+    'Грудень',
   ];
 
   bool get _isEditing => widget.template != null;
@@ -338,7 +338,7 @@ class _AddEditRepeatingTransactionScreenState
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Р”Р»СЏ С‰РѕС‚РёР¶РЅРµРІРѕРіРѕ РїРѕРІС‚РѕСЂРµРЅРЅСЏ РїРѕС‚СЂС–Р±РЅРѕ РѕР±СЂР°С‚Рё С…РѕС‡Р° Р± РѕРґРёРЅ РґРµРЅСЊ.',
+            'Для щотижневого повторення потрібно обрати хоча б один день.',
           ),
         ),
       );
@@ -430,14 +430,14 @@ class _AddEditRepeatingTransactionScreenState
       appBar: AppBar(
         title: Text(
           _isEditing
-              ? 'Р РµРґР°РіСѓРІР°С‚Рё С€Р°Р±Р»РѕРЅ'
-              : 'РќРѕРІРёР№ С€Р°Р±Р»РѕРЅ',
+              ? 'Редагувати шаблон'
+              : 'Новий шаблон',
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.save_outlined),
             onPressed: _saveTemplate,
-            tooltip: 'Р—Р±РµСЂРµРіС‚Рё С€Р°Р±Р»РѕРЅ',
+            tooltip: 'Зберегти шаблон',
           ),
         ],
       ),
@@ -468,8 +468,8 @@ class _AddEditRepeatingTransactionScreenState
                         onPressed: _saveTemplate,
                         child: Text(
                           _isEditing
-                              ? 'Р—Р±РµСЂРµРіС‚Рё Р·РјС–РЅРё'
-                              : 'РЎС‚РІРѕСЂРёС‚Рё С€Р°Р±Р»РѕРЅ',
+                              ? 'Зберегти зміни'
+                              : 'Створити шаблон',
                         ),
                       ),
                     ),
@@ -486,9 +486,9 @@ class _AddEditRepeatingTransactionScreenState
       children: [
         TextFormField(
           controller: _descriptionController,
-          decoration: const InputDecoration(labelText: 'РћРїРёСЃ'),
+          decoration: const InputDecoration(labelText: 'Опис'),
           validator: (value) =>
-              value == null || value.isEmpty ? 'Р’РІРµРґС–С‚СЊ РѕРїРёСЃ' : null,
+              value == null || value.isEmpty ? 'Введіть опис' : null,
         ),
         const SizedBox(height: 16),
         Row(
@@ -497,18 +497,18 @@ class _AddEditRepeatingTransactionScreenState
             Expanded(
               child: TextFormField(
                 controller: _amountController,
-                decoration: const InputDecoration(labelText: 'РЎСѓРјР°'),
+                decoration: const InputDecoration(labelText: 'Сума'),
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Р’РІРµРґС–С‚СЊ СЃСѓРјСѓ';
+                    return 'Введіть суму';
                   }
                   if (double.tryParse(value.replaceAll(',', '.')) == null) {
-                    return 'РќРµРІС–СЂРЅРµ С‡РёСЃР»Рѕ';
+                    return 'Невірне число';
                   }
                   if (double.parse(value.replaceAll(',', '.')) <= 0) {
-                    return 'РЎСѓРјР° > 0';
+                    return 'Сума > 0';
                   }
                   return null;
                 },
@@ -517,32 +517,32 @@ class _AddEditRepeatingTransactionScreenState
             const SizedBox(width: 8),
             Expanded(
               child: DropdownButtonFormField<Currency>(
-                value: _selectedCurrency,
-                decoration: const InputDecoration(labelText: 'Р’Р°Р»СЋС‚Р°'),
+                initialValue: _selectedCurrency,
+                decoration: const InputDecoration(labelText: 'Валюта'),
                 items: appCurrencies
                     .map(
                       (c) => DropdownMenuItem(value: c, child: Text(c.code)),
                     )
                     .toList(),
                 onChanged: (val) => setState(() => _selectedCurrency = val),
-                validator: (val) => val == null ? 'РћР±РµСЂС–С‚СЊ' : null,
+                validator: (val) => val == null ? 'Оберіть' : null,
               ),
             ),
           ],
         ),
         const SizedBox(height: 16),
         DropdownButtonFormField<fin_transaction.TransactionType>(
-          value: _selectedType,
+          initialValue: _selectedType,
           decoration:
-              const InputDecoration(labelText: 'РўРёРї С‚СЂР°РЅР·Р°РєС†С–С—'),
+              const InputDecoration(labelText: 'Тип транзакції'),
           items: fin_transaction.TransactionType.values
               .map(
                 (t) => DropdownMenuItem(
                   value: t,
                   child: Text(
                     t == fin_transaction.TransactionType.income
-                        ? 'Р”РѕС…С–Рґ'
-                        : 'Р’РёС‚СЂР°С‚Р°',
+                        ? 'Дохід'
+                        : 'Витрата',
                   ),
                 ),
               )
@@ -560,19 +560,19 @@ class _AddEditRepeatingTransactionScreenState
         const SizedBox(height: 16),
         if (_availableCategories.isNotEmpty)
           DropdownButtonFormField<Category>(
-            value: _selectedCategory,
-            decoration: const InputDecoration(labelText: 'РљР°С‚РµРіРѕСЂС–СЏ'),
+            initialValue: _selectedCategory,
+            decoration: const InputDecoration(labelText: 'Категорія'),
             items: _availableCategories
                 .map((c) => DropdownMenuItem(value: c, child: Text(c.name)))
                 .toList(),
             onChanged: (val) => setState(() => _selectedCategory = val),
-            validator: (val) => val == null ? 'РћР±РµСЂС–С‚СЊ' : null,
+            validator: (val) => val == null ? 'Оберіть' : null,
           )
         else
           Text(
             _isLoadingCategories
-                ? 'Р—Р°РІР°РЅС‚Р°Р¶РµРЅРЅСЏ РєР°С‚РµРіРѕСЂС–Р№...'
-                : 'РќРµРјР°С” РґРѕСЃС‚СѓРїРЅРёС… РєР°С‚РµРіРѕСЂС–Р№ РґР»СЏ РѕР±СЂР°РЅРѕРіРѕ С‚РёРїСѓ. РЎРїРѕС‡Р°С‚РєСѓ СЃС‚РІРѕСЂС–С‚СЊ С—С….',
+                ? 'Завантаження категорій...'
+                : 'Немає доступних категорій для обраного типу. Спочатку створіть їх.',
             style: TextStyle(color: Colors.orange.shade700),
           ),
       ],
@@ -584,13 +584,13 @@ class _AddEditRepeatingTransactionScreenState
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'РќР°Р»Р°С€С‚СѓРІР°РЅРЅСЏ РїРѕРІС‚РѕСЂРµРЅРЅСЏ:',
+          'Налаштування повторення:',
           style: Theme.of(context).textTheme.titleMedium,
         ),
         const SizedBox(height: 8),
         DropdownButtonFormField<Frequency>(
-          value: _selectedFrequency,
-          decoration: const InputDecoration(labelText: 'Р§Р°СЃС‚РѕС‚Р°'),
+          initialValue: _selectedFrequency,
+          decoration: const InputDecoration(labelText: 'Частота'),
           items: Frequency.values
               .map(
                 (f) => DropdownMenuItem(
@@ -624,15 +624,15 @@ class _AddEditRepeatingTransactionScreenState
           controller: _intervalController,
           decoration: const InputDecoration(
             labelText:
-                'Р†РЅС‚РµСЂРІР°Р» (РЅР°РїСЂ., РєРѕР¶РЅС– X РґРЅС–РІ/С‚РёР¶РЅС–РІ/РјС–СЃСЏС†С–РІ)',
+                'Інтервал (напр., кожні X днів/тижнів/місяців)',
           ),
           keyboardType: TextInputType.number,
           validator: (value) {
             if (value == null || value.isEmpty) {
-              return 'Р’РєР°Р¶С–С‚СЊ С–РЅС‚РµСЂРІР°Р»';
+              return 'Вкажіть інтервал';
             }
             if (int.tryParse(value) == null || int.parse(value) < 1) {
-              return 'РњС–РЅ. 1';
+              return 'Мін. 1';
             }
             return null;
           },
@@ -648,7 +648,7 @@ class _AddEditRepeatingTransactionScreenState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'РћР±РµСЂС–С‚СЊ РґРЅС– С‚РёР¶РЅСЏ:',
+            'Оберіть дні тижня:',
             style: Theme.of(context).textTheme.titleSmall,
           ),
           const SizedBox(height: 8),
@@ -695,62 +695,37 @@ class _AddEditRepeatingTransactionScreenState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Р”РµРЅСЊ РјС–СЃСЏС†СЏ РґР»СЏ РїРѕРІС‚РѕСЂРµРЅРЅСЏ:',
+            'День місяця для повторення:',
             style: Theme.of(context).textTheme.titleSmall,
           ),
-          RadioListTile<MonthlyRepeatType>(
-            title: const Text('РљРѕРЅРєСЂРµС‚РЅРёР№ РґРµРЅСЊ'),
-            value: MonthlyRepeatType.specificDay,
+            RadioGroup<MonthlyRepeatType>(
             groupValue: _monthlyType,
-            onChanged: (value) {
-              if (value != null) {
-                setState(() {
-                  _monthlyType = value;
-                });
+             onChanged: (value) {
+             if (value != null) {
+               setState(() => _monthlyType = value);
               }
             },
-          ),
-          if (_monthlyType == MonthlyRepeatType.specificDay)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: DropdownButtonFormField<int>(
-                value: _selectedMonthNumericDay.clamp(
-                  1,
-                  _getDaysInMonth(_startDate.year, _startDate.month),
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                const RadioListTile<MonthlyRepeatType>(
+                    title: Text('Конкретний день'),
+                    value: MonthlyRepeatType.specificDay,
                 ),
-                decoration: const InputDecoration(
-                  labelText: 'РћР±РµСЂС–С‚СЊ С‡РёСЃР»Рѕ',
-                  contentPadding:
-                      EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                if (_monthlyType == MonthlyRepeatType.specificDay)
+                    Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                     child: DropdownButtonFormField<int>(
+                        items: const [],
+                        onChanged: (_) {},
+                     ),
+                    ),
+                const RadioListTile<MonthlyRepeatType>(
+                 title: Text('Останній день місяця'),
+                    value: MonthlyRepeatType.lastDay,
                 ),
-                items: List.generate(31, (i) => i + 1)
-                    .map(
-                      (day) => DropdownMenuItem(
-                        value: day,
-                        child: Text(day.toString()),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (val) {
-                  if (val != null) {
-                    setState(() {
-                      _selectedMonthNumericDay = val;
-                    });
-                  }
-                },
-              ),
-            ),
-          RadioListTile<MonthlyRepeatType>(
-            title: const Text('РћСЃС‚Р°РЅРЅС–Р№ РґРµРЅСЊ РјС–СЃСЏС†СЏ'),
-            value: MonthlyRepeatType.lastDay,
-            groupValue: _monthlyType,
-            onChanged: (value) {
-              if (value != null) {
-                setState(() {
-                  _monthlyType = value;
-                });
-              }
-            },
+                ],
+             ),
           ),
         ],
       ),
@@ -764,13 +739,13 @@ class _AddEditRepeatingTransactionScreenState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Р”Р°С‚Р° РґР»СЏ С‰РѕСЂС–С‡РЅРѕРіРѕ РїРѕРІС‚РѕСЂРµРЅРЅСЏ:',
+            'Дата для щорічного повторення:',
             style: Theme.of(context).textTheme.titleSmall,
           ),
           const SizedBox(height: 8),
           DropdownButtonFormField<int>(
-            value: _selectedYearMonth,
-            decoration: const InputDecoration(labelText: 'РњС–СЃСЏС†СЊ'),
+            initialValue: _selectedYearMonth,
+            decoration: const InputDecoration(labelText: 'Місяць'),
             items: List.generate(12, (i) => i + 1)
                 .map(
                   (month) => DropdownMenuItem(
@@ -792,19 +767,18 @@ class _AddEditRepeatingTransactionScreenState
                 });
               }
             },
-            validator: (val) =>
-                val == null ? 'РћР±РµСЂС–С‚СЊ РјС–СЃСЏС†СЊ' : null,
+            validator: (val) => val == null ? 'Оберіть місяць' : null,
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<int>(
-            value:
+            initialValue:
                 (_selectedYearNumericDay != null && _selectedYearMonth != null)
                     ? _selectedYearNumericDay!.clamp(
                         1,
                         _getDaysInMonth(_startDate.year, _selectedYearMonth!),
                       )
                     : null,
-            decoration: const InputDecoration(labelText: 'Р”РµРЅСЊ'),
+            decoration: const InputDecoration(labelText: 'День'),
             items: List.generate(
               _getDaysInMonth(
                 _startDate.year,
@@ -826,7 +800,7 @@ class _AddEditRepeatingTransactionScreenState
                 });
               }
             },
-            validator: (val) => val == null ? 'РћР±РµСЂС–С‚СЊ РґРµРЅСЊ' : null,
+            validator: (val) => val == null ? 'Оберіть день' : null,
           ),
         ],
       ),
@@ -840,7 +814,7 @@ class _AddEditRepeatingTransactionScreenState
         ListTile(
           contentPadding: EdgeInsets.zero,
           title: Text(
-            'РџРѕС‡Р°С‚РѕРє: ${DateFormat('dd.MM.yyyy HH:mm').format(_startDate)}',
+            'Початок: ${DateFormat('dd.MM.yyyy HH:mm').format(_startDate)}',
           ),
           trailing: const Icon(Icons.calendar_today_outlined),
           onTap: () async {
@@ -851,11 +825,12 @@ class _AddEditRepeatingTransactionScreenState
               lastDate: DateTime(2100),
             );
             if (pickedDate != null) {
+              if (!mounted) return;
               final pickedTime = await showTimePicker(
                 context: context,
                 initialTime: TimeOfDay.fromDateTime(_startDate),
               );
-              if (mounted) {
+              if (!mounted) return; 
                 setState(() {
                   _startDate = DateTime(
                     pickedDate.year,
@@ -865,7 +840,6 @@ class _AddEditRepeatingTransactionScreenState
                     pickedTime?.minute ?? _startDate.minute,
                   );
                 });
-              }
             }
           },
         ),
@@ -873,8 +847,8 @@ class _AddEditRepeatingTransactionScreenState
           contentPadding: EdgeInsets.zero,
           title: Text(
             _endDate == null
-                ? 'Р‘РµР· РґР°С‚Рё Р·Р°РєС–РЅС‡РµРЅРЅСЏ'
-                : 'РљС–РЅРµС†СЊ: ${DateFormat('dd.MM.yyyy').format(_endDate!)}',
+                ? 'Без дати закінчення'
+                : 'Кінець: ${DateFormat('dd.MM.yyyy').format(_endDate!)}',
           ),
           trailing: const Icon(Icons.calendar_today),
           onTap: () async {
@@ -895,7 +869,7 @@ class _AddEditRepeatingTransactionScreenState
         ),
         SwitchListTile(
           contentPadding: const EdgeInsets.fromLTRB(0, 8, 0, 8),
-          title: const Text('РЁР°Р±Р»РѕРЅ Р°РєС‚РёРІРЅРёР№'),
+          title: const Text('Шаблон активний'),
           value: _isActive,
           onChanged: (val) => setState(() => _isActive = val),
         ),

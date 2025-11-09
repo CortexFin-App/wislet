@@ -1,6 +1,7 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:fpdart/fpdart.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:wislet/core/di/injector.dart';
 import 'package:wislet/data/repositories/goal_repository.dart';
 import 'package:wislet/data/repositories/transaction_repository.dart';
@@ -9,7 +10,6 @@ import 'package:wislet/models/financial_health.dart';
 import 'package:wislet/models/transaction.dart' as fin_transaction;
 import 'package:wislet/services/financial_health_service.dart';
 import 'package:wislet/utils/app_palette.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AiAdvice {
   AiAdvice({

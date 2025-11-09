@@ -1,4 +1,4 @@
-import 'package:collection/collection.dart';
+﻿import 'package:collection/collection.dart';
 import 'package:wislet/data/repositories/transaction_repository.dart';
 import 'package:wislet/models/ai_insight.dart';
 import 'package:wislet/models/transaction.dart';
@@ -35,9 +35,9 @@ class AiInsightService {
           lastMonthSpending > 0 &&
           thisMonthSpending > (lastMonthSpending * 2.5)) {
         return AiInsight(
-          title: 'РњСѓРґСЂР° РїРѕСЂР°РґР°',
+          title: 'Мудра порада',
           content:
-              'Р’Р°С€С– РІРёС‚СЂР°С‚Рё РІ РєР°С‚РµРіРѕСЂС–С— "$categoryName" С†СЊРѕРіРѕ РјС–СЃСЏС†СЏ Р·РЅР°С‡РЅРѕ РІРёС‰С– Р·Р° РїРѕРїРµСЂРµРґРЅС–Р№. РњРѕР¶Р»РёРІРѕ, РІР°СЂС‚Рѕ РїРµСЂРµРіР»СЏРЅСѓС‚Рё С†РµР№ Р°СЃРїРµРєС‚ Р±СЋРґР¶РµС‚Сѓ?',
+              'Ваші витрати в категорії "$categoryName" цього місяця значно вищі за попередній. Можливо, варто переглянути цей аспект бюджету?',
         );
       }
     }

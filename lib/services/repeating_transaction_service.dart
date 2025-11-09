@@ -1,4 +1,4 @@
-import 'package:wislet/data/repositories/repeating_transaction_repository.dart';
+﻿import 'package:wislet/data/repositories/repeating_transaction_repository.dart';
 import 'package:wislet/data/repositories/transaction_repository.dart';
 import 'package:wislet/data/repositories/wallet_repository.dart';
 import 'package:wislet/models/repeating_transaction_model.dart';
@@ -28,7 +28,7 @@ class RepeatingTransactionService {
           final rtEither =
               await _rtRepository.getAllRepeatingTransactions(wallet.id!);
 
-          rtEither.fold(
+          await rtEither.fold(
             (l) => null,
             (allRTs) async {
               for (final rt in allRTs) {
@@ -66,9 +66,10 @@ class RepeatingTransactionService {
                     userIdForWallet,
                   );
 
-                  rt.generatedOccurrencesCount =
-                      (rt.generatedOccurrencesCount ?? 0) + 1;
-                  rt.nextDueDate = RepeatingTransaction.calculateNextDueDate(
+                  rt
+                  ..generatedOccurrencesCount =
+                      (rt.generatedOccurrencesCount ?? 0) + 1
+                  ..nextDueDate = RepeatingTransaction.calculateNextDueDate(
                     checkDate,
                     rt.frequency,
                   );

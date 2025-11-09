@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:wislet/core/di/injector.dart';
 import 'package:wislet/data/repositories/invitation_repository.dart';
 import 'package:wislet/models/wallet.dart';
@@ -8,7 +9,6 @@ import 'package:wislet/providers/wallet_provider.dart';
 import 'package:wislet/screens/settings/add_edit_wallet_screen.dart';
 import 'package:wislet/services/auth_service.dart';
 import 'package:wislet/widgets/scaffold/patterned_scaffold.dart';
-import 'package:share_plus/share_plus.dart';
 
 class WalletsScreen extends StatefulWidget {
   const WalletsScreen({super.key});
@@ -57,9 +57,7 @@ class _WalletsScreenState extends State<WalletsScreen> {
     if (mounted) {
       messenger.showSnackBar(
         const SnackBar(
-          content: Text(
-            'РљРѕСЂРёСЃС‚СѓРІР°С‡Р° РІРёРґР°Р»РµРЅРѕ Р· РіР°РјР°РЅС†СЏ.',
-          ),
+          content: Text('Користувача видалено з гаманця.'),
         ),
       );
     }
@@ -75,16 +73,17 @@ class _WalletsScreenState extends State<WalletsScreen> {
       final invitationToken =
           await _invitationRepo.generateInvitation(wallet.id!);
       final link = 'https://cortexfinapp.com/invite?token=$invitationToken';
-      await Share.share(
-        'РџСЂРёРІС–С‚! Р—Р°РїСЂРѕС€СѓСЋ С‚РµР±Рµ РґРѕ СЃРІРѕРіРѕ СЃРїС–Р»СЊРЅРѕРіРѕ РіР°РјР°РЅС†СЏ "${wallet.name}" РІ РґРѕРґР°С‚РєСѓ Р“Р°РјР°РЅРµС†СЊ РњСѓРґСЂРµС†СЏ:\n\n$link',
-        subject: 'Р—Р°РїСЂРѕС€РµРЅРЅСЏ РґРѕ РіР°РјР°РЅС†СЏ',
+      await SharePlus.instance.share(
+        ShareParams(
+          text:
+              'Привіт! Запрошую тебе до свого спільного гаманця "${wallet.name}" у додатку Гаманець Мудреця:\n\n$link',
+          subject: 'Запрошення до гаманця',
+        ),
       );
     } on Exception catch (e) {
       messenger.showSnackBar(
         SnackBar(
-          content: Text(
-            'РџРѕРјРёР»РєР° СЃС‚РІРѕСЂРµРЅРЅСЏ Р·Р°РїСЂРѕС€РµРЅРЅСЏ: $e',
-          ),
+          content: Text('Помилка створення запрошення: $e'),
         ),
       );
     }
@@ -99,7 +98,7 @@ class _WalletsScreenState extends State<WalletsScreen> {
 
     return PatternedScaffold(
       appBar: AppBar(
-        title: const Text('РЈРїСЂР°РІР»С–РЅРЅСЏ РіР°РјР°РЅС†СЏРјРё'),
+        title: const Text('Управління гаманцями'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -148,14 +147,13 @@ class _WalletsScreenState extends State<WalletsScreen> {
                             ?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       subtitle:
-                          Text('РЈС‡Р°СЃРЅРёРєС–РІ: ${wallet.members.length}'),
+                          Text('Учасників: ${wallet.members.length}'),
                       trailing: amIOwner
                           ? Consumer<AppModeProvider>(
                               builder: (context, appModeProvider, child) {
                                 return IconButton(
                                   icon: const Icon(Icons.share_outlined),
-                                  tooltip:
-                                      'Р—Р°РїСЂРѕСЃРёС‚Рё Р·Р° РїРѕСЃРёР»Р°РЅРЅСЏРј',
+                                  tooltip: 'Запросити за посиланням',
                                   onPressed: appModeProvider.isOnline
                                       ? () => _generateAndShareInvite(
                                             context,
@@ -195,11 +193,11 @@ class _WalletsScreenState extends State<WalletsScreen> {
                                             items: const [
                                               DropdownMenuItem(
                                                 value: 'editor',
-                                                child: Text('Р РµРґР°РєС‚РѕСЂ'),
+                                                child: Text('Редактор'),
                                               ),
                                               DropdownMenuItem(
                                                 value: 'viewer',
-                                                child: Text('Р“Р»СЏРґР°С‡'),
+                                                child: Text('Глядач'),
                                               ),
                                             ],
                                             onChanged: (newRole) {
@@ -229,10 +227,10 @@ class _WalletsScreenState extends State<WalletsScreen> {
                                       )
                                     : Text(
                                         member.role == 'owner'
-                                            ? 'Р’Р»Р°СЃРЅРёРє'
+                                            ? 'Власник'
                                             : (member.role == 'editor'
-                                                ? 'Р РµРґР°РєС‚РѕСЂ'
-                                                : 'Р“Р»СЏРґР°С‡'),
+                                                ? 'Редактор'
+                                                : 'Глядач'),
                                         style: TextStyle(
                                           color: Theme.of(context)
                                               .colorScheme
@@ -256,7 +254,7 @@ class _WalletsScreenState extends State<WalletsScreen> {
                                   wallet,
                                   wallets.length > 1,
                                 ),
-                                child: const Text('РћРїС†С–С— РіР°РјР°РЅС†СЏ'),
+                                child: const Text('Опції гаманця'),
                               ),
                             ],
                           ),
@@ -269,7 +267,7 @@ class _WalletsScreenState extends State<WalletsScreen> {
             ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddEditWalletDialog(context),
-        label: const Text('РќРѕРІРёР№ РіР°РјР°РЅРµС†СЊ'),
+        label: const Text('Новий гаманець'),
         icon: const Icon(Icons.add),
       ),
     );
@@ -287,7 +285,7 @@ class _WalletsScreenState extends State<WalletsScreen> {
           children: <Widget>[
             ListTile(
               leading: const Icon(Icons.edit_outlined),
-              title: const Text('Р РµРґР°РіСѓРІР°С‚Рё РЅР°Р·РІСѓ'),
+              title: const Text('Редагувати назву'),
               onTap: () {
                 Navigator.pop(ctx);
                 _showAddEditWalletDialog(context, walletToEdit: wallet);
@@ -300,7 +298,7 @@ class _WalletsScreenState extends State<WalletsScreen> {
                   color: Theme.of(context).colorScheme.error,
                 ),
                 title: Text(
-                  'Р’РёРґР°Р»РёС‚Рё РіР°РјР°РЅРµС†СЊ',
+                  'Видалити гаманець',
                   style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
                 onTap: () {
@@ -322,7 +320,7 @@ class _WalletsScreenState extends State<WalletsScreen> {
       context: context,
       builder: (_) => AddEditWalletScreen(walletToEdit: walletToEdit),
     );
-    if (result == true && mounted) {
+    if ((result ?? false) && mounted) {
       await _refreshData();
     }
   }
@@ -338,13 +336,13 @@ class _WalletsScreenState extends State<WalletsScreen> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Р’РёРґР°Р»РёС‚Рё РіР°РјР°РЅРµС†СЊ?'),
+          title: const Text('Видалити гаманець?'),
           content: Text(
-            'Р“Р°РјР°РЅРµС†СЊ "${wallet.name}" Р±СѓРґРµ РІРёРґР°Р»РµРЅРѕ СЂР°Р·РѕРј Р· СѓСЃС–РјР° РїРѕРІ\'СЏР·Р°РЅРёРјРё РґР°РЅРёРјРё. Р¦СЋ РґС–СЋ РЅРµРјРѕР¶Р»РёРІРѕ СЃРєР°СЃСѓРІР°С‚Рё.',
+            'Гаманець "${wallet.name}" буде видалено разом з усіма пов’язаними даними. Цю дію неможливо скасувати.',
           ),
           actions: <Widget>[
             TextButton(
-              child: const Text('РЎРєР°СЃСѓРІР°С‚Рё'),
+              child: const Text('Скасувати'),
               onPressed: () {
                 Navigator.of(dialogContext).pop(false);
               },
@@ -353,7 +351,7 @@ class _WalletsScreenState extends State<WalletsScreen> {
               style: TextButton.styleFrom(
                 foregroundColor: Theme.of(context).colorScheme.error,
               ),
-              child: const Text('Р’РёРґР°Р»РёС‚Рё'),
+              child: const Text('Видалити'),
               onPressed: () async {
                 Navigator.of(dialogContext).pop(true);
               },
@@ -363,13 +361,12 @@ class _WalletsScreenState extends State<WalletsScreen> {
       },
     );
 
-    if (confirmDelete == true) {
+    if (confirmDelete ?? false) {
       await walletProvider.deleteWallet(wallet.id!);
       if (mounted) {
         messenger.showSnackBar(
           SnackBar(
-            content:
-                Text('Р“Р°РјР°РЅРµС†СЊ "${wallet.name}" РІРёРґР°Р»РµРЅРѕ.'),
+            content: Text('Гаманець "${wallet.name}" видалено.'),
           ),
         );
       }

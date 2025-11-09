@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -82,9 +82,9 @@ class _PinEntryScreenState extends State<PinEntryScreen> {
     if (isCorrect) {
       widget.onSuccess();
     } else {
-      HapticFeedback.heavyImpact();
+      await HapticFeedback.heavyImpact();
       setState(() {
-        _errorMessage = 'РќРµРІС–СЂРЅРёР№ PIN-РєРѕРґ';
+        _errorMessage = 'Невірний PIN-код';
         _pin = '';
         _isLoading = false;
       });
@@ -100,7 +100,7 @@ class _PinEntryScreenState extends State<PinEntryScreen> {
           child: Column(
             children: [
               Text(
-                'Р’РІРµРґС–С‚СЊ PIN-РєРѕРґ',
+                'Введіть PIN-код',
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               const SizedBox(height: 32),

@@ -223,7 +223,8 @@ class LocalGoalRepositoryImpl implements GoalRepository {
                 );
                 if (goal.targetDate != null) {
                   final targetDateReminderId = goal.id! * 10000 + 1;
-                  await _notificationService.cancelNotification(targetDateReminderId);
+                  await _notificationService
+                      .cancelNotification(targetDateReminderId);
                 }
               }
               return const Right(null);
