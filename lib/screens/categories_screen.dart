@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:fpdart/fpdart.dart' hide State;
 import 'package:provider/provider.dart';
 import 'package:wislet/core/error/failures.dart';
@@ -60,7 +60,7 @@ class _CategoriesScreenState extends State<CategoriesScreen>
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'РџРѕРјРёР»РєР°: РЅРµРјРѕР¶Р»РёРІРѕ РІРёР·РЅР°С‡РёС‚Рё Р°РєС‚РёРІРЅРёР№ РіР°РјР°РЅРµС†СЊ.',
+            'Помилка: неможливо визначити активний гаманець.',
           ),
         ),
       );
@@ -83,8 +83,8 @@ class _CategoriesScreenState extends State<CategoriesScreen>
             return AlertDialog(
               title: Text(
                 category == null
-                    ? 'РќРѕРІР° РєР°С‚РµРіРѕСЂС–СЏ'
-                    : 'Р РµРґР°РіСѓРІР°С‚Рё РєР°С‚РµРіРѕСЂС–СЋ',
+                    ? 'Нова категорія'
+                    : 'Редагувати категорію',
               ),
               content: Form(
                 key: formKey,
@@ -94,24 +94,24 @@ class _CategoriesScreenState extends State<CategoriesScreen>
                     TextFormField(
                       controller: nameController,
                       decoration:
-                          const InputDecoration(labelText: 'РќР°Р·РІР°'),
+                          const InputDecoration(labelText: 'Назва'),
                       validator: (value) =>
                           value == null || value.trim().isEmpty
-                              ? 'Р’РІРµРґС–С‚СЊ РЅР°Р·РІСѓ'
+                              ? 'Введіть назву'
                               : null,
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<CategoryType>(
-                      value: selectedType,
-                      decoration: const InputDecoration(labelText: 'РўРёРї'),
+                      initialValue: selectedType,
+                      decoration: const InputDecoration(labelText: 'Тип'),
                       items: const [
                         DropdownMenuItem(
                           value: CategoryType.expense,
-                          child: Text('Р’РёС‚СЂР°С‚Р°'),
+                          child: Text('Витрата'),
                         ),
                         DropdownMenuItem(
                           value: CategoryType.income,
-                          child: Text('Р”РѕС…С–Рґ'),
+                          child: Text('Дохід'),
                         ),
                       ],
                       onChanged: (value) {
@@ -125,26 +125,26 @@ class _CategoriesScreenState extends State<CategoriesScreen>
                     ),
                     if (selectedType == CategoryType.expense)
                       DropdownButtonFormField<Bucket?>(
-                        value: selectedBucket,
+                        initialValue: selectedBucket,
                         decoration: const InputDecoration(
                           labelText:
-                              'Р“СЂСѓРїР° (РґР»СЏ Р±СЋРґР¶РµС‚Сѓ 50/30/20)',
+                              'Група (для бюджету 50/30/20)',
                         ),
-                        hint: const Text('РќРµ РІРєР°Р·Р°РЅРѕ'),
+                        hint: const Text('Не вказано'),
                         items: const [
-                          DropdownMenuItem(child: Text('РќРµ РІРєР°Р·Р°РЅРѕ')),
+                          DropdownMenuItem(child: Text('Не вказано')),
                           DropdownMenuItem(
                             value: Bucket.needs,
-                            child: Text('Р‘Р°Р·РѕРІС– РїРѕС‚СЂРµР±Рё'),
+                            child: Text('Базові потреби'),
                           ),
                           DropdownMenuItem(
                             value: Bucket.wants,
-                            child: Text('Р‘Р°Р¶Р°РЅРЅСЏ'),
+                            child: Text('Бажання'),
                           ),
                           DropdownMenuItem(
                             value: Bucket.savings,
                             child: Text(
-                              'Р—Р°РѕС‰Р°РґР¶РµРЅРЅСЏ/Р†РЅРІРµСЃС‚РёС†С–С—',
+                              'Заощадження/Інвестиції',
                             ),
                           ),
                         ],
@@ -160,7 +160,7 @@ class _CategoriesScreenState extends State<CategoriesScreen>
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('РЎРєР°СЃСѓРІР°С‚Рё'),
+                  child: const Text('Скасувати'),
                 ),
                 ElevatedButton(
                   onPressed: () async {
@@ -184,7 +184,7 @@ class _CategoriesScreenState extends State<CategoriesScreen>
                       if (navigator.canPop()) navigator.pop(true);
                     }
                   },
-                  child: const Text('Р—Р±РµСЂРµРіС‚Рё'),
+                  child: const Text('Зберегти'),
                 ),
               ],
             );
@@ -193,7 +193,7 @@ class _CategoriesScreenState extends State<CategoriesScreen>
       },
     );
 
-    if (result == true && mounted) {
+    if ((result ?? false) && mounted) {
       _loadCategories();
     }
   }
@@ -202,13 +202,13 @@ class _CategoriesScreenState extends State<CategoriesScreen>
   Widget build(BuildContext context) {
     return PatternedScaffold(
       appBar: AppBar(
-        title: const Text('РљР°С‚РµРіРѕСЂС–С—'),
+        title: const Text('Категорії'),
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: AppPalette.darkAccent,
           tabs: const [
-            Tab(text: 'Р’РёС‚СЂР°С‚Рё'),
-            Tab(text: 'Р”РѕС…РѕРґРё'),
+            Tab(text: 'Витрати'),
+            Tab(text: 'Доходи'),
           ],
         ),
       ),
@@ -219,12 +219,12 @@ class _CategoriesScreenState extends State<CategoriesScreen>
             return const Center(child: CircularProgressIndicator());
           }
           if (!snapshot.hasData) {
-            return const Center(child: Text('Р—Р°РІР°РЅС‚Р°Р¶РµРЅРЅСЏ...'));
+            return const Center(child: Text('Завантаження...'));
           }
 
           return snapshot.data!.fold(
               (failure) =>
-                  Center(child: Text('РџРѕРјРёР»РєР°: ${failure.userMessage}')),
+                  Center(child: Text('Помилка: ${failure.userMessage}')),
               (allCategories) {
             final expenseCategories = allCategories
                 .where((c) => c.type == CategoryType.expense)
@@ -253,7 +253,7 @@ class _CategoriesScreenState extends State<CategoriesScreen>
   Widget _buildCategoryList(List<Category> categories) {
     if (categories.isEmpty) {
       return const Center(
-        child: Text('РќРµРјР°С” РєР°С‚РµРіРѕСЂС–Р№ С†СЊРѕРіРѕ С‚РёРїСѓ.'),
+        child: Text('Немає категорій цього типу.'),
       );
     }
     return ListView.builder(

@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:wislet/l10n/app_localizations.dart' as sw;
 import 'package:wislet/utils/l10n_helpers.dart';
 
 class OnboardingScreen extends StatefulWidget {
-  const OnboardingScreen({super.key, required this.onFinished});
+  const OnboardingScreen({required this.onFinished, super.key});
   final VoidCallback onFinished;
 
   @override

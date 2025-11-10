@@ -1,4 +1,4 @@
-import 'package:collection/collection.dart';
+﻿import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:wislet/core/di/injector.dart';
@@ -24,18 +24,18 @@ class _AddEditAssetScreenState extends State<AddEditAssetScreen> {
   late TextEditingController _nameController;
   late TextEditingController _valueController;
 
-  String _selectedType = 'РќРµСЂСѓС…РѕРјС–СЃС‚СЊ';
+  String _selectedType = 'Нерухомість';
   Currency? _selectedCurrency;
   bool _isSaving = false;
 
   bool get _isEditing => widget.assetToEdit != null;
 
   final List<String> _assetTypes = [
-    'РќРµСЂСѓС…РѕРјС–СЃС‚СЊ',
-    'РђРІС‚РѕРјРѕР±С–Р»СЊ',
-    'Р†РЅРІРµСЃС‚РёС†С–С—',
-    'РљСЂРёРїС‚РѕРІР°Р»СЋС‚Р°',
-    'Р†РЅС€Рµ',
+    'Нерухомість',
+    'Автомобіль',
+    'Інвестиції',
+    'Криптовалюта',
+    'Інше',
   ];
 
   @override
@@ -77,7 +77,7 @@ class _AddEditAssetScreenState extends State<AddEditAssetScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
-              'РџРѕРјРёР»РєР°: РЅРµРјРѕР¶Р»РёРІРѕ Р·Р±РµСЂРµРіС‚Рё. РђРєС‚РёРІРЅРёР№ РіР°РјР°РЅРµС†СЊ Р°Р±Рѕ РєРѕСЂРёСЃС‚СѓРІР°С‡ РЅРµ Р·РЅР°Р№РґРµРЅРѕ.',
+              'Помилка: неможливо зберегти. Активний гаманець або користувач не знайдено.',
             ),
           ),
         );
@@ -108,7 +108,7 @@ class _AddEditAssetScreenState extends State<AddEditAssetScreen> {
     } on Exception catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('РџРѕРјРёР»РєР° Р·Р±РµСЂРµР¶РµРЅРЅСЏ: $e')),
+          SnackBar(content: Text('Помилка збереження: $e')),
         );
       }
     } finally {
@@ -123,9 +123,7 @@ class _AddEditAssetScreenState extends State<AddEditAssetScreen> {
     return PatternedScaffold(
       appBar: AppBar(
         title: Text(
-          _isEditing
-              ? 'Р РµРґР°РіСѓРІР°С‚Рё РђРєС‚РёРІ'
-              : 'РќРѕРІРёР№ РђРєС‚РёРІ',
+          _isEditing ? 'Редагувати Актив' : 'Новий Актив',
         ),
       ),
       body: Form(
@@ -137,17 +135,17 @@ class _AddEditAssetScreenState extends State<AddEditAssetScreen> {
               controller: _nameController,
               decoration: const InputDecoration(
                 labelText:
-                    'РќР°Р·РІР° Р°РєС‚РёРІСѓ (РЅР°РїСЂ., РљРІР°СЂС‚РёСЂР° РЅР° РҐСЂРµС‰Р°С‚РёРєСѓ)',
+                    'Назва активу (напр., Квартира на Хрещатику)',
               ),
               validator: (value) => value == null || value.trim().isEmpty
-                  ? 'Р’РІРµРґС–С‚СЊ РЅР°Р·РІСѓ'
+                  ? 'Введіть назву'
                   : null,
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
-              value: _selectedType,
+              initialValue: _selectedType,
               decoration:
-                  const InputDecoration(labelText: 'РўРёРї Р°РєС‚РёРІСѓ'),
+                  const InputDecoration(labelText: 'Тип активу'),
               items: _assetTypes
                   .map(
                     (type) => DropdownMenuItem(value: type, child: Text(type)),
@@ -163,15 +161,15 @@ class _AddEditAssetScreenState extends State<AddEditAssetScreen> {
                   child: TextFormField(
                     controller: _valueController,
                     decoration:
-                        const InputDecoration(labelText: 'Р’Р°СЂС‚С–СЃС‚СЊ'),
+                        const InputDecoration(labelText: 'Вартість'),
                     keyboardType:
                         const TextInputType.numberWithOptions(decimal: true),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Р’РІРµРґС–С‚СЊ РІР°СЂС‚С–СЃС‚СЊ';
+                        return 'Введіть вартість';
                       }
                       if (double.tryParse(value.replaceAll(',', '.')) == null) {
-                        return 'РќРµРІС–СЂРЅРµ С‡РёСЃР»Рѕ';
+                        return 'Невірне число';
                       }
                       return null;
                     },
@@ -180,9 +178,9 @@ class _AddEditAssetScreenState extends State<AddEditAssetScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: DropdownButtonFormField<Currency>(
-                    value: _selectedCurrency,
+                    initialValue: _selectedCurrency,
                     decoration:
-                        const InputDecoration(labelText: 'Р’Р°Р»СЋС‚Р°'),
+                        const InputDecoration(labelText: 'Валюта'),
                     items: appCurrencies
                         .map(
                           (c) =>
@@ -201,8 +199,8 @@ class _AddEditAssetScreenState extends State<AddEditAssetScreen> {
                   ? const CircularProgressIndicator(color: Colors.white)
                   : Text(
                       _isEditing
-                          ? 'Р—Р±РµСЂРµРіС‚Рё Р·РјС–РЅРё'
-                          : 'РЎС‚РІРѕСЂРёС‚Рё Р°РєС‚РёРІ',
+                          ? 'Зберегти зміни'
+                          : 'Створити актив',
                     ),
             ),
           ],

@@ -1,4 +1,4 @@
-import 'package:fl_chart/fl_chart.dart';
+﻿import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -50,7 +50,7 @@ class _ForecastScreenState extends State<ForecastScreen> {
 
     return PatternedScaffold(
       appBar: AppBar(
-        title: const Text('РџСЂРѕРіРЅРѕР· Р“СЂРѕС€РѕРІРѕРіРѕ РџРѕС‚РѕРєСѓ'),
+        title: const Text('Прогноз грошового потоку'),
       ),
       body: Column(
         children: [
@@ -58,9 +58,9 @@ class _ForecastScreenState extends State<ForecastScreen> {
             padding: const EdgeInsets.all(16),
             child: SegmentedButton<int>(
               segments: const [
-                ButtonSegment(value: 30, label: Text('30 РґРЅС–РІ')),
-                ButtonSegment(value: 90, label: Text('90 РґРЅС–РІ')),
-                ButtonSegment(value: 180, label: Text('180 РґРЅС–РІ')),
+                ButtonSegment(value: 30, label: Text('30 днів')),
+                ButtonSegment(value: 90, label: Text('90 днів')),
+                ButtonSegment(value: 180, label: Text('180 днів')),
               ],
               selected: {_selectedDays},
               onSelectionChanged: (newSelection) {
@@ -81,14 +81,13 @@ class _ForecastScreenState extends State<ForecastScreen> {
                 if (snapshot.hasError) {
                   return Center(
                     child: Text(
-                      'РџРѕРјРёР»РєР° РїСЂРѕРіРЅРѕР·СѓРІР°РЅРЅСЏ: ${snapshot.error}',
+                      'Помилка прогнозування: ${snapshot.error}',
                     ),
                   );
                 }
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
                   return const Center(
-                    child:
-                        Text('РќРµРјР°С” РґР°РЅРёС… РґР»СЏ РїСЂРѕРіРЅРѕР·Сѓ.'),
+                    child: Text('Немає даних для прогнозу.'),
                   );
                 }
 

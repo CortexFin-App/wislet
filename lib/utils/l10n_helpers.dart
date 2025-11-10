@@ -107,7 +107,8 @@ const Map<String, String> _ukStrings = {
   'billing_cycle_custom': 'Користувацький',
 };
 
-String budgetStrategyTypeToString(BudgetStrategyType type, BuildContext context) {
+String budgetStrategyTypeToString(
+    BudgetStrategyType type, BuildContext context,) {
   final l = AppLocalizations.of(context)!;
   switch (type) {
     case BudgetStrategyType.categoryBased:

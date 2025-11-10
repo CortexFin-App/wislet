@@ -1,14 +1,13 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:fpdart/fpdart.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:wislet/core/error/failures.dart';
 import 'package:wislet/data/repositories/transaction_repository.dart';
-import 'package:wislet/models/transaction.dart'
-    as fin_transaction_model;
+import 'package:wislet/models/transaction.dart' as fin_transaction_model;
 import 'package:wislet/models/transaction_view_data.dart';
 import 'package:wislet/models/wallet.dart';
 import 'package:wislet/services/error_monitoring_service.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseTransactionRepositoryImpl implements TransactionRepository {
   SupabaseTransactionRepositoryImpl(this._client);
@@ -51,7 +50,7 @@ class SupabaseTransactionRepositoryImpl implements TransactionRepository {
 
       final finalQuery = query.order('date', ascending: false);
       if (limit != null) {
-        finalQuery.limit(limit);
+        await finalQuery.limit(limit);
       }
 
       final response = await finalQuery;

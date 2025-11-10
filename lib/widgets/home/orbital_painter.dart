@@ -1,4 +1,4 @@
-import 'dart:math';
+﻿import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:wislet/providers/dashboard_provider.dart';
@@ -30,8 +30,9 @@ class OrbitalPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1;
 
-    canvas.drawCircle(center, radius * 0.7, backgroundPaint);
-    canvas.drawCircle(center, radius, backgroundPaint);
+    canvas
+    ..drawCircle(center, radius * 0.7, backgroundPaint)
+    ..drawCircle(center, radius, backgroundPaint);
 
     var startAngle = -pi / 2;
     for (var i = 0; i < categories.length; i++) {

@@ -1,5 +1,9 @@
 name: Sync to Google Drive (multi-folders)
 
+permissions:
+  contents: read
+  pull-requests: write
+
 on:
   push:
     branches: [ "main" ]

@@ -1,9 +1,9 @@
 import 'package:fpdart/fpdart.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:wislet/core/error/failures.dart';
 import 'package:wislet/data/repositories/liability_repository.dart';
 import 'package:wislet/models/liability.dart';
 import 'package:wislet/services/error_monitoring_service.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseLiabilityRepositoryImpl implements LiabilityRepository {
   SupabaseLiabilityRepositoryImpl(this._client);

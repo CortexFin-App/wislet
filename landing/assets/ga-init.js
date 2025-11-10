@@ -1,6 +1,6 @@
-<script>
 // ga-init.js — єдиний підключуваний файл для GA4
-(function () {
+(function () 
+{
   var tag = document.currentScript;
   var GA_ID   = (tag && tag.dataset && tag.dataset.gaid) || "";
   var PV      = (tag && tag.dataset && tag.dataset.pageview) === "true";
@@ -28,4 +28,3 @@
   gtag('js', new Date());
   gtag('config', GA_ID, { send_page_view: PV });
 })();
-</script>

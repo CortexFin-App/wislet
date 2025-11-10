@@ -1,4 +1,4 @@
-import 'package:collection/collection.dart';
+﻿import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -18,12 +18,14 @@ class AddEditSubscriptionScreen extends StatefulWidget {
   final Subscription? subscriptionToEdit;
 
   @override
-  State<AddEditSubscriptionScreen> createState() => _AddEditSubscriptionScreenState();
+  State<AddEditSubscriptionScreen> createState() =>
+      _AddEditSubscriptionScreenState();
 }
 
 class _AddEditSubscriptionScreenState extends State<AddEditSubscriptionScreen> {
   final _formKey = GlobalKey<FormState>();
-  final SubscriptionRepository _subscriptionRepository = getIt<SubscriptionRepository>();
+  final SubscriptionRepository _subscriptionRepository =
+      getIt<SubscriptionRepository>();
   final CategoryRepository _categoryRepository = getIt<CategoryRepository>();
   final NotificationService _notificationService = getIt<NotificationService>();
 
@@ -68,7 +70,8 @@ class _AddEditSubscriptionScreenState extends State<AddEditSubscriptionScreen> {
       _paymentMethodController = TextEditingController(text: sub.paymentMethod);
       _notesController = TextEditingController(text: sub.notes);
       _websiteController = TextEditingController(text: sub.website);
-      _selectedCurrency = appCurrencies.firstWhereOrNull((c) => c.code == sub.currencyCode);
+      _selectedCurrency =
+          appCurrencies.firstWhereOrNull((c) => c.code == sub.currencyCode);
       _selectedBillingCycle = sub.billingCycle;
       _nextPaymentDate = sub.nextPaymentDate;
       _startDate = sub.startDate;
@@ -86,7 +89,8 @@ class _AddEditSubscriptionScreenState extends State<AddEditSubscriptionScreen> {
         DateTime.now().month,
         DateTime.now().day,
       );
-      _nextPaymentDate = _calculateNextPaymentDate(_startDate, _selectedBillingCycle);
+      _nextPaymentDate =
+          _calculateNextPaymentDate(_startDate, _selectedBillingCycle);
     }
   }
 
@@ -106,7 +110,9 @@ class _AddEditSubscriptionScreenState extends State<AddEditSubscriptionScreen> {
     );
     if (!mounted) return;
 
-    categoriesEither.fold((failure) => setState(() => _isLoadingCategories = false), (categories) {
+    categoriesEither
+        .fold((failure) => setState(() => _isLoadingCategories = false),
+            (categories) {
       if (mounted) {
         setState(() {
           _availableCategories = categories;
@@ -191,7 +197,7 @@ class _AddEditSubscriptionScreenState extends State<AddEditSubscriptionScreen> {
         ? await _subscriptionRepository.updateSubscription(subToSave, walletId)
         : await _subscriptionRepository.createSubscription(subToSave, walletId);
 
-    result.fold((failure) {
+    await result.fold((failure) {
       if (mounted) {
         messenger.showSnackBar(
           SnackBar(
@@ -208,13 +214,16 @@ class _AddEditSubscriptionScreenState extends State<AddEditSubscriptionScreen> {
         await _notificationService.cancelNotification(reminderId);
       }
 
-      if (subToSave.isActive && subToSave.nextPaymentDate.isAfter(DateTime.now())) {
-        final reminderDateTime = subToSave.nextPaymentDate.subtract(Duration(days: subToSave.reminderDaysBefore!));
+      if (subToSave.isActive &&
+          subToSave.nextPaymentDate.isAfter(DateTime.now())) {
+        final reminderDateTime = subToSave.nextPaymentDate
+            .subtract(Duration(days: subToSave.reminderDaysBefore!));
 
         await _notificationService.scheduleNotificationForDueDate(
           id: reminderId,
           title: 'Нагадування про підписку: ${subToSave.name}',
-          body: 'Завтра платіж на суму ${subToSave.amount.toStringAsFixed(2)} ${subToSave.currencyCode}',
+          body:
+              'Завтра платіж на суму ${subToSave.amount.toStringAsFixed(2)} ${subToSave.currencyCode}',
           dueDate: reminderDateTime,
           payload: 'subscription/$savedSubscriptionId',
           channelId: NotificationService.goalNotificationChannelId,
@@ -267,7 +276,9 @@ class _AddEditSubscriptionScreenState extends State<AddEditSubscriptionScreen> {
                       labelText: 'Назва підписки',
                       prefixIcon: Icon(Icons.star_border_purple500_outlined),
                     ),
-                    validator: (v) => v == null || v.trim().isEmpty ? 'Назва не може бути порожньою' : null,
+                    validator: (v) => v == null || v.trim().isEmpty
+                        ? 'Назва не може бути порожньою'
+                        : null,
                   ),
                   const SizedBox(height: 24),
                   Row(
@@ -289,7 +300,9 @@ class _AddEditSubscriptionScreenState extends State<AddEditSubscriptionScreen> {
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   fontSize: 16,
-                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
                                 ),
                               ),
                             ),
@@ -301,7 +314,8 @@ class _AddEditSubscriptionScreenState extends State<AddEditSubscriptionScreen> {
                             if (v == null || v.isEmpty) {
                               return 'Введіть суму';
                             }
-                            if (double.tryParse(v.replaceAll(',', '.')) == null) {
+                            if (double.tryParse(v.replaceAll(',', '.')) ==
+                                null) {
                               return 'Невірне число';
                             }
                             if (double.parse(v.replaceAll(',', '.')) <= 0) {
@@ -315,8 +329,9 @@ class _AddEditSubscriptionScreenState extends State<AddEditSubscriptionScreen> {
                       Expanded(
                         flex: 2,
                         child: DropdownButtonFormField<Currency>(
-                          value: _selectedCurrency,
-                          decoration: const InputDecoration(labelText: 'Валюта'),
+                          initialValue: _selectedCurrency,
+                          decoration:
+                              const InputDecoration(labelText: 'Валюта'),
                           items: appCurrencies
                               .map(
                                 (c) => DropdownMenuItem(
@@ -325,7 +340,8 @@ class _AddEditSubscriptionScreenState extends State<AddEditSubscriptionScreen> {
                                 ),
                               )
                               .toList(),
-                          onChanged: (val) => setState(() => _selectedCurrency = val),
+                          onChanged: (val) =>
+                              setState(() => _selectedCurrency = val),
                           validator: (v) => v == null ? 'Оберіть' : null,
                         ),
                       ),
@@ -333,7 +349,7 @@ class _AddEditSubscriptionScreenState extends State<AddEditSubscriptionScreen> {
                   ),
                   const SizedBox(height: 24),
                   DropdownButtonFormField<BillingCycle>(
-                    value: _selectedBillingCycle,
+                    initialValue: _selectedBillingCycle,
                     decoration: const InputDecoration(
                       labelText: 'Цикл оплати',
                       prefixIcon: Icon(Icons.repeat_outlined),
@@ -351,7 +367,8 @@ class _AddEditSubscriptionScreenState extends State<AddEditSubscriptionScreen> {
                         setState(() {
                           _selectedBillingCycle = val;
                           if (!_isEditing) {
-                            _nextPaymentDate = _calculateNextPaymentDate(_startDate, val);
+                            _nextPaymentDate =
+                                _calculateNextPaymentDate(_startDate, val);
                           }
                         });
                       }
@@ -371,20 +388,22 @@ class _AddEditSubscriptionScreenState extends State<AddEditSubscriptionScreen> {
                     title: const Text(
                       'Дата наступного платежу',
                     ),
-                    subtitle: Text(DateFormat('dd.MM.yyyy').format(_nextPaymentDate)),
+                    subtitle:
+                        Text(DateFormat('dd.MM.yyyy').format(_nextPaymentDate)),
                     onTap: () => _pickDate(true),
                   ),
                   const SizedBox(height: 16),
                   if (_availableCategories.isNotEmpty)
                     DropdownButtonFormField<fin_category.Category?>(
-                      value: _selectedCategory,
+                      initialValue: _selectedCategory,
                       decoration: InputDecoration(
                         labelText: 'Категорія витрат (опціонально)',
                         prefixIcon: const Icon(Icons.category_outlined),
                         suffixIcon: _selectedCategory != null
                             ? IconButton(
                                 icon: const Icon(Icons.clear, size: 20),
-                                onPressed: () => setState(() => _selectedCategory = null),
+                                onPressed: () =>
+                                    setState(() => _selectedCategory = null),
                               )
                             : null,
                       ),
@@ -393,14 +412,16 @@ class _AddEditSubscriptionScreenState extends State<AddEditSubscriptionScreen> {
                           child: Text('Без категорії'),
                         ),
                         ..._availableCategories.map(
-                          (c) => DropdownMenuItem(value: c, child: Text(c.name)),
+                          (c) =>
+                              DropdownMenuItem(value: c, child: Text(c.name)),
                         ),
                       ],
-                      onChanged: (val) => setState(() => _selectedCategory = val),
+                      onChanged: (val) =>
+                          setState(() => _selectedCategory = val),
                     ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<int>(
-                    value: _selectedReminderDays,
+                    initialValue: _selectedReminderDays,
                     decoration: const InputDecoration(
                       labelText: 'Нагадувати',
                       prefixIcon: Icon(Icons.notifications_active_outlined),
@@ -413,7 +434,8 @@ class _AddEditSubscriptionScreenState extends State<AddEditSubscriptionScreen> {
                           ),
                         )
                         .toList(),
-                    onChanged: (val) => setState(() => _selectedReminderDays = val ?? 1),
+                    onChanged: (val) =>
+                        setState(() => _selectedReminderDays = val ?? 1),
                   ),
                   const SizedBox(height: 24),
                   TextFormField(
@@ -449,7 +471,8 @@ class _AddEditSubscriptionScreenState extends State<AddEditSubscriptionScreen> {
                     ),
                     value: _isActive,
                     onChanged: (val) => setState(() => _isActive = val),
-                    tileColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    tileColor:
+                        Theme.of(context).colorScheme.surfaceContainerHighest,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),

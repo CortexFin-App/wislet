@@ -3,18 +3,28 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:wislet/utils/l10n_helpers.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:wislet/app_providers.dart';
+import 'package:wislet/core/bootstrap/supabase_env.dart';
 import 'package:wislet/core/di/injector.dart';
 import 'package:wislet/l10n/app_localizations.dart' as sw;
 import 'package:wislet/screens/app_navigation_shell.dart';
 import 'package:wislet/screens/onboarding/onboarding_gate.dart';
+import 'package:wislet/utils/l10n_helpers.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+await Supabase.initialize(
+  url: SupabaseEnv.url,
+  anonKey: SupabaseEnv.anon,
+);
+
   await configureDependencies();
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => LanguageProvider()..load(),
+   MultiProvider(
+    providers: 
+      buildAppProviders(),
       child: const MyApp(),
     ),
   );
@@ -45,7 +55,8 @@ final _router = GoRouter(
   initialLocation: '/home',
   routes: [
     StatefulShellRoute.indexedStack(
-      builder: (context, state, navigationShell) => AppNavigationShell(shell: navigationShell),
+      builder: (context, state, navigationShell) =>
+          AppNavigationShell(shell: navigationShell),
       branches: [
         StatefulShellBranch(
           routes: [
@@ -95,7 +106,8 @@ class MyApp extends StatelessWidget {
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
-        onGenerateTitle: (context) => sw.AppLocalizations.of(context)!.t('app_title'),
+        onGenerateTitle: (context) =>
+            sw.AppLocalizations.of(context)!.t('app_title'),
         routerConfig: _router,
         debugShowCheckedModeBanner: false,
         theme: ThemeData(useMaterial3: true),

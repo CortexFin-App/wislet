@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
@@ -51,14 +51,14 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('РќР°РІРµРґС–С‚СЊ РЅР° QR-РєРѕРґ'),
+        title: const Text('Наведіть на QR-код'),
         actions: [
           ValueListenableBuilder<bool>(
             valueListenable: _isTorchOn,
             builder: (context, isTorchOn, child) {
               return IconButton(
                 icon: Icon(isTorchOn ? Icons.flash_on : Icons.flash_off),
-                tooltip: 'Р›С–С…С‚Р°СЂРёРє',
+                tooltip: 'Ліхтарик',
                 onPressed: () async {
                   await _scannerController.toggleTorch();
                   _isTorchOn.value = !_isTorchOn.value;

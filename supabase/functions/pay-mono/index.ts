@@ -5,7 +5,7 @@
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const MONO_TOKEN   = Deno.env.get("MONO_TOKEN")!;
 const PUBLIC_BASE  = Deno.env.get("PUBLIC_BASE") || "https://cortexfinapp.com";
-const FUNCTIONS_BASE = `${SUPABASE_URL.replace(".supabase.co","").replace("https://","https://")}.functions.supabase.co`;
+const FUNCTIONS_BASE = `${SUPABASE_URL.replace(".supabase.co","")}.functions.supabase.co`;
 
 const cors = {
   "Access-Control-Allow-Origin": "*",

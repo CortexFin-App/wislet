@@ -1,4 +1,4 @@
-import 'package:collection/collection.dart';
+﻿import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:wislet/core/di/injector.dart';
@@ -24,18 +24,18 @@ class _AddEditLiabilityScreenState extends State<AddEditLiabilityScreen> {
   late TextEditingController _nameController;
   late TextEditingController _amountController;
 
-  String _selectedType = 'РљСЂРµРґРёС‚';
+  String _selectedType = 'Кредит';
   Currency? _selectedCurrency;
   bool _isSaving = false;
 
   bool get _isEditing => widget.liabilityToEdit != null;
 
   final List<String> _liabilityTypes = [
-    'Р†РїРѕС‚РµРєР°',
-    'РђРІС‚РѕРєСЂРµРґРёС‚',
-    'РЎРїРѕР¶РёРІС‡РёР№ РєСЂРµРґРёС‚',
-    'Р‘РѕСЂРі',
-    'Р†РЅС€Рµ',
+    'Іпотека',
+    'Автокредит',
+    'Споживчий кредит',
+    'Борг',
+    'Інше',
   ];
 
   @override
@@ -77,7 +77,7 @@ class _AddEditLiabilityScreenState extends State<AddEditLiabilityScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
-              'РџРѕРјРёР»РєР°: РЅРµРјРѕР¶Р»РёРІРѕ Р·Р±РµСЂРµРіС‚Рё. РђРєС‚РёРІРЅРёР№ РіР°РјР°РЅРµС†СЊ Р°Р±Рѕ РєРѕСЂРёСЃС‚СѓРІР°С‡ РЅРµ Р·РЅР°Р№РґРµРЅРѕ.',
+              'Помилка: неможливо зберегти. Активний гаманець або користувач не знайдено.',
             ),
           ),
         );
@@ -108,7 +108,7 @@ class _AddEditLiabilityScreenState extends State<AddEditLiabilityScreen> {
     } on Exception catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('РџРѕРјРёР»РєР° Р·Р±РµСЂРµР¶РµРЅРЅСЏ: $e')),
+          SnackBar(content: Text('Помилка збереження: $e')),
         );
       }
     } finally {
@@ -123,9 +123,7 @@ class _AddEditLiabilityScreenState extends State<AddEditLiabilityScreen> {
     return PatternedScaffold(
       appBar: AppBar(
         title: Text(
-          _isEditing
-              ? 'Р РµРґР°РіСѓРІР°С‚Рё РџР°СЃРёРІ'
-              : 'РќРѕРІРёР№ РџР°СЃРёРІ',
+          _isEditing ? 'Редагувати Пасив' : 'Новий Пасив',
         ),
       ),
       body: Form(
@@ -137,17 +135,17 @@ class _AddEditLiabilityScreenState extends State<AddEditLiabilityScreen> {
               controller: _nameController,
               decoration: const InputDecoration(
                 labelText:
-                    'РќР°Р·РІР° РїР°СЃРёРІСѓ (РЅР°РїСЂ., Р†РїРѕС‚РµРєР° РІ РџСЂРёРІР°С‚Р‘Р°РЅРєСѓ)',
+                    'Назва пасиву (напр., Іпотека в ПриватБанку)',
               ),
               validator: (value) => value == null || value.trim().isEmpty
-                  ? 'Р’РІРµРґС–С‚СЊ РЅР°Р·РІСѓ'
+                  ? 'Введіть назву'
                   : null,
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
-              value: _selectedType,
+              initialValue: _selectedType,
               decoration:
-                  const InputDecoration(labelText: 'РўРёРї РїР°СЃРёРІСѓ'),
+                  const InputDecoration(labelText: 'Тип пасиву'),
               items: _liabilityTypes
                   .map(
                     (type) => DropdownMenuItem(value: type, child: Text(type)),
@@ -162,15 +160,15 @@ class _AddEditLiabilityScreenState extends State<AddEditLiabilityScreen> {
                 Expanded(
                   child: TextFormField(
                     controller: _amountController,
-                    decoration: const InputDecoration(labelText: 'РЎСѓРјР°'),
+                    decoration: const InputDecoration(labelText: 'Сума'),
                     keyboardType:
                         const TextInputType.numberWithOptions(decimal: true),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Р’РІРµРґС–С‚СЊ СЃСѓРјСѓ';
+                        return 'Введіть суму';
                       }
                       if (double.tryParse(value.replaceAll(',', '.')) == null) {
-                        return 'РќРµРІС–СЂРЅРµ С‡РёСЃР»Рѕ';
+                        return 'Невірне число';
                       }
                       return null;
                     },
@@ -179,9 +177,9 @@ class _AddEditLiabilityScreenState extends State<AddEditLiabilityScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: DropdownButtonFormField<Currency>(
-                    value: _selectedCurrency,
+                    initialValue: _selectedCurrency,
                     decoration:
-                        const InputDecoration(labelText: 'Р’Р°Р»СЋС‚Р°'),
+                        const InputDecoration(labelText: 'Валюта'),
                     items: appCurrencies
                         .map(
                           (c) =>
@@ -200,8 +198,8 @@ class _AddEditLiabilityScreenState extends State<AddEditLiabilityScreen> {
                   ? const CircularProgressIndicator(color: Colors.white)
                   : Text(
                       _isEditing
-                          ? 'Р—Р±РµСЂРµРіС‚Рё Р·РјС–РЅРё'
-                          : 'РЎС‚РІРѕСЂРёС‚Рё РїР°СЃРёРІ',
+                          ? 'Зберегти зміни'
+                          : 'Створити пасив',
                     ),
             ),
           ],

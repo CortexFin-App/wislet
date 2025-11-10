@@ -1,6 +1,7 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:table_calendar/table_calendar.dart';
 import 'package:wislet/core/di/injector.dart';
 import 'package:wislet/data/repositories/plan_repository.dart';
 import 'package:wislet/models/plan_view_data.dart';
@@ -8,7 +9,6 @@ import 'package:wislet/providers/currency_provider.dart';
 import 'package:wislet/providers/wallet_provider.dart';
 import 'package:wislet/screens/planning/add_edit_plan_screen.dart';
 import 'package:wislet/utils/fade_page_route.dart';
-import 'package:table_calendar/table_calendar.dart';
 
 class PlansCalendarView extends StatefulWidget {
   const PlansCalendarView({super.key});
@@ -58,7 +58,7 @@ class _PlansCalendarViewState extends State<PlansCalendarView> {
         builder: (_) => AddEditPlanScreen(initialDate: _focusedDay),
       ),
     );
-    if (result == true && mounted) {
+    if ((result ?? false) && mounted) {
       await _loadPlans();
     }
   }

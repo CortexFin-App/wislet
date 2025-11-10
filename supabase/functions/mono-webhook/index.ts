@@ -4,7 +4,7 @@
 // Приймає callback від monobank і викликає admin-manual-convert
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const ADMIN_KEY    = Deno.env.get("ADMIN_EXPORT_KEYS")!;
-const FUNCTIONS_BASE = `${SUPABASE_URL.replace(".supabase.co","").replace("https://","https://")}.functions.supabase.co`;
+const FUNCTIONS_BASE = `${SUPABASE_URL.replace(".supabase.co","")}.functions.supabase.co`;
 
 // TODO: валідація X-Signature за докою mono (якщо ввімкнена)
 function verifyMono(_req:Request, _body:any){ return true; }
