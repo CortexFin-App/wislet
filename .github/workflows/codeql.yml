@@ -6,7 +6,8 @@ on:
   pull_request:
     branches: [ "main" ]
   schedule:
-    - cron: "0 3 * * 1" # щопонеділка
+    - cron: "0 3 * * 1" # щопонеділка о 03:00 UTC
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -31,6 +32,7 @@ jobs:
           languages: javascript, typescript
           queries: security-extended,security-and-quality
 
+      # Опційно для JS/TS
       - name: Autobuild
         uses: github/codeql-action/autobuild@v3
 
@@ -50,7 +52,7 @@ jobs:
         uses: github/codeql-action/init@v3
         with:
           languages: cpp
-          # без білду, щоб не падало якщо немає toolchain/скриптів білду
+          # без білду — щоб не падало, якщо немає toolchain/скриптів
           build-mode: none
           queries: security-extended,security-and-quality
 
@@ -61,7 +63,7 @@ jobs:
   flutter-analyze:
     name: Flutter Analyze
     runs-on: ubuntu-latest
-    if: ${{ hashFiles('/pubspec.yaml') != '' }}
+    if: ${{ hashFiles('pubspec.yaml') != '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -75,7 +77,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.pub-cache
-          key: ${{ runner.os }}-pub-${{ hashFiles('/pubspec.yaml') }}
+          key: ${{ runner.os }}-pub-${{ hashFiles('pubspec.yaml') }}
 
       - name: Install dependencies
         run: flutter pub get
