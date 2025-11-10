@@ -1,12 +1,13 @@
-name: Static Analysis
+name: "CodeQL"
 
 on:
   push:
-    branches: [ "main", "develop", "**" ]   # тригеримо будь-які гілки
-  pull_request: {}                          # для всіх PR
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main", "develop" ]
+  workflow_dispatch: {}
   schedule:
-    - cron: "0 3 * * 1"                     # щопонеділка
-  workflow_dispatch: {}                     # ручний запуск
+    - cron: "0 3 * * 1" # щопонеділка о 03:00 UTC
 
 permissions:
   contents: read
@@ -17,7 +18,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # ---------- JS/TS: завжди ----------
+  # ---------- CodeQL for JS/TS ----------
   codeql-js:
     name: CodeQL (JS/TS)
     runs-on: ubuntu-latest
@@ -56,11 +57,11 @@ jobs:
       - name: Analyze
         uses: github/codeql-action/analyze@v3
 
-  # ---------- Flutter Analyze: якщо є pubspec.yaml ----------
+  # ---------- Flutter Analyze (опціонально, якщо є pubspec.yaml) ----------
   flutter-analyze:
     name: Flutter Analyze
     runs-on: ubuntu-latest
-    if: ${{ hashFiles('pubspec.yaml') != '' }}   # або '**/pubspec.yaml', якщо файл у підтеці
+    if: ${{ hashFiles('**/pubspec.yaml') != '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -74,7 +75,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.pub-cache
-          key: ${{ runner.os }}-pub-${{ hashFiles('pubspec.yaml') }}
+          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock', '**/pubspec.yaml') }}
 
       - name: Install dependencies
         run: flutter pub get
