@@ -92,13 +92,17 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           flutter-version: "3.24.3"
+          channel: stable
+
+      - name: Verify Flutter version
+        run: flutter --version
 
       - name: Enable pub cache
         if: ${{ steps.detect_flutter.outputs.has == 'true' }}
         uses: actions/cache@v4
         with:
           path: ~/.pub-cache
-          key: ${{ runner.os }}-pub-${{ hashFiles('pubspec.yaml') }}
+          key: ${{ runner.os }}-pub-v2-${{ hashFiles('pubspec.yaml') }}
 
       - name: Install dependencies
         if: ${{ steps.detect_flutter.outputs.has == 'true' }}
