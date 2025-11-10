@@ -27,7 +27,8 @@ class AnalyticsService {
       final now = DateTime.now();
       final threeMonthsAgo = DateTime(now.year, now.month - 3, now.day);
 
-      final recentTransactionsEither = await _transactionRepo.getTransactionsWithDetails(
+      final recentTransactionsEither =
+          await _transactionRepo.getTransactionsWithDetails(
         walletId: walletId,
         startDate: threeMonthsAgo,
         endDate: now,
@@ -53,7 +54,8 @@ class AnalyticsService {
           final averageMonthlySpending = totalSpendingLast3Months / 3;
 
           final startOfCurrentMonth = DateTime(now.year, now.month);
-          final currentMonthSpendingEither = await _transactionRepo.getTotalAmount(
+          final currentMonthSpendingEither =
+              await _transactionRepo.getTotalAmount(
             walletId: walletId,
             startDate: startOfCurrentMonth,
             endDate: now,
@@ -68,9 +70,10 @@ class AnalyticsService {
               );
             },
             (currentMonthSpending) async {
-              if (averageMonthlySpending > 100 && currentMonthSpending > (averageMonthlySpending * 2.5)) {
-                final categoryNameEither =
-                    await _categoryRepo.getCategoryNameById(transaction.categoryId);
+              if (averageMonthlySpending > 100 &&
+                  currentMonthSpending > (averageMonthlySpending * 2.5)) {
+                final categoryNameEither = await _categoryRepo
+                    .getCategoryNameById(transaction.categoryId);
 
                 final categoryName = categoryNameEither.fold(
                   (l) => 'Невідома категорія',

@@ -1,4 +1,4 @@
-import 'package:intl/intl.dart';
+﻿import 'package:intl/intl.dart';
 import 'package:wislet/models/receipt_parse_result.dart';
 
 class ReceiptParser {
@@ -27,7 +27,7 @@ class ReceiptParser {
       return ParseResult(
         totalAmount: amount,
         date: date,
-        merchantName: fiscalNumber != null ? 'Р§РµРє QR: $fiscalNumber' : null,
+        merchantName: fiscalNumber != null ? 'Чек QR: $fiscalNumber' : null,
       );
     } on Exception {
       return parseFromText(qrData);
@@ -53,7 +53,7 @@ class ReceiptParser {
         totalAmount: amount,
         date: date,
         merchantName:
-            fiscalNumber != null ? 'Р§РµРє Р”РџРЎ: $fiscalNumber' : null,
+            fiscalNumber != null ? 'Чек ДПС: $fiscalNumber' : null,
       );
     } on Exception {
       return parseFromText(url);

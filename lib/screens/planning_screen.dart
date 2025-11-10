@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:wislet/screens/budgets/budgets_list_screen.dart';
 import 'package:wislet/screens/financial_goals/financial_goals_list_screen.dart';
 import 'package:wislet/screens/planning/plans_calendar_view.dart';
@@ -35,9 +35,9 @@ class _PlanningScreenState extends State<PlanningScreen>
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
-            Tab(text: 'Р‘СЋРґР¶РµС‚Рё'),
-            Tab(text: 'РџР»Р°РЅРё'),
-            Tab(text: 'Р¦С–Р»С–'),
+            Tab(text: 'Бюджети'),
+            Tab(text: 'Плани'),
+            Tab(text: 'Цілі'),
           ],
         ),
       ),

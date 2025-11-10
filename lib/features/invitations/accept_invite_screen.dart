@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:wislet/features/invitations/invitations_repository.dart';
 
@@ -38,12 +38,14 @@ class _AcceptInviteScreenState extends State<AcceptInviteScreen> {
                       setState(() => busy = true);
                       try {
                         final repo = context.read<InvitationsRepository>();
+                        final messenger = ScaffoldMessenger.of(context);
+                        final navigator = Navigator.of(context);
                         await repo.acceptInvitation(controller.text.trim());
                         if (!mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(
+                        messenger.showSnackBar(
                           const SnackBar(content: Text('Інвайт прийнято')),
                         );
-                        Navigator.pop(context, true);
+                        navigator.pop(true);
                       } finally {
                         if (mounted) setState(() => busy = false);
                       }

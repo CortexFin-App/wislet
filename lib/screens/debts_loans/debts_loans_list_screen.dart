@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:wislet/core/di/injector.dart';
@@ -21,6 +21,7 @@ class _DebtsLoansListScreenState extends State<DebtsLoansListScreen>
   final DebtLoanRepository _repository = getIt<DebtLoanRepository>();
   Stream<List<DebtLoan>>? _debtsStream;
   late TabController _tabController;
+
   @override
   void initState() {
     super.initState();
@@ -64,13 +65,13 @@ class _DebtsLoansListScreenState extends State<DebtsLoansListScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Р‘РѕСЂРіРё С‚Р° РљСЂРµРґРёС‚Рё'),
+        title: const Text('Борги та Кредити'),
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: AppPalette.darkAccent,
           tabs: const [
-            Tab(text: 'РЇ РІРёРЅРµРЅ'),
-            Tab(text: 'РњРµРЅС– РІРёРЅРЅС–'),
+            Tab(text: 'Я винен'),
+            Tab(text: 'Мені винні'),
           ],
         ),
       ),
@@ -84,7 +85,7 @@ class _DebtsLoansListScreenState extends State<DebtsLoansListScreen>
           if (snapshot.hasError) {
             return Center(
               child: Text(
-                'РџРѕРјРёР»РєР° Р·Р°РІР°РЅС‚Р°Р¶РµРЅРЅСЏ: ${snapshot.error}',
+                'Помилка завантаження: ${snapshot.error}',
               ),
             );
           }
@@ -128,7 +129,7 @@ class _DebtsLoansListScreenState extends State<DebtsLoansListScreen>
             ),
             const SizedBox(height: 16),
             const Text(
-              'Р—Р°РїРёСЃС–РІ РїСЂРѕ Р±РѕСЂРіРё С‡Рё РєСЂРµРґРёС‚Рё РЅРµРјР°С”',
+              'Записів про борги чи кредити немає',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 18),
             ),
@@ -141,7 +142,7 @@ class _DebtsLoansListScreenState extends State<DebtsLoansListScreen>
   Widget _buildList(List<DebtLoan> items) {
     if (items.isEmpty) {
       return const Center(
-        child: Text('РЈ С†С–Р№ РєР°С‚РµРіРѕСЂС–С— РЅРµРјР°С” Р·Р°РїРёСЃС–РІ.'),
+        child: Text('У цій категорії немає записів.'),
       );
     }
     return ListView.builder(
@@ -195,7 +196,7 @@ class _DebtsLoansListScreenState extends State<DebtsLoansListScreen>
                 ),
                 if (item.dueDate != null)
                   Text(
-                    'Р”Рѕ: ${DateFormat('dd.MM.yyyy').format(item.dueDate!)}',
+                    'До: ${DateFormat('dd.MM.yyyy').format(item.dueDate!)}',
                     style: TextStyle(
                       color: !item.isSettled &&
                               item.dueDate!.isBefore(DateTime.now())

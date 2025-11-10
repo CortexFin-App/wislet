@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:fl_chart/fl_chart.dart';
@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:wislet/core/di/injector.dart';
 import 'package:wislet/data/repositories/transaction_repository.dart';
 import 'package:wislet/providers/currency_provider.dart';
@@ -14,8 +16,6 @@ import 'package:wislet/providers/wallet_provider.dart';
 import 'package:wislet/services/detailed_report_service.dart';
 import 'package:wislet/services/report_generation_service.dart';
 import 'package:wislet/widgets/scaffold/patterned_scaffold.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:shimmer/shimmer.dart';
 
 class DetailedReportsScreen extends StatefulWidget {
   const DetailedReportsScreen({super.key});
@@ -96,9 +96,8 @@ class _DetailedReportsScreenState extends State<DetailedReportsScreen> {
     final walletId = walletProvider.currentWallet?.id;
     if (walletId == null) return;
 
-    final messenger = ScaffoldMessenger.of(context);
-    messenger.showSnackBar(
-      const SnackBar(content: Text('Р“РµРЅРµСЂР°С†С–СЏ Р·РІС–С‚Сѓ...')),
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Генерація звіту...')),
     );
 
     try {
@@ -137,15 +136,18 @@ class _DetailedReportsScreenState extends State<DetailedReportsScreen> {
           final file =
               await File('${tempDir.path}/$fileName').writeAsBytes(fileBytes);
 
-          await Share.shareXFiles(
-            [XFile(file.path, mimeType: mimeType)],
-            subject: 'Р¤С–РЅР°РЅСЃРѕРІРёР№ Р·РІС–С‚',
+          await SharePlus.instance.share(
+            ShareParams(
+              files: [XFile(file.path, mimeType: mimeType)],
+              subject: 'Фінансовий звіт',
+            ),
           );
         },
       );
     } on Exception catch (e) {
-      messenger.showSnackBar(
-        SnackBar(content: Text('РџРѕРјРёР»РєР° РµРєСЃРїРѕСЂС‚Сѓ: $e')),
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Помилка експорту: $e')),
       );
     }
   }
@@ -154,9 +156,9 @@ class _DetailedReportsScreenState extends State<DetailedReportsScreen> {
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Р•РєСЃРїРѕСЂС‚ Р·РІС–С‚Сѓ'),
+        title: const Text('Експорт звіту'),
         content: const Text(
-          'РћР±РµСЂС–С‚СЊ С„РѕСЂРјР°С‚ С„Р°Р№Р»Сѓ РґР»СЏ РµРєСЃРїРѕСЂС‚Сѓ.',
+          'Оберіть формат файлу для експорту.',
         ),
         actions: [
           TextButton(
@@ -182,12 +184,12 @@ class _DetailedReportsScreenState extends State<DetailedReportsScreen> {
   Widget build(BuildContext context) {
     return PatternedScaffold(
       appBar: AppBar(
-        title: const Text('Р”РµС‚Р°Р»СЊРЅС– Р·РІС–С‚Рё'),
+        title: const Text('Детальні звіти'),
         actions: [
           IconButton(
             icon: const Icon(Icons.ios_share_outlined),
             onPressed: _showExportDialog,
-            tooltip: 'Р•РєСЃРїРѕСЂС‚',
+            tooltip: 'Експорт',
           ),
         ],
       ),
@@ -203,7 +205,7 @@ class _DetailedReportsScreenState extends State<DetailedReportsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'РџРµСЂС–РѕРґ:',
+                        'Період:',
                         style: Theme.of(context).textTheme.labelLarge,
                       ),
                       Text(
@@ -216,7 +218,7 @@ class _DetailedReportsScreenState extends State<DetailedReportsScreen> {
                 ),
                 ElevatedButton.icon(
                   icon: const Icon(Icons.calendar_today, size: 18),
-                  label: const Text('Р—РјС–РЅРёС‚Рё'),
+                  label: const Text('Змінити'),
                   onPressed: _pickDateRange,
                 ),
               ],
@@ -234,20 +236,20 @@ class _DetailedReportsScreenState extends State<DetailedReportsScreen> {
                 if (snapshot.hasError) {
                   return Center(
                     child: Text(
-                      'РџРѕРјРёР»РєР° РіРµРЅРµСЂР°С†С–С— Р·РІС–С‚Сѓ: ${snapshot.error}',
+                      'Помилка генерації звіту: ${snapshot.error}',
                     ),
                   );
                 }
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
                   return const Center(
                     child: Text(
-                      'РќРµРјР°С” РґР°РЅРёС… РґР»СЏ РїРѕР±СѓРґРѕРІРё Р·РІС–С‚С–РІ.',
+                      'Немає даних для побудови звітів.',
                     ),
                   );
                 }
                 final data = snapshot.data!;
 
-                return LayoutBuilder(
+                                return LayoutBuilder(
                   builder: (context, constraints) {
                     final isWideScreen =
                         constraints.maxWidth > _tabletBreakpoint;
@@ -336,7 +338,7 @@ class _DetailedReportsScreenState extends State<DetailedReportsScreen> {
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
           child: Text(
-            'РђРЅР°Р»С–Р· "РџР»Р°РЅ-Р¤Р°РєС‚"',
+            'Аналіз "План-Факт"',
             style: Theme.of(context).textTheme.titleLarge,
           ),
         ),
@@ -344,8 +346,8 @@ class _DetailedReportsScreenState extends State<DetailedReportsScreen> {
           _buildSectionEmptyState(
             context,
             Icons.fact_check_outlined,
-            'РќРµРјР°С” РґР°РЅРёС… РґР»СЏ Р°РЅР°Р»С–Р·Сѓ',
-            'РџРµСЂРµРІС–СЂС‚Рµ РѕР±СЂР°РЅРёР№ РїРµСЂС–РѕРґ Р°Р±Рѕ РґРѕРґР°Р№С‚Рµ РїР»Р°РЅРё С‚Р° РІС–РґРїРѕРІС–РґРЅС– С‚СЂР°РЅР·Р°РєС†С–С—.',
+            'Немає даних для аналізу',
+            'Перевірте обраний період або додайте плани та відповідні транзакції.',
           )
         else
           ...items.map((item) {
@@ -357,7 +359,7 @@ class _DetailedReportsScreenState extends State<DetailedReportsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${item.categoryName} (${item.categoryType.name == 'income' ? 'Р”РѕС…С–Рґ' : 'Р’РёС‚СЂР°С‚Р°'})',
+                      '${item.categoryName} (${item.categoryType.name == 'income' ? 'Доход' : 'Витрата'})',
                       style: Theme.of(context)
                           .textTheme
                           .titleMedium
@@ -367,7 +369,7 @@ class _DetailedReportsScreenState extends State<DetailedReportsScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('РџР»Р°РЅ:'),
+                        const Text('План:'),
                         Text(
                           item.formattedPlannedAmount,
                           style: const TextStyle(fontWeight: FontWeight.bold),
@@ -377,7 +379,7 @@ class _DetailedReportsScreenState extends State<DetailedReportsScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Р¤Р°РєС‚:'),
+                        const Text('Факт:'),
                         Text(
                           item.formattedActualAmount,
                           style: TextStyle(
@@ -391,7 +393,7 @@ class _DetailedReportsScreenState extends State<DetailedReportsScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Р С–Р·РЅРёС†СЏ:'),
+                        const Text('Різниця:'),
                         Text(
                           item.formattedDifference,
                           style: TextStyle(
@@ -421,7 +423,7 @@ class _DetailedReportsScreenState extends State<DetailedReportsScreen> {
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
           child: Text(
-            'Р’РёС‚СЂР°С‚Рё Р·Р° РєР°С‚РµРіРѕСЂС–СЏРјРё',
+            'Витрати за категоріями',
             style: theme.textTheme.titleLarge,
           ),
         ),
@@ -429,8 +431,8 @@ class _DetailedReportsScreenState extends State<DetailedReportsScreen> {
           _buildSectionEmptyState(
             context,
             Icons.pie_chart_outline,
-            'РќРµРјР°С” РґР°РЅРёС… РґР»СЏ РґС–Р°РіСЂР°РјРё',
-            'Р”РѕРґР°Р№С‚Рµ С‚СЂР°РЅР·Р°РєС†С–С— РІРёС‚СЂР°С‚ Р·Р° РѕР±СЂР°РЅРёР№ РїРµСЂС–РѕРґ.',
+            'Немає даних для діаграми',
+            'Додайте транзакції витрат за обраний період.',
           )
         else
           SizedBox(
@@ -531,7 +533,7 @@ class _DetailedReportsScreenState extends State<DetailedReportsScreen> {
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
           child: Text(
-            'Р”РёРЅР°РјС–РєР° (РѕСЃС‚Р°РЅРЅС– 6 РјС–СЃ.)',
+            'Динаміка (останні 6 міс.)',
             style: theme.textTheme.titleLarge,
           ),
         ),
@@ -541,8 +543,8 @@ class _DetailedReportsScreenState extends State<DetailedReportsScreen> {
           _buildSectionEmptyState(
             context,
             Icons.show_chart,
-            'РќРµРјР°С” РґР°РЅРёС… РґР»СЏ РіСЂР°С„С–РєР°',
-            'Р”РѕРґР°Р№С‚Рµ С‚СЂР°РЅР·Р°РєС†С–С— Р·Р° РєС–Р»СЊРєР° РјС–СЃСЏС†С–РІ.',
+            'Немає даних для графіка',
+            'Додайте транзакції за кілька місяців.',
           )
         else
           SizedBox(
@@ -694,11 +696,11 @@ class _DetailedReportsScreenState extends State<DetailedReportsScreen> {
                                   Color spotColor;
                                   if (barSpot.barIndex == 0) {
                                     text =
-                                        'Р”РѕС…С–Рґ: ${trendDataItem.formattedIncome}';
+                                        'Доход: ${trendDataItem.formattedIncome}';
                                     spotColor = theme.colorScheme.tertiary;
                                   } else {
                                     text =
-                                        'Р’РёС‚СЂР°С‚Рё: ${trendDataItem.formattedExpense}';
+                                        'Витрати: ${trendDataItem.formattedExpense}';
                                     spotColor = theme.colorScheme.error;
                                   }
                                   return LineTooltipItem(
@@ -730,7 +732,7 @@ class _DetailedReportsScreenState extends State<DetailedReportsScreen> {
                           color: theme.colorScheme.tertiary,
                         ),
                         const SizedBox(width: 4),
-                        const Text('Р”РѕС…РѕРґРё'),
+                        const Text('Доходи'),
                       ],
                     ),
                     const SizedBox(width: 16),
@@ -742,7 +744,7 @@ class _DetailedReportsScreenState extends State<DetailedReportsScreen> {
                           color: theme.colorScheme.error,
                         ),
                         const SizedBox(width: 4),
-                        const Text('Р’РёС‚СЂР°С‚Рё'),
+                        const Text('Витрати'),
                       ],
                     ),
                   ],

@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -18,10 +18,12 @@ class AddEditFinancialGoalScreen extends StatefulWidget {
   final FinancialGoal? goalToEdit;
 
   @override
-  State<AddEditFinancialGoalScreen> createState() => _AddEditFinancialGoalScreenState();
+  State<AddEditFinancialGoalScreen> createState() =>
+      _AddEditFinancialGoalScreenState();
 }
 
-class _AddEditFinancialGoalScreenState extends State<AddEditFinancialGoalScreen> {
+class _AddEditFinancialGoalScreenState
+    extends State<AddEditFinancialGoalScreen> {
   final _formKey = GlobalKey<FormState>();
   final GoalRepository _goalRepository = getIt<GoalRepository>();
   final ExchangeRateService _exchangeRateService = getIt<ExchangeRateService>();
@@ -57,14 +59,17 @@ class _AddEditFinancialGoalScreenState extends State<AddEditFinancialGoalScreen>
         text: goal.originalTargetAmount.toStringAsFixed(2).replaceAll('.', ','),
       );
       _currentAmountController = TextEditingController(
-        text: goal.originalCurrentAmount.toStringAsFixed(2).replaceAll('.', ','),
+        text:
+            goal.originalCurrentAmount.toStringAsFixed(2).replaceAll('.', ','),
       );
       _selectedGoalCurrency = _availableCurrencies.firstWhere(
         (c) => c.code == goal.currencyCode,
-        orElse: () => _availableCurrencies.firstWhere((curr) => curr.code == _baseCurrencyCode),
+        orElse: () => _availableCurrencies
+            .firstWhere((curr) => curr.code == _baseCurrencyCode),
       );
 
-      if (goal.exchangeRateUsed != null && goal.currencyCode != _baseCurrencyCode) {
+      if (goal.exchangeRateUsed != null &&
+          goal.currencyCode != _baseCurrencyCode) {
         _currentRateInfo = ConversionRateInfo(
           rate: goal.exchangeRateUsed!,
           effectiveRateDate: goal.creationDate,
@@ -76,10 +81,12 @@ class _AddEditFinancialGoalScreenState extends State<AddEditFinancialGoalScreen>
     } else {
       _targetAmountController = TextEditingController();
       _currentAmountController = TextEditingController(text: '0');
-      final globalDisplayCurrency = context.read<CurrencyProvider>().selectedCurrency;
+      final globalDisplayCurrency =
+          context.read<CurrencyProvider>().selectedCurrency;
       _selectedGoalCurrency = _availableCurrencies.firstWhere(
         (c) => c.code == globalDisplayCurrency.code,
-        orElse: () => _availableCurrencies.firstWhere((curr) => curr.code == _baseCurrencyCode),
+        orElse: () => _availableCurrencies
+            .firstWhere((curr) => curr.code == _baseCurrencyCode),
       );
       _fetchAndSetExchangeRate(currency: _selectedGoalCurrency);
     }
@@ -133,7 +140,8 @@ class _AddEditFinancialGoalScreenState extends State<AddEditFinancialGoalScreen>
   }
 
   Future<void> _pickTargetDate() async {
-    var initialDatePickerDate = _targetDate ?? DateTime.now().add(const Duration(days: 30));
+    var initialDatePickerDate =
+        _targetDate ?? DateTime.now().add(const Duration(days: 30));
     if (_targetDate == null && initialDatePickerDate.isBefore(DateTime.now())) {
       initialDatePickerDate = DateTime.now().add(const Duration(days: 30));
     }
@@ -165,9 +173,11 @@ class _AddEditFinancialGoalScreenState extends State<AddEditFinancialGoalScreen>
 
     final name = _nameController.text.trim();
     final originalTargetAmount =
-        double.tryParse(_targetAmountController.text.replaceAll(',', '.')) ?? 0.0;
+        double.tryParse(_targetAmountController.text.replaceAll(',', '.')) ??
+            0.0;
     final originalCurrentAmount =
-        double.tryParse(_currentAmountController.text.replaceAll(',', '.')) ?? 0.0;
+        double.tryParse(_currentAmountController.text.replaceAll(',', '.')) ??
+            0.0;
     final notes = _notesController.text.trim();
 
     if (_selectedGoalCurrency == null ||
@@ -208,7 +218,7 @@ class _AddEditFinancialGoalScreenState extends State<AddEditFinancialGoalScreen>
         ? await _goalRepository.updateFinancialGoal(goalToSave)
         : await _goalRepository.createFinancialGoal(goalToSave, walletId);
 
-    result.fold(
+    await result.fold(
       (failure) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -221,7 +231,8 @@ class _AddEditFinancialGoalScreenState extends State<AddEditFinancialGoalScreen>
       (savedGoalId) async {
         final targetDateReminderId = savedGoalId * 10000 + 1;
         if (_isEditing && widget.goalToEdit?.id != null) {
-          await _notificationService.cancelNotification(widget.goalToEdit!.id! * 10000 + 1);
+          await _notificationService
+              .cancelNotification(widget.goalToEdit!.id! * 10000 + 1);
         }
 
         if (goalToSave.targetDate != null && !goalToSave.isAchieved) {
@@ -271,8 +282,9 @@ class _AddEditFinancialGoalScreenState extends State<AddEditFinancialGoalScreen>
                 labelText: 'Назва цілі',
                 prefixIcon: Icon(Icons.flag_outlined),
               ),
-              validator: (value) =>
-                  (value == null || value.trim().isEmpty) ? 'Будь ласка, введіть назву цілі' : null,
+              validator: (value) => (value == null || value.trim().isEmpty)
+                  ? 'Будь ласка, введіть назву цілі'
+                  : null,
             ),
             const SizedBox(height: 24),
             Row(
@@ -288,12 +300,14 @@ class _AddEditFinancialGoalScreenState extends State<AddEditFinancialGoalScreen>
                         color: Theme.of(context).colorScheme.secondary,
                       ),
                     ),
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Введіть суму';
                       }
-                      final amount = double.tryParse(value.replaceAll(',', '.'));
+                      final amount =
+                          double.tryParse(value.replaceAll(',', '.'));
                       if (amount == null || amount <= 0) {
                         return 'Сума має бути більшою за нуль';
                       }
@@ -304,7 +318,7 @@ class _AddEditFinancialGoalScreenState extends State<AddEditFinancialGoalScreen>
                 const SizedBox(width: 16),
                 Expanded(
                   child: DropdownButtonFormField<Currency>(
-                    value: _selectedGoalCurrency,
+                    initialValue: _selectedGoalCurrency,
                     decoration: const InputDecoration(labelText: 'Валюта'),
                     items: _availableCurrencies.map((currency) {
                       return DropdownMenuItem<Currency>(
@@ -334,12 +348,17 @@ class _AddEditFinancialGoalScreenState extends State<AddEditFinancialGoalScreen>
                   ),
                 ),
               ),
-            if (!_isFetchingRate && _currentRateInfo != null && _selectedGoalCurrency?.code != _baseCurrencyCode)
+            if (!_isFetchingRate &&
+                _currentRateInfo != null &&
+                _selectedGoalCurrency?.code != _baseCurrencyCode)
               Padding(
                 padding: const EdgeInsets.only(top: 8, left: 8),
                 child: Text(
                   '1 ${_selectedGoalCurrency!.code} ≈ ${_currentRateInfo!.rate.toStringAsFixed(4)} $_baseCurrencyCode',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppPalette.darkSecondaryText),
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: AppPalette.darkSecondaryText),
                 ),
               ),
             const SizedBox(height: 24),
@@ -349,7 +368,8 @@ class _AddEditFinancialGoalScreenState extends State<AddEditFinancialGoalScreen>
                 labelText: 'Вже накопичено',
                 prefixIcon: Icon(Icons.account_balance_wallet_outlined),
               ),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return 'Введіть поточну суму (може бути 0)';
@@ -363,7 +383,8 @@ class _AddEditFinancialGoalScreenState extends State<AddEditFinancialGoalScreen>
             ),
             const SizedBox(height: 24),
             ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:wislet/models/wallet.dart';
 import 'package:wislet/providers/wallet_provider.dart';
@@ -26,7 +26,7 @@ class _AddEditWalletScreenState extends State<AddEditWalletScreen> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(
-      text: widget.walletToEdit?.name ?? 'РћСЃРѕР±РёСЃС‚РёР№',
+      text: widget.walletToEdit?.name ?? 'Особистий',
     );
   }
 
@@ -63,7 +63,7 @@ class _AddEditWalletScreenState extends State<AddEditWalletScreen> {
     } on Exception catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('РџРѕРјРёР»РєР°: $e')),
+          SnackBar(content: Text('Помилка: $e')),
         );
       }
     } finally {
@@ -80,10 +80,10 @@ class _AddEditWalletScreenState extends State<AddEditWalletScreen> {
     return AlertDialog(
       title: Text(
         widget.isFirstWallet
-            ? 'РЎС‚РІРѕСЂРёРјРѕ РІР°С€ РїРµСЂС€РёР№ РіР°РјР°РЅРµС†СЊ'
+            ? 'Створімо ваш перший гаманець'
             : (_isEditing
-                ? 'Р РµРґР°РіСѓРІР°С‚Рё РіР°РјР°РЅРµС†СЊ'
-                : 'РќРѕРІРёР№ РіР°РјР°РЅРµС†СЊ'),
+                ? 'Редагувати гаманець'
+                : 'Новий гаманець'),
       ),
       content: Form(
         key: _formKey,
@@ -91,12 +91,12 @@ class _AddEditWalletScreenState extends State<AddEditWalletScreen> {
           controller: _nameController,
           autofocus: true,
           decoration: const InputDecoration(
-            labelText: 'РќР°Р·РІР° РіР°РјР°РЅС†СЏ',
+            labelText: 'Назва гаманця',
             prefixIcon: Icon(Icons.account_balance_wallet_outlined),
           ),
           validator: (value) {
             if (value == null || value.trim().isEmpty) {
-              return 'РќР°Р·РІР° РЅРµ РјРѕР¶Рµ Р±СѓС‚Рё РїРѕСЂРѕР¶РЅСЊРѕСЋ';
+              return 'Назва не може бути порожньою';
             }
             return null;
           },
@@ -106,7 +106,7 @@ class _AddEditWalletScreenState extends State<AddEditWalletScreen> {
         if (!widget.isFirstWallet)
           TextButton(
             onPressed: _isSaving ? null : Navigator.of(context).pop,
-            child: const Text('РЎРєР°СЃСѓРІР°С‚Рё'),
+            child: const Text('Скасувати'),
           ),
         ElevatedButton(
           onPressed: _isSaving ? null : _saveWallet,
@@ -118,10 +118,10 @@ class _AddEditWalletScreenState extends State<AddEditWalletScreen> {
                 )
               : Text(
                   _isEditing
-                      ? 'Р—Р±РµСЂРµРіС‚Рё'
+                      ? 'Зберегти'
                       : (widget.isFirstWallet
-                          ? 'РЎС‚РІРѕСЂРёС‚Рё'
-                          : 'РЎС‚РІРѕСЂРёС‚Рё'),
+                          ? 'Створити'
+                          : 'Створити'),
                 ),
         ),
       ],

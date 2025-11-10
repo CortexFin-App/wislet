@@ -1,10 +1,11 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wislet/core/constants/app_constants.dart';
 import 'package:wislet/core/di/injector.dart';
 import 'package:wislet/data/repositories/budget_repository.dart';
@@ -28,7 +29,6 @@ import 'package:wislet/services/exchange_rate_service.dart';
 import 'package:wislet/services/ocr_service.dart';
 import 'package:wislet/services/receipt_parser.dart';
 import 'package:wislet/widgets/scaffold/patterned_scaffold.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 enum _TransactionScreenMode { expense, income, transfer }
 
@@ -199,7 +199,7 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'РџРѕРјРёР»РєР°: РЅРµ РІРґР°Р»РѕСЃСЏ РІРёР·РЅР°С‡РёС‚Рё РіР°РјР°РЅРµС†СЊ Р°Р±Рѕ РєРѕСЂРёСЃС‚СѓРІР°С‡Р°. РЎРїСЂРѕР±СѓР№С‚Рµ РїРµСЂРµР·Р°Р№С‚Рё.',
+            'Помилка: не вдалося визначити гаманець або користувача. Спробуйте перезайти.',
           ),
         ),
       );
@@ -260,9 +260,9 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
 
-    result.fold((failure) {
+    await result.fold((failure) {
       messenger.showSnackBar(
-        SnackBar(content: Text('РџРѕРјРёР»РєР°: ${failure.userMessage}')),
+        SnackBar(content: Text('Помилка: ${failure.userMessage}')),
       );
       if (mounted) setState(() => _isSaving = false);
     }, (savedId) async {
@@ -290,7 +290,7 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
           messenger.showSnackBar(
             SnackBar(
               content: Text(
-                'РўСЂР°РЅР·Р°РєС†С–СЋ Р·Р±РµСЂРµР¶РµРЅРѕ, Р°Р»Рµ СЃС‚Р°Р»Р°СЃСЏ РїРѕРјРёР»РєР°: $e',
+                'Транзакцію збережено, але сталася помилка: $e',
               ),
             ),
           );
@@ -313,7 +313,7 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
       messenger.showSnackBar(
         const SnackBar(
           content: Text(
-            'РЎРєР°РЅСѓРІР°РЅРЅСЏ С‡РµРєС–РІ РґРѕСЃС‚СѓРїРЅРµ Р»РёС€Рµ Сѓ Pro-РІРµСЂСЃС–С—.',
+            'Сканування чеків доступне лише у Pro-версії.',
           ),
         ),
       );
@@ -338,21 +338,21 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
         });
         messenger.showSnackBar(
           const SnackBar(
-            content: Text('Р”Р°РЅС– Р· С‡РµРєР° Р·Р°РїРѕРІРЅРµРЅРѕ!'),
+            content: Text('Дані з чека заповнено!'),
           ),
         );
       } else {
         messenger.showSnackBar(
           const SnackBar(
             content: Text(
-              'РќРµ РІРґР°Р»РѕСЃСЏ СЂРѕР·РїС–Р·РЅР°С‚Рё С‚РµРєСЃС‚ РЅР° Р·РѕР±СЂР°Р¶РµРЅРЅС–.',
+              'Не вдалося розпізнати текст на зображенні.',
             ),
           ),
         );
       }
     } catch (e) {
       messenger.showSnackBar(
-        SnackBar(content: Text('РџРѕРјРёР»РєР° СЃРєР°РЅСѓРІР°РЅРЅСЏ: $e')),
+        SnackBar(content: Text('Помилка сканування: $e')),
       );
     } finally {
       if (mounted) setState(() => _isScanning = false);
@@ -369,7 +369,7 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
       messenger.showSnackBar(
         const SnackBar(
           content: Text(
-            'РЎРєР°РЅСѓРІР°РЅРЅСЏ QR РґРѕСЃС‚СѓРїРЅРµ Р»РёС€Рµ Сѓ Pro-РІРµСЂСЃС–С—.',
+            'Сканування QR доступне лише у Pro-версії.',
           ),
         ),
       );
@@ -383,8 +383,9 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
       final parsedData = _receiptParser.parseQrCode(result);
       setState(() {
         if (parsedData.totalAmount != null) {
-          _amountController.text =
-              parsedData.totalAmount!.toStringAsFixed(2).replaceAll('.', ',');
+          _amountController.text = parsedData.totalAmount!
+              .toStringAsFixed(2)
+              .replaceAll('.', ',');
         }
         if (parsedData.date != null) {
           _selectedDate = parsedData.date!;
@@ -395,7 +396,7 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
       });
       messenger.showSnackBar(
         const SnackBar(
-          content: Text('Р”Р°РЅС– Р· QR-РєРѕРґСѓ Р·Р°РїРѕРІРЅРµРЅРѕ!'),
+          content: Text('Дані з QR-коду заповнено!'),
         ),
       );
     }
@@ -465,7 +466,7 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'РќРµ РІРґР°Р»РѕСЃСЏ РѕС‚СЂРёРјР°С‚Рё РєСѓСЂСЃ РґР»СЏ ${targetCurrency.code}',
+              'Не вдалося отримати курс для ${targetCurrency.code}',
             ),
           ),
         );
@@ -532,7 +533,7 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
     final appModeProvider = context.watch<AppModeProvider>();
 
     final isUserAvailable =
-        appModeProvider.isOnline ? authService.currentUser != null : true;
+        !appModeProvider.isOnline || authService.currentUser != null;
     final isRateReady = _selectedInputCurrency?.code == _baseCurrencyCode ||
         (_currentRateInfo != null && !_isLoadingRate);
     final canSave = !_isSaving &&
@@ -543,12 +544,12 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
         isRateReady;
 
     var titleText = _isEditing
-        ? 'Р РµРґР°РіСѓРІР°С‚Рё С‚СЂР°РЅР·Р°РєС†С–СЋ'
-        : 'РќРѕРІР° С‚СЂР°РЅР·Р°РєС†С–СЏ';
+        ? 'Редагувати транзакцію'
+        : 'Нова транзакція';
     if (widget.isFirstTransaction) {
       titleText = _selectedMode == _TransactionScreenMode.income
-          ? 'Р’Р°С€ РїРµСЂС€РёР№ РґРѕС…С–Рґ'
-          : 'Р’Р°С€Р° РїРµСЂС€Р° РІРёС‚СЂР°С‚Р°';
+          ? 'Ваш перший дохід'
+          : 'Ваша перша витрата';
     }
 
     return PatternedScaffold(
@@ -558,12 +559,12 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
           if (!widget.isFirstTransaction) ...[
             IconButton(
               icon: const Icon(Icons.qr_code_scanner_outlined),
-              tooltip: 'РЎРєР°РЅСѓРІР°С‚Рё QR-РєРѕРґ',
+              tooltip: 'Сканувати QR-код',
               onPressed: _scanQrCode,
             ),
             IconButton(
               icon: const Icon(Icons.camera_alt_outlined),
-              tooltip: 'РЎРєР°РЅСѓРІР°С‚Рё С‡РµРє',
+              tooltip: 'Сканувати чек',
               onPressed: _scanReceipt,
             ),
           ],
@@ -581,18 +582,18 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
                   segments: <ButtonSegment<_TransactionScreenMode>>[
                     const ButtonSegment(
                       value: _TransactionScreenMode.expense,
-                      label: Text('Р’РёС‚СЂР°С‚Р°'),
+                      label: Text('Витрата'),
                       icon: Icon(Icons.arrow_upward),
                     ),
                     const ButtonSegment(
                       value: _TransactionScreenMode.income,
-                      label: Text('Р”РѕС…С–Рґ'),
+                      label: Text('Дохід'),
                       icon: Icon(Icons.arrow_downward),
                     ),
                     if (widget.isTransferAllowed)
                       const ButtonSegment(
                         value: _TransactionScreenMode.transfer,
-                        label: Text('РџРµСЂРµРєР°Р·'),
+                        label: Text('Переказ'),
                         icon: Icon(Icons.swap_horiz),
                       ),
                   ],
@@ -608,7 +609,7 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
                             builder: (context) => const CreateTransferScreen(),
                           ),
                         );
-                        if (result == true) {
+                        if (result ?? false) {
                           WidgetsBinding.instance.addPostFrameCallback((_) {
                             if (mounted) {
                               Navigator.of(context).pop(true);
@@ -619,7 +620,8 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
                         setState(() {
                           _selectedMode = newSelection.first;
                           _loadCategoriesForType(
-                            _selectedMode == _TransactionScreenMode.income
+                            _selectedMode ==
+                                    _TransactionScreenMode.income
                                 ? fin_transaction.TransactionType.income
                                 : fin_transaction.TransactionType.expense,
                           );
@@ -632,7 +634,7 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
                 TextFormField(
                   controller: _amountController,
                   decoration: InputDecoration(
-                    labelText: 'РЎСѓРјР°',
+                    labelText: 'Сума',
                     prefixIcon: _selectedInputCurrency != null
                         ? Padding(
                             padding: const EdgeInsets.all(14),
@@ -650,14 +652,14 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
                       const TextInputType.numberWithOptions(decimal: true),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Р’РІРµРґС–С‚СЊ СЃСѓРјСѓ';
+                      return 'Введіть суму';
                     }
                     final cleanValue = value.replaceAll(',', '.');
                     if (double.tryParse(cleanValue) == null) {
-                      return 'РљРѕСЂРµРєС‚РЅРµ С‡РёСЃР»Рѕ';
+                      return 'Коректне число';
                     }
                     if (double.parse(cleanValue) <= 0) {
-                      return 'Р‘С–Р»СЊС€Рµ РЅСѓР»СЏ';
+                      return 'Більше нуля';
                     }
                     return null;
                   },
@@ -676,19 +678,19 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
                     child: Padding(
                       padding: const EdgeInsets.all(12),
                       child: Text(
-                        'РЎРїРѕС‡Р°С‚РєСѓ СЃС‚РІРѕСЂС–С‚СЊ РєР°С‚РµРіРѕСЂС–С— РґР»СЏ "${_selectedMode == _TransactionScreenMode.expense ? 'РІРёС‚СЂР°С‚' : 'РґРѕС…РѕРґС–РІ'}" РІ РЅР°Р»Р°С€С‚СѓРІР°РЅРЅСЏС….',
+                        'Спочатку створіть категорії для "${_selectedMode == _TransactionScreenMode.expense ? 'витрат' : 'доходів'}" в налаштуваннях.',
                         textAlign: TextAlign.center,
                       ),
                     ),
                   )
                 else
                   DropdownButtonFormField<Category>(
-                    value: _selectedCategory,
+                    initialValue: _selectedCategory,
                     decoration: const InputDecoration(
-                      labelText: 'РљР°С‚РµРіРѕСЂС–СЏ',
+                      labelText: 'Категорія',
                       prefixIcon: Icon(Icons.category_outlined),
                     ),
-                    hint: const Text('РћР±РµСЂС–С‚СЊ РєР°С‚РµРіРѕСЂС–СЋ'),
+                    hint: const Text('Оберіть категорію'),
                     isExpanded: true,
                     items: _availableCategories
                         .map(
@@ -704,15 +706,14 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
                         _userHasManuallySelectedCategory = true;
                       });
                     },
-                    validator: (value) => value == null
-                        ? 'РћР±РµСЂС–С‚СЊ РєР°С‚РµРіРѕСЂС–СЋ'
-                        : null,
+                    validator: (value) =>
+                        value == null ? 'Оберіть категорію' : null,
                   ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _descriptionController,
                   decoration: const InputDecoration(
-                    labelText: 'РћРїРёСЃ (РѕРїС†С–РѕРЅР°Р»СЊРЅРѕ)',
+                    labelText: 'Опис (опціонально)',
                     prefixIcon: Icon(Icons.description_outlined),
                   ),
                   maxLines: 3,
@@ -734,8 +735,8 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
                           setState(() => _showDetails = !_showDetails),
                       child: Text(
                         _showDetails
-                            ? 'РЎС…РѕРІР°С‚Рё РґРµС‚Р°Р»С–'
-                            : 'РџРѕРєР°Р·Р°С‚Рё РґРµС‚Р°Р»С–',
+                            ? 'Сховати деталі'
+                            : 'Показати деталі',
                       ),
                     ),
                     ElevatedButton(
@@ -756,7 +757,7 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
                               ),
                             )
                           : Text(
-                              _isEditing ? 'Р—Р±РµСЂРµРіС‚Рё' : 'Р”РѕРґР°С‚Рё',
+                              _isEditing ? 'Зберегти' : 'Додати',
                             ),
                     ),
                   ],
@@ -774,7 +775,7 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
                     CircularProgressIndicator(),
                     SizedBox(height: 16),
                     Text(
-                      'РћР±СЂРѕР±РєР° Р·РѕР±СЂР°Р¶РµРЅРЅСЏ...',
+                      'Обробка зображення...',
                       style: TextStyle(color: Colors.white, fontSize: 16),
                     ),
                   ],
@@ -792,16 +793,16 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
       children: [
         const Divider(height: 24),
         Text(
-          'Р”РѕРґР°С‚РєРѕРІС– РїР°СЂР°РјРµС‚СЂРё',
+          'Додаткові параметри',
           style: Theme.of(context).textTheme.titleMedium,
         ),
         const SizedBox(height: 16),
         DropdownButtonFormField<Currency>(
           decoration: const InputDecoration(
-            labelText: 'Р’Р°Р»СЋС‚Р°',
+            labelText: 'Валюта',
             prefixIcon: Icon(Icons.currency_exchange_outlined),
           ),
-          value: _selectedInputCurrency,
+          initialValue: _selectedInputCurrency,
           items: appCurrencies
               .map(
                 (Currency currency) => DropdownMenuItem<Currency>(
@@ -817,7 +818,7 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
             }
           },
           validator: (value) =>
-              value == null ? 'РћР±РµСЂС–С‚СЊ РІР°Р»СЋС‚Сѓ' : null,
+              value == null ? 'Оберіть валюту' : null,
         ),
         if (_isLoadingRate)
           const Padding(
@@ -829,7 +830,7 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
           Padding(
             padding: const EdgeInsets.only(top: 8),
             child: Text(
-              'РљСѓСЂСЃ: 1 ${_selectedInputCurrency?.code} в‰€ ${_currentRateInfo!.rate.toStringAsFixed(4)} $_baseCurrencyCode',
+              'Курс: 1 ${_selectedInputCurrency?.code} ≈ ${_currentRateInfo!.rate.toStringAsFixed(4)} $_baseCurrencyCode',
               style: Theme.of(context).textTheme.bodySmall,
               textAlign: TextAlign.center,
             ),
@@ -839,7 +840,7 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
           contentPadding: EdgeInsets.zero,
           leading: const Icon(Icons.calendar_today_outlined),
           title: Text(
-            "Р”Р°С‚Р°: ${DateFormat('dd.MM.yyyy, HH:mm').format(_selectedDate)}",
+            'Дата: ${DateFormat('dd.MM.yyyy, HH:mm').format(_selectedDate)}',
           ),
           trailing: const Icon(Icons.edit_outlined),
           onTap: () async {
@@ -864,7 +865,7 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
                     pickedTime?.minute ?? _selectedDate.minute,
                   );
                 });
-                _fetchAndSetExchangeRate(
+                await _fetchAndSetExchangeRate(
                   date: _selectedDate,
                   currency: _selectedInputCurrency,
                 );
@@ -875,9 +876,9 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
         const SizedBox(height: 16),
         if (_availableGoals.isNotEmpty)
           DropdownButtonFormField<FinancialGoal?>(
-            value: _selectedLinkedGoal,
+            initialValue: _selectedLinkedGoal,
             decoration: InputDecoration(
-              labelText: "РџСЂРёРІ'СЏР·Р°С‚Рё РґРѕ С†С–Р»С–",
+              labelText: "Прив'язати до цілі",
               border: const OutlineInputBorder(),
               prefixIcon: const Icon(Icons.flag_outlined),
               suffixIcon: _selectedLinkedGoal != null
@@ -889,10 +890,10 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
                   : null,
             ),
             isExpanded: true,
-            hint: const Text("РќРµ РїСЂРёРІ'СЏР·СѓРІР°С‚Рё"),
+            hint: const Text("Не прив'язувати"),
             items: [
               const DropdownMenuItem<FinancialGoal?>(
-                child: Text("РќРµ РїСЂРёРІ'СЏР·СѓРІР°С‚Рё РґРѕ С†С–Р»С–"),
+                child: Text("Не прив'язувати до цілі"),
               ),
               ..._availableGoals.map((FinancialGoal goal) {
                 return DropdownMenuItem<FinancialGoal?>(

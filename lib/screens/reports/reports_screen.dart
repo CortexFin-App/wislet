@@ -1,10 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:wislet/models/financial_story.dart';
 import 'package:wislet/providers/reports_provider.dart';
 import 'package:wislet/providers/wallet_provider.dart';
 import 'package:wislet/screens/reports/widgets/story_cards.dart';
-import 'package:shimmer/shimmer.dart';
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -76,7 +76,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 switch (story.type) {
                   case StoryType.topExpenses:
                     return TopExpenseStoryCard(
-                        story: story as TopExpensesStory);
+                        story: story as TopExpensesStory,);
                   case StoryType.comparison:
                     return ComparisonStoryCard(story: story as ComparisonStory);
                   case StoryType.mostExpensiveDay:
@@ -96,7 +96,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
   Widget _buildShimmerLoading(BuildContext context) {
     final base =
-        Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.4);
+        Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.4);
     final highlight = Theme.of(context).colorScheme.surfaceContainerHighest;
     return ListView(
       padding: const EdgeInsets.all(16),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:wislet/models/currency_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:wislet/models/currency_model.dart';
 
 class CurrencyProvider with ChangeNotifier {
   CurrencyProvider() {

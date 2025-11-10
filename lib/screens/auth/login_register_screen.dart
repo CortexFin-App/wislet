@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:wislet/core/di/injector.dart';
 import 'package:wislet/data/repositories/invitation_repository.dart';
@@ -34,13 +34,13 @@ class _LoginRegisterScreenState extends State<LoginRegisterScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('РћРЅР»Р°Р№РЅ-Р°РєР°СѓРЅС‚'),
+        title: const Text('Онлайн-акаунт'),
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: AppPalette.darkAccent,
           tabs: const [
-            Tab(text: 'Р’С…С–Рґ'),
-            Tab(text: 'Р РµС”СЃС‚СЂР°С†С–СЏ'),
+            Tab(text: 'Вхід'),
+            Tab(text: 'Реєстрація'),
           ],
         ),
       ),
@@ -102,15 +102,13 @@ class _AuthFormState extends State<_AuthForm> {
         await walletProvider.loadWallets();
         messenger.showSnackBar(
           const SnackBar(
-            content: Text('Р—Р°РїСЂРѕС€РµРЅРЅСЏ РїСЂРёР№РЅСЏС‚Рѕ!'),
+            content: Text('Запрошення прийнято!'),
           ),
         );
       } on Exception catch (e) {
         messenger.showSnackBar(
           SnackBar(
-            content: Text(
-              'РќРµ РІРґР°Р»РѕСЃСЏ РїСЂРёР№РЅСЏС‚Рё Р·Р°РїСЂРѕС€РµРЅРЅСЏ: $e',
-            ),
+            content: Text('Не вдалося прийняти запрошення: $e'),
           ),
         );
       }
@@ -175,20 +173,19 @@ class _AuthFormState extends State<_AuthForm> {
             ),
             const SizedBox(height: 24),
             Text(
-              'Р РµС”СЃС‚СЂР°С†С–СЏ РјР°Р№Р¶Рµ Р·Р°РІРµСЂС€РµРЅР°!',
+              'Реєстрація майже завершена!',
               style: Theme.of(context).textTheme.headlineSmall,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
             Text(
-              'РњРё РЅР°РґС–СЃР»Р°Р»Рё Р»РёСЃС‚ РЅР° ${_emailController.text} РґР»СЏ РїС–РґС‚РІРµСЂРґР¶РµРЅРЅСЏ РІР°С€РѕС— РїРѕС€С‚Рё. Р‘СѓРґСЊ Р»Р°СЃРєР°, РїРµСЂРµР№РґС–С‚СЊ Р·Р° РїРѕСЃРёР»Р°РЅРЅСЏРј Сѓ Р»РёСЃС‚С–, С‰РѕР± Р°РєС‚РёРІСѓРІР°С‚Рё Р°РєР°СѓРЅС‚.',
+              'Ми надіслали лист на ${_emailController.text} для підтвердження вашої пошти. Будь ласка, перейдіть за посиланням у листі, щоб активувати акаунт.',
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
             TextButton(
               onPressed: () => widget.tabController.animateTo(0),
-              child:
-                  const Text('РџРµСЂРµР№С‚Рё РЅР° РІРєР»Р°РґРєСѓ "Р’С…С–Рґ"'),
+              child: const Text('Перейти на вкладку "Вхід"'),
             ),
           ],
         ),
@@ -208,19 +205,19 @@ class _AuthFormState extends State<_AuthForm> {
             ),
             keyboardType: TextInputType.emailAddress,
             validator: (value) => value == null || !value.contains('@')
-                ? 'Р’РІРµРґС–С‚СЊ РєРѕСЂРµРєС‚РЅРёР№ email'
+                ? 'Введіть коректний email'
                 : null,
           ),
           const SizedBox(height: 16),
           TextFormField(
             controller: _passwordController,
             decoration: const InputDecoration(
-              labelText: 'РџР°СЂРѕР»СЊ',
+              labelText: 'Пароль',
               prefixIcon: Icon(Icons.lock_outline),
             ),
             obscureText: true,
             validator: (value) => value == null || value.length < 6
-                ? 'РџР°СЂРѕР»СЊ РјР°С” Р±СѓС‚Рё РЅРµ РјРµРЅС€Рµ 6 СЃРёРјРІРѕР»С–РІ'
+                ? 'Пароль має бути не менше 6 символів'
                 : null,
           ),
           const SizedBox(height: 24),
@@ -241,11 +238,7 @@ class _AuthFormState extends State<_AuthForm> {
                     width: 20,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : Text(
-                    widget.isLogin
-                        ? 'РЈРІС–Р№С‚Рё'
-                        : 'Р—Р°СЂРµС”СЃС‚СЂСѓРІР°С‚РёСЃСЏ',
-                  ),
+                : Text(widget.isLogin ? 'Увійти' : 'Зареєструватися'),
           ),
         ],
       ),

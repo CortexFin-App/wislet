@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:wislet/providers/dashboard_provider.dart';
 import 'package:wislet/services/financial_health_service.dart';
 
@@ -62,7 +62,7 @@ class HealthScoreWidget extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'AI-Р Р°РґРЅРёРє',
+                        'AI-Радник',
                         style: theme.textTheme.labelMedium?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),

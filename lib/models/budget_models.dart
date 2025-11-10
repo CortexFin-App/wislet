@@ -37,11 +37,19 @@ class Budget {
       name: map['name'] as String,
       startDate: DateTime.parse(map['start_date'] as String),
       endDate: DateTime.parse(map['end_date'] as String),
-      strategyType: BudgetStrategyType.values.byName(map['strategy_type'] as String),
-      plannedIncomeInBaseCurrency: (map['planned_income_in_base_currency'] as num?)?.toDouble(),
-      isActive: (map['is_active'] is bool) ? map['is_active'] as bool : (map['is_active'] as int? ?? 1) == 1,
-      updatedAt: map['updated_at'] != null ? DateTime.parse(map['updated_at'] as String) : null,
-      isDeleted: (map['is_deleted'] is bool) ? map['is_deleted'] as bool : (map['is_deleted'] as int? ?? 0) == 1,
+      strategyType:
+          BudgetStrategyType.values.byName(map['strategy_type'] as String),
+      plannedIncomeInBaseCurrency:
+          (map['planned_income_in_base_currency'] as num?)?.toDouble(),
+      isActive: (map['is_active'] is bool)
+          ? map['is_active'] as bool
+          : (map['is_active'] as int? ?? 1) == 1,
+      updatedAt: map['updated_at'] != null
+          ? DateTime.parse(map['updated_at'] as String)
+          : null,
+      isDeleted: (map['is_deleted'] is bool)
+          ? map['is_deleted'] as bool
+          : (map['is_deleted'] as int? ?? 0) == 1,
     );
   }
 
@@ -91,10 +99,15 @@ class BudgetEnvelope {
       categoryId: map['category_id'] as int,
       originalPlannedAmount: (map['original_planned_amount'] as num).toDouble(),
       originalCurrencyCode: map['original_currency_code'] as String,
-      plannedAmountInBaseCurrency: (map['planned_amount_in_base_currency'] as num).toDouble(),
+      plannedAmountInBaseCurrency:
+          (map['planned_amount_in_base_currency'] as num).toDouble(),
       exchangeRateUsed: (map['exchange_rate_used'] as num?)?.toDouble(),
-      updatedAt: map['updated_at'] != null ? DateTime.parse(map['updated_at'] as String) : null,
-      isDeleted: (map['is_deleted'] is bool) ? map['is_deleted'] as bool : (map['is_deleted'] as int? ?? 0) == 1,
+      updatedAt: map['updated_at'] != null
+          ? DateTime.parse(map['updated_at'] as String)
+          : null,
+      isDeleted: (map['is_deleted'] is bool)
+          ? map['is_deleted'] as bool
+          : (map['is_deleted'] as int? ?? 0) == 1,
     );
   }
 

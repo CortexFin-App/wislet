@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+﻿import 'package:flutter/foundation.dart';
 import 'package:wislet/models/user.dart';
 
 @immutable
@@ -9,8 +9,9 @@ class WalletUser {
   final String role;
 }
 
+@immutable
 class Wallet {
-  Wallet({
+  const Wallet({
     required this.name,
     required this.ownerUserId,
     this.id,
@@ -62,8 +63,8 @@ class Wallet {
   final String name;
   final String ownerUserId;
   final bool isDefault;
-  String? currentUserRole;
-  List<WalletUser> members;
+  final String? currentUserRole;
+  final List<WalletUser> members;
   final DateTime? updatedAt;
   final bool isDeleted;
 

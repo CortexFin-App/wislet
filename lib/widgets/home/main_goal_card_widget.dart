@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:wislet/models/currency_model.dart';
 import 'package:wislet/models/financial_goal.dart';
@@ -42,7 +42,7 @@ class MainGoalCard extends StatelessWidget {
                 Icon(Icons.flag_outlined, color: theme.colorScheme.secondary),
                 const SizedBox(width: 8),
                 Text(
-                  'Р“РѕР»РѕРІРЅР° С†С–Р»СЊ',
+                  'Головна ціль',
                   style: theme.textTheme.labelLarge
                       ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                 ),

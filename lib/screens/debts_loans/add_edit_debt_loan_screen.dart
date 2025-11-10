@@ -1,4 +1,4 @@
-import 'package:collection/collection.dart';
+﻿import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -88,7 +88,7 @@ class _AddEditDebtLoanScreenState extends State<AddEditDebtLoanScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
-              'РџРѕРјРёР»РєР°: РЅРµРјРѕР¶Р»РёРІРѕ Р·Р±РµСЂРµРіС‚Рё. РђРєС‚РёРІРЅРёР№ РіР°РјР°РЅРµС†СЊ РЅРµ Р·РЅР°Р№РґРµРЅРѕ.',
+              'Помилка: неможливо зберегти. Активний гаманець не знайдено.',
             ),
           ),
         );
@@ -125,7 +125,7 @@ class _AddEditDebtLoanScreenState extends State<AddEditDebtLoanScreen> {
     } on Exception catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('РџРѕРјРёР»РєР° Р·Р±РµСЂРµР¶РµРЅРЅСЏ: $e')),
+          SnackBar(content: Text('Помилка збереження: $e')),
         );
       }
     } finally {
@@ -140,9 +140,7 @@ class _AddEditDebtLoanScreenState extends State<AddEditDebtLoanScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          _isEditing
-              ? 'Р РµРґР°РіСѓРІР°С‚Рё Р—Р°РїРёСЃ'
-              : 'РќРѕРІРёР№ Р—Р°РїРёСЃ',
+          _isEditing ? 'Редагувати запис' : 'Новий запис',
         ),
       ),
       body: Form(
@@ -154,12 +152,12 @@ class _AddEditDebtLoanScreenState extends State<AddEditDebtLoanScreen> {
               segments: const [
                 ButtonSegment(
                   value: DebtLoanType.debt,
-                  label: Text('РЇ РІРёРЅРµРЅ'),
+                  label: Text('Я винен'),
                   icon: Icon(Icons.arrow_circle_up_rounded),
                 ),
                 ButtonSegment(
                   value: DebtLoanType.loan,
-                  label: Text('РњРµРЅС– РІРёРЅРЅС–'),
+                  label: Text('Мені винні'),
                   icon: Icon(Icons.arrow_circle_down_rounded),
                 ),
               ],
@@ -172,11 +170,10 @@ class _AddEditDebtLoanScreenState extends State<AddEditDebtLoanScreen> {
             TextFormField(
               controller: _personNameController,
               decoration: const InputDecoration(
-                labelText:
-                    "Р†Рј'СЏ РѕСЃРѕР±Рё Р°Р±Рѕ РЅР°Р·РІР° РѕСЂРіР°РЅС–Р·Р°С†С–С—",
+                labelText: "Ім'я особи або назва організації",
               ),
               validator: (value) => value == null || value.trim().isEmpty
-                  ? "Р’РІРµРґС–С‚СЊ С–Рј'СЏ"
+                  ? "Введіть ім'я"
                   : null,
             ),
             const SizedBox(height: 16),
@@ -186,15 +183,15 @@ class _AddEditDebtLoanScreenState extends State<AddEditDebtLoanScreen> {
                 Expanded(
                   child: TextFormField(
                     controller: _amountController,
-                    decoration: const InputDecoration(labelText: 'РЎСѓРјР°'),
+                    decoration: const InputDecoration(labelText: 'Сума'),
                     keyboardType:
                         const TextInputType.numberWithOptions(decimal: true),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Р’РІРµРґС–С‚СЊ СЃСѓРјСѓ';
+                        return 'Введіть суму';
                       }
                       if (double.tryParse(value.replaceAll(',', '.')) == null) {
-                        return 'РќРµРІС–СЂРЅРµ С‡РёСЃР»Рѕ';
+                        return 'Невірне число';
                       }
                       return null;
                     },
@@ -203,9 +200,8 @@ class _AddEditDebtLoanScreenState extends State<AddEditDebtLoanScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: DropdownButtonFormField<Currency>(
-                    value: _selectedCurrency,
-                    decoration:
-                        const InputDecoration(labelText: 'Р’Р°Р»СЋС‚Р°'),
+                    initialValue: _selectedCurrency,
+                    decoration: const InputDecoration(labelText: 'Валюта'),
                     items: appCurrencies
                         .map(
                           (c) =>
@@ -221,7 +217,7 @@ class _AddEditDebtLoanScreenState extends State<AddEditDebtLoanScreen> {
             TextFormField(
               controller: _descriptionController,
               decoration: const InputDecoration(
-                labelText: 'РћРїРёСЃ (РѕРїС†С–РѕРЅР°Р»СЊРЅРѕ)',
+                labelText: 'Опис (опціонально)',
               ),
               maxLines: 2,
             ),
@@ -230,8 +226,8 @@ class _AddEditDebtLoanScreenState extends State<AddEditDebtLoanScreen> {
               contentPadding: EdgeInsets.zero,
               title: Text(
                 _dueDate == null
-                    ? 'РўРµСЂРјС–РЅ РїРѕРІРµСЂРЅРµРЅРЅСЏ (РѕРїС†С–РѕРЅР°Р»СЊРЅРѕ)'
-                    : 'РџРѕРІРµСЂРЅСѓС‚Рё РґРѕ: ${DateFormat('dd.MM.yyyy').format(_dueDate!)}',
+                    ? 'Термін повернення (опціонально)'
+                    : 'Повернути до: ${DateFormat('dd.MM.yyyy').format(_dueDate!)}',
               ),
               trailing: _dueDate != null
                   ? IconButton(
@@ -243,7 +239,7 @@ class _AddEditDebtLoanScreenState extends State<AddEditDebtLoanScreen> {
             ),
             const SizedBox(height: 16),
             SwitchListTile(
-              title: const Text('Р—Р°РїРёСЃ РїРѕРіР°С€РµРЅРѕ/Р·Р°РєСЂРёС‚Рѕ'),
+              title: const Text('Запис погашено/закрито'),
               value: _isSettled,
               onChanged: (val) => setState(() => _isSettled = val),
               tileColor: Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -258,8 +254,8 @@ class _AddEditDebtLoanScreenState extends State<AddEditDebtLoanScreen> {
                   ? const CircularProgressIndicator(color: Colors.white)
                   : Text(
                       _isEditing
-                          ? 'Р—Р±РµСЂРµРіС‚Рё Р·РјС–РЅРё'
-                          : 'РЎС‚РІРѕСЂРёС‚Рё Р·Р°РїРёСЃ',
+                          ? 'Зберегти зміни'
+                          : 'Створити запис',
                     ),
             ),
           ],

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:wislet/providers/theme_provider.dart';
 import 'package:wislet/screens/settings/theme_editor_screen.dart';
@@ -14,7 +14,7 @@ class ThemeSelectionScreen extends StatelessWidget {
 
     return PatternedScaffold(
       appBar: AppBar(
-        title: const Text('Р’РёР±С–СЂ С‚РµРјРё'),
+        title: const Text('Вибір теми'),
       ),
       body: ListView.builder(
         padding: const EdgeInsets.fromLTRB(8, 8, 8, 80),
@@ -88,7 +88,7 @@ class ThemeSelectionScreen extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         icon: const Icon(Icons.add),
-        label: const Text('РЎС‚РІРѕСЂРёС‚Рё СЃРІРѕСЋ С‚РµРјСѓ'),
+        label: const Text('Створити свою тему'),
         onPressed: () {
           Navigator.push<void>(
             context,

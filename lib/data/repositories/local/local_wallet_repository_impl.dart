@@ -1,4 +1,6 @@
-import 'package:fpdart/fpdart.dart';
+﻿import 'package:fpdart/fpdart.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sqflite/sqflite.dart';
 import 'package:wislet/core/constants/app_constants.dart';
 import 'package:wislet/core/error/failures.dart';
 import 'package:wislet/data/repositories/wallet_repository.dart';
@@ -7,8 +9,6 @@ import 'package:wislet/models/user.dart';
 import 'package:wislet/models/wallet.dart';
 import 'package:wislet/services/error_monitoring_service.dart';
 import 'package:wislet/utils/database_helper.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:sqflite/sqflite.dart';
 
 class LocalWalletRepositoryImpl implements WalletRepository {
   LocalWalletRepositoryImpl(this._dbHelper);
@@ -50,7 +50,18 @@ class LocalWalletRepositoryImpl implements WalletRepository {
           db,
           walletMap[DatabaseHelper.colWalletId]! as int,
         );
-        final wallet = Wallet.fromMap(walletMap)..members = members;
+        final walletMapObject = Wallet.fromMap(walletMap);
+        final wallet = Wallet(
+        id: walletMapObject.id,
+        name: walletMapObject.name,
+        ownerUserId: walletMapObject.ownerUserId,
+        isDefault: walletMapObject.isDefault,
+        currentUserRole: walletMapObject.currentUserRole,
+        members: members, 
+        updatedAt: walletMapObject.updatedAt,
+        isDeleted: walletMapObject.isDeleted,
+        );
+
         wallets.add(wallet);
       }
       return Right(wallets);
@@ -71,8 +82,18 @@ class LocalWalletRepositoryImpl implements WalletRepository {
         whereArgs: [id],
       );
       if (maps.isNotEmpty) {
-        final wallet = Wallet.fromMap(maps.first)
-          ..members = await _getMembersForWallet(db, id);
+        final baseWallet = Wallet.fromMap(maps.first);
+        final wallet = Wallet(
+        id: baseWallet.id,
+        name: baseWallet.name,
+        ownerUserId: baseWallet.ownerUserId,
+        isDefault: baseWallet.isDefault,
+        currentUserRole: baseWallet.currentUserRole,
+        members: await _getMembersForWallet(db, id),
+        updatedAt: baseWallet.updatedAt,
+        isDeleted: baseWallet.isDeleted,
+        );
+
         return Right(wallet);
       }
       return const Right(null);

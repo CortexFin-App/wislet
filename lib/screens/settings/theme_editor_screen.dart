@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:provider/provider.dart';
 import 'package:wislet/models/theme_profile.dart';
@@ -36,7 +36,7 @@ class _ThemeEditorScreenState extends State<ThemeEditorScreen> {
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('РћР±РµСЂС–С‚СЊ РєРѕР»С–СЂ'),
+        title: const Text('Оберіть колір'),
         content: SingleChildScrollView(
           child: ColorPicker(
             pickerColor: _editedProfile.seedColor,
@@ -54,7 +54,7 @@ class _ThemeEditorScreenState extends State<ThemeEditorScreen> {
         ),
         actions: <Widget>[
           TextButton(
-            child: const Text('Р“РѕС‚РѕРІРѕ'),
+            child: const Text('Готово'),
             onPressed: () => Navigator.of(context).pop(),
           ),
         ],
@@ -85,8 +85,8 @@ class _ThemeEditorScreenState extends State<ThemeEditorScreen> {
         appBar: AppBar(
           title: Text(
             widget.initialProfile == null
-                ? 'РќРѕРІР° РўРµРјР°'
-                : 'Р РµРґР°РєС‚РѕСЂ РўРµРјРё',
+                ? 'Нова Тема'
+                : 'Редактор Теми',
           ),
           actions: [
             IconButton(
@@ -114,13 +114,13 @@ class _ThemeEditorScreenState extends State<ThemeEditorScreen> {
             TextFormField(
               controller: _nameController,
               decoration: const InputDecoration(
-                labelText: 'РќР°Р·РІР° С‚РµРјРё',
+                labelText: 'Назва теми',
                 border: OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 16),
             ListTile(
-              title: const Text('РћСЃРЅРѕРІРЅРёР№ РєРѕР»С–СЂ'),
+              title: const Text('Основний колір'),
               trailing: CircleAvatar(backgroundColor: _editedProfile.seedColor),
               onTap: _showColorPicker,
               shape: RoundedRectangleBorder(
@@ -130,7 +130,7 @@ class _ThemeEditorScreenState extends State<ThemeEditorScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Р Р°РґС–СѓСЃ Р·Р°РѕРєСЂСѓРіР»РµРЅРЅСЏ: ${_editedProfile.borderRadius.toStringAsFixed(1)}',
+              'Радіус заокруглення: ${_editedProfile.borderRadius.toStringAsFixed(1)}',
             ),
             Slider(
               value: _editedProfile.borderRadius,
@@ -150,9 +150,9 @@ class _ThemeEditorScreenState extends State<ThemeEditorScreen> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
-              value: _editedProfile.fontFamily,
+              initialValue: _editedProfile.fontFamily,
               decoration: const InputDecoration(
-                labelText: 'РЁСЂРёС„С‚',
+                labelText: 'Шрифт',
                 border: OutlineInputBorder(),
               ),
               items: ['NotoSans', 'Roboto', 'Inter', 'SourceCodePro']
@@ -182,11 +182,11 @@ class _ThemeEditorScreenState extends State<ThemeEditorScreen> {
                 padding: const EdgeInsets.all(8),
                 child: Column(
                   children: [
-                    const Text('РџСЂРёРєР»Р°Рґ РєР°СЂС‚РєРё'),
+                    const Text('Приклад картки'),
                     const SizedBox(height: 8),
                     ElevatedButton(
                       onPressed: () {},
-                      child: const Text('РџСЂРёРєР»Р°Рґ РєРЅРѕРїРєРё'),
+                      child: const Text('Приклад кнопки'),
                     ),
                   ],
                 ),

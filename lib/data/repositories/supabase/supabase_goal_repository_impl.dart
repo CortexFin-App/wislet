@@ -1,9 +1,9 @@
 import 'package:fpdart/fpdart.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:wislet/core/error/failures.dart';
 import 'package:wislet/data/repositories/goal_repository.dart';
 import 'package:wislet/models/financial_goal.dart';
 import 'package:wislet/services/error_monitoring_service.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseGoalRepositoryImpl implements GoalRepository {
   SupabaseGoalRepositoryImpl(this._client);

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:wislet/core/di/injector.dart';
 import 'package:wislet/data/repositories/category_repository.dart';
 import 'package:wislet/data/repositories/repeating_transaction_repository.dart';
@@ -12,7 +13,6 @@ import 'package:wislet/screens/repeating_transactions/add_edit_repeating_transac
 import 'package:wislet/services/notification_service.dart';
 import 'package:wislet/utils/fade_page_route.dart';
 import 'package:wislet/widgets/scaffold/patterned_scaffold.dart';
-import 'package:shimmer/shimmer.dart';
 
 class RepeatingTransactionsListScreen extends StatefulWidget {
   const RepeatingTransactionsListScreen({super.key});
@@ -91,49 +91,49 @@ class _RepeatingTransactionsListScreenState
   String _getFrequencyDetails(RepeatingTransaction template) {
     final frequencyStr = frequencyToString(template.frequency);
     final intervalStr =
-        template.interval > 1 ? 'РєРѕР¶РЅС– ${template.interval}' : '';
+        template.interval > 1 ? 'кожні ${template.interval}' : '';
     var details = '';
 
     switch (template.frequency) {
       case Frequency.daily:
         details = intervalStr.isEmpty
             ? frequencyStr
-            : '$frequencyStr ($intervalStr РґРЅС–)';
+            : '$frequencyStr ($intervalStr дні)';
       case Frequency.weekly:
         details = intervalStr.isEmpty
             ? frequencyStr
-            : '$frequencyStr ($intervalStr С‚РёР¶РЅС–)';
+            : '$frequencyStr ($intervalStr тижні)';
         if (template.weekDays?.isNotEmpty ?? false) {
           final dayNames = <String>[];
           const weekDayMap = <int, String>{
-            1: 'РџРЅ',
-            2: 'Р’С‚',
-            3: 'РЎСЂ',
-            4: 'Р§С‚',
-            5: 'РџС‚',
-            6: 'РЎР±',
-            7: 'РќРґ',
+            1: 'Пн',
+            2: 'Вт',
+            3: 'Ср',
+            4: 'Чт',
+            5: 'Пт',
+            6: 'Сб',
+            7: 'Нд',
           };
           for (final dayIndex in template.weekDays!) {
             if (weekDayMap.containsKey(dayIndex)) {
               dayNames.add(weekDayMap[dayIndex]!);
             }
           }
-          if (dayNames.isNotEmpty) details += ' РїРѕ: ${dayNames.join(', ')}';
+          if (dayNames.isNotEmpty) details += ' по: ${dayNames.join(', ')}';
         }
       case Frequency.monthly:
         details = intervalStr.isEmpty
             ? frequencyStr
-            : '$frequencyStr ($intervalStr РјС–СЃСЏС†С–)';
+            : '$frequencyStr ($intervalStr місяці)';
         if (template.monthDay?.isNotEmpty ?? false) {
           details += template.monthDay == 'last'
-              ? ' (РѕСЃС‚. РґРµРЅСЊ)'
-              : ' (${template.monthDay} С‡РёСЃР»Р°)';
+              ? ' (ост. день)'
+              : ' (${template.monthDay} числа)';
         }
       case Frequency.yearly:
         details = intervalStr.isEmpty
             ? frequencyStr
-            : '$frequencyStr ($intervalStr СЂРѕРєРё)';
+            : '$frequencyStr ($intervalStr роки)';
         if (template.yearMonth != null && template.yearDay != null) {
           details +=
               ' (${DateFormat('d MMMM', 'uk_UA').format(DateTime(2000, template.yearMonth!, template.yearDay!))})';
@@ -150,7 +150,7 @@ class _RepeatingTransactionsListScreenState
             AddEditRepeatingTransactionScreen(template: template),
       ),
     );
-    if (result == true && mounted) {
+    if ((result ?? false) && mounted) {
       await _loadData();
     }
   }
@@ -160,20 +160,20 @@ class _RepeatingTransactionsListScreenState
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Р’РёРґР°Р»РёС‚Рё С€Р°Р±Р»РѕРЅ?'),
+          title: const Text('Видалити шаблон?'),
           content: const Text(
-            'Р¦РµР№ С€Р°Р±Р»РѕРЅ РїРѕРІС‚РѕСЂСЋРІР°РЅРѕС— С‚СЂР°РЅР·Р°РєС†С–С— Р±СѓРґРµ РІРёРґР°Р»РµРЅРѕ. Р’Р¶Рµ СЃС‚РІРѕСЂРµРЅС– РЅР° Р№РѕРіРѕ РѕСЃРЅРѕРІС– С‚СЂР°РЅР·Р°РєС†С–С— Р·Р°Р»РёС€Р°С‚СЊСЃСЏ. Р—Р°РїР»Р°РЅРѕРІР°РЅРµ РЅР°РіР°РґСѓРІР°РЅРЅСЏ РґР»СЏ С†СЊРѕРіРѕ С€Р°Р±Р»РѕРЅСѓ С‚Р°РєРѕР¶ Р±СѓРґРµ СЃРєР°СЃРѕРІР°РЅРѕ.',
+            'Цей шаблон повторюваної транзакції буде видалено. Вже створені на його основі транзакції залишаться. Заплановане нагадування для цього шаблону також буде скасовано.',
           ),
           actions: <Widget>[
             TextButton(
-              child: const Text('РЎРєР°СЃСѓРІР°С‚Рё'),
+              child: const Text('Скасувати'),
               onPressed: () => Navigator.of(dialogContext).pop(false),
             ),
             TextButton(
               style: TextButton.styleFrom(
-                foregroundColor: Theme.of(context).colorScheme.error,
+                foregroundColor: Colors.red,
               ),
-              child: const Text('Р’РёРґР°Р»РёС‚Рё'),
+              child: const Text('Видалити'),
               onPressed: () => Navigator.of(dialogContext).pop(true),
             ),
           ],
@@ -181,13 +181,13 @@ class _RepeatingTransactionsListScreenState
       },
     );
 
-    if (confirmDelete == true) {
+    if (confirmDelete ?? false) {
       await _repeatingTransactionRepository.deleteRepeatingTransaction(id);
       await _notificationService.cancelNotification(id);
       await _loadData();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('РЁР°Р±Р»РѕРЅ РІРёРґР°Р»РµРЅРѕ')),
+          const SnackBar(content: Text('Шаблон видалено')),
         );
       }
     }
@@ -269,7 +269,7 @@ class _RepeatingTransactionsListScreenState
   Widget build(BuildContext context) {
     return PatternedScaffold(
       appBar: AppBar(
-        title: const Text('РџРѕРІС‚РѕСЂСЋРІР°РЅС– С‚СЂР°РЅР·Р°РєС†С–С—'),
+        title: const Text('Повторювані транзакції'),
       ),
       body: _isLoading
           ? _buildShimmerLoadingList()
@@ -285,16 +285,16 @@ class _RepeatingTransactionsListScreenState
                       ),
                       const SizedBox(height: 16),
                       const Text(
-                        'РќРµРјР°С” С€Р°Р±Р»РѕРЅС–РІ РїРѕРІС‚РѕСЂСЋРІР°РЅРёС… С‚СЂР°РЅР·Р°РєС†С–Р№.',
+                        'Немає шаблонів повторюваних транзакцій.',
                         style: TextStyle(fontSize: 18, color: Colors.grey),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 8),
-                      Text(
-                        'РќР°С‚РёСЃРЅС–С‚СЊ "+", С‰РѕР± СЃС‚РІРѕСЂРёС‚Рё РЅРѕРІРёР№ С€Р°Р±Р»РѕРЅ.',
+                      const Text(
+                        'Натисніть "+", щоб створити новий шаблон.',
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.grey.shade600,
+                          color: Colors.grey,
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -307,7 +307,7 @@ class _RepeatingTransactionsListScreenState
                   itemBuilder: (context, index) {
                     final template = _repeatingTransactions[index];
                     final categoryName = _categoryNames[template.categoryId] ??
-                        'РљР°С‚РµРіРѕСЂС–СЏ РЅРµ Р·РЅР°Р№РґРµРЅР°';
+                        'Категорія не знайдена';
                     final currency = appCurrencies.firstWhere(
                       (c) => c.code == template.originalCurrencyCode,
                       orElse: () => Currency(
@@ -348,17 +348,17 @@ class _RepeatingTransactionsListScreenState
                           children: [
                             Text('$formattedAmount ($categoryName)'),
                             Text(
-                              'Р§Р°СЃС‚РѕС‚Р°: ${_getFrequencyDetails(template)}',
+                              'Частота: ${_getFrequencyDetails(template)}',
                             ),
                             Text(
-                              'РќР°СЃС‚СѓРїРЅРµ СЃРїСЂР°С†СЋРІР°РЅРЅСЏ: ${DateFormat('dd.MM.yyyy HH:mm').format(template.nextDueDate)}',
+                              'Наступне спрацювання: ${DateFormat('dd.MM.yyyy HH:mm').format(template.nextDueDate)}',
                             ),
                             if (template.endDate != null)
                               Text(
-                                'Р—Р°РєС–РЅС‡СѓС”С‚СЊСЃСЏ: ${DateFormat('dd.MM.yyyy').format(template.endDate!)}',
+                                'Закінчується: ${DateFormat('dd.MM.yyyy').format(template.endDate!)}',
                               ),
                             Text(
-                              'РЎС‚Р°С‚СѓСЃ: ${template.isActive ? 'РђРєС‚РёРІРЅРёР№' : 'РќРµР°РєС‚РёРІРЅРёР№'}',
+                              'Статус: ${template.isActive ? 'Активний' : 'Неактивний'}',
                               style: TextStyle(
                                 color: template.isActive
                                     ? Colors.green
@@ -377,14 +377,14 @@ class _RepeatingTransactionsListScreenState
                               }
                             }
                           },
-                          itemBuilder: (context) => <PopupMenuEntry<String>>[
-                            const PopupMenuItem<String>(
+                          itemBuilder: (context) => const [
+                            PopupMenuItem<String>(
                               value: 'edit',
-                              child: Text('Р РµРґР°РіСѓРІР°С‚Рё'),
+                              child: Text('Редагувати'),
                             ),
-                            const PopupMenuItem<String>(
+                            PopupMenuItem<String>(
                               value: 'delete',
-                              child: Text('Р’РёРґР°Р»РёС‚Рё'),
+                              child: Text('Видалити'),
                             ),
                           ],
                         ),
@@ -394,7 +394,7 @@ class _RepeatingTransactionsListScreenState
                   },
                 ),
       floatingActionButton: FloatingActionButton(
-        tooltip: 'РЎС‚РІРѕСЂРёС‚Рё С€Р°Р±Р»РѕРЅ',
+        tooltip: 'Створити шаблон',
         onPressed: () async {
           final result = await Navigator.push<bool>(
             context,
@@ -402,7 +402,7 @@ class _RepeatingTransactionsListScreenState
               builder: (context) => const AddEditRepeatingTransactionScreen(),
             ),
           );
-          if (result == true && mounted) {
+          if ((result ?? false) && mounted) {
             await _loadData();
           }
         },
