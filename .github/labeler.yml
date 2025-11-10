@@ -1,4 +1,4 @@
-﻿feature:  
+﻿feature:
   - head-branch: ['^feature/.*']
 fix:
   - head-branch: ['^fix/.*']
