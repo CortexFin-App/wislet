@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:wislet/core/di/injector.dart';
@@ -26,22 +26,27 @@ class _AddEditPlanScreenState extends State<AddEditPlanScreen> {
   final ExchangeRateService _exchangeRateService = getIt<ExchangeRateService>();
 
   final TextEditingController _amountController = TextEditingController();
+  final TextEditingController _manualRateController = TextEditingController();
+
   Category? _selectedCategory;
   late DateTime _startDate;
   late DateTime _endDate;
+
   Currency? _selectedPlanCurrency;
   final List<Currency> _availableCurrencies = appCurrencies;
+
   List<Category> _availableCategories = [];
   bool _isLoadingCategories = false;
   bool _isSaving = false;
   bool get _isEditing => widget.planToEdit != null;
+
   final String _baseCurrencyCode = 'UAH';
+
   bool _isFetchingRate = false;
   String? _rateFetchingError;
   ConversionRateInfo? _currentRateInfo;
 
   bool _isManuallyEnteringRate = false;
-  final TextEditingController _manualRateController = TextEditingController();
   bool _manualRateSetByButton = false;
 
   @override
@@ -63,11 +68,13 @@ class _AddEditPlanScreenState extends State<AddEditPlanScreen> {
           plan.originalPlannedAmount.toStringAsFixed(2).replaceAll('.', ',');
       _startDate = plan.startDate;
       _endDate = plan.endDate;
+
       _selectedPlanCurrency = _availableCurrencies.firstWhere(
         (c) => c.code == plan.originalCurrencyCode,
         orElse: () => _availableCurrencies
             .firstWhere((curr) => curr.code == _baseCurrencyCode),
       );
+
       if (plan.exchangeRateUsed != null &&
           plan.originalCurrencyCode != _baseCurrencyCode) {
         _currentRateInfo = ConversionRateInfo(
@@ -122,6 +129,7 @@ class _AddEditPlanScreenState extends State<AddEditPlanScreen> {
   }) async {
     final targetCurrency = currency ?? _selectedPlanCurrency;
     final rateDateForPlan = DateTime.now();
+
     if (targetCurrency == null || targetCurrency.code == _baseCurrencyCode) {
       if (mounted) {
         setState(() {
@@ -167,7 +175,7 @@ class _AddEditPlanScreenState extends State<AddEditPlanScreen> {
       if (mounted) {
         setState(() {
           _rateFetchingError =
-              'РљСѓСЂСЃ РґР»СЏ ${targetCurrency.code}: РїРѕРјРёР»РєР°.';
+              'Курс для ${targetCurrency.code}: помилка отримання.';
         });
       }
     } finally {
@@ -261,21 +269,18 @@ class _AddEditPlanScreenState extends State<AddEditPlanScreen> {
   }
 
   Future<void> _savePlan() async {
-    if (!_formKey.currentState!.validate() || _isSaving) {
-      return;
-    }
+    if (!_formKey.currentState!.validate() || _isSaving) return;
 
     final walletProvider = context.read<WalletProvider>();
     final currentWalletId = walletProvider.currentWallet?.id;
     if (currentWalletId == null && !_isEditing) return;
+
     final originalAmount =
         double.tryParse(_amountController.text.replaceAll(',', '.'));
     if (originalAmount == null ||
+        originalAmount <= 0 ||
         _selectedCategory == null ||
         _selectedPlanCurrency == null) {
-      return;
-    }
-    if (originalAmount <= 0) {
       return;
     }
 
@@ -297,7 +302,7 @@ class _AddEditPlanScreenState extends State<AddEditPlanScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'РќРµ РІРґР°Р»РѕСЃСЏ РІРёР·РЅР°С‡РёС‚Рё РєСѓСЂСЃ РґР»СЏ ${_selectedPlanCurrency!.code}.',
+              'Не вдалося визначити курс для ${_selectedPlanCurrency!.code}.',
             ),
           ),
         );
@@ -312,59 +317,46 @@ class _AddEditPlanScreenState extends State<AddEditPlanScreen> {
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
 
+    final plan = Plan(
+      id: widget.planToEdit?.id,
+      categoryId: _selectedCategory!.id!,
+      originalPlannedAmount: originalAmount,
+      originalCurrencyCode: _selectedPlanCurrency!.code,
+      plannedAmountInBaseCurrency: amountInBase,
+      exchangeRateUsed: finalExchangeRate,
+      startDate: _startDate,
+      endDate: _endDate,
+    );
+
     final result = _isEditing
-        ? await _planRepository.updatePlan(
-            Plan(
-              id: widget.planToEdit!.id,
-              categoryId: _selectedCategory!.id!,
-              originalPlannedAmount: originalAmount,
-              originalCurrencyCode: _selectedPlanCurrency!.code,
-              plannedAmountInBaseCurrency: amountInBase,
-              exchangeRateUsed: finalExchangeRate,
-              startDate: _startDate,
-              endDate: _endDate,
-            ),
-          )
-        : await _planRepository.createPlan(
-            Plan(
-              categoryId: _selectedCategory!.id!,
-              originalPlannedAmount: originalAmount,
-              originalCurrencyCode: _selectedPlanCurrency!.code,
-              plannedAmountInBaseCurrency: amountInBase,
-              exchangeRateUsed: finalExchangeRate,
-              startDate: _startDate,
-              endDate: _endDate,
-            ),
-            currentWalletId!,
-          );
+        ? await _planRepository.updatePlan(plan)
+     : await _planRepository.createPlan(plan, currentWalletId!);
+
+    if (!mounted) return;
 
     result.fold(
-      (failure) {
-        if (mounted) {
-          messenger.showSnackBar(
-            SnackBar(
-              content: Text(
-                'РџРѕРјРёР»РєР° Р·Р±РµСЂРµР¶РµРЅРЅСЏ РїР»Р°РЅСѓ: ${failure.userMessage}',
-              ),
+        (failure) {
+         messenger.showSnackBar(
+        SnackBar(
+         content: Text(
+           'Помилка збереження плану: ${failure.userMessage}',
+             ),
             ),
-          );
-        }
-      },
-      (_) {
-        if (mounted) {
-          messenger.showSnackBar(
-            SnackBar(
-              content: Text(
-                _isEditing
-                    ? 'РџР»Р°РЅ РѕРЅРѕРІР»РµРЅРѕ!'
-                    : 'РџР»Р°РЅ СЃС‚РІРѕСЂРµРЅРѕ!',
-              ),
-            ),
-          );
-          navigator.pop(true);
-        }
-      },
+           );
+        },
+    (_) {
+        messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+           _isEditing ? 'План оновлено!' : 'План створено!',
+          ),
+         ),
+        );
+        navigator.pop(true);
+     },
     );
+
+
 
     if (mounted) {
       setState(() => _isSaving = false);
@@ -383,12 +375,11 @@ class _AddEditPlanScreenState extends State<AddEditPlanScreen> {
                 _rateFetchingError == null &&
                 !_isFetchingRate &&
                 _currentRateInfo!.rate > 0));
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          _isEditing
-              ? 'Р РµРґР°РіСѓРІР°С‚Рё РџР»Р°РЅ'
-              : 'РЎС‚РІРѕСЂРёС‚Рё РџР»Р°РЅ',
+          _isEditing ? 'Редагувати План' : 'Створити План',
         ),
       ),
       body: Padding(
@@ -401,18 +392,18 @@ class _AddEditPlanScreenState extends State<AddEditPlanScreen> {
                 const Center(child: CircularProgressIndicator())
               else if (_availableCategories.isEmpty)
                 Text(
-                  'РќРµРјР°С” РґРѕСЃС‚СѓРїРЅРёС… РєР°С‚РµРіРѕСЂС–Р№ РІРёС‚СЂР°С‚. РЎРїРѕС‡Р°С‚РєСѓ РґРѕРґР°Р№С‚Рµ С—С… РЅР° РµРєСЂР°РЅС– РєР°С‚РµРіРѕСЂС–Р№.',
+                  'Немає доступних категорій витрат. Спочатку додайте їх на екрані категорій.',
                   style: TextStyle(color: Colors.orange[700]),
                 )
               else
                 DropdownButtonFormField<Category>(
-                  value: _selectedCategory,
+                  initialValue: _selectedCategory,
                   decoration: const InputDecoration(
-                    labelText: 'РљР°С‚РµРіРѕСЂС–СЏ РІРёС‚СЂР°С‚',
+                    labelText: 'Категорія витрат',
                     border: OutlineInputBorder(),
                     prefixIcon: Icon(Icons.category_outlined),
                   ),
-                  hint: const Text('РћР±РµСЂС–С‚СЊ РєР°С‚РµРіРѕСЂС–СЋ'),
+                  hint: const Text('Оберіть категорію'),
                   isExpanded: true,
                   items: _availableCategories
                       .map(
@@ -428,7 +419,7 @@ class _AddEditPlanScreenState extends State<AddEditPlanScreen> {
                     }
                   },
                   validator: (value) => value == null
-                      ? 'Р‘СѓРґСЊ Р»Р°СЃРєР°, РѕР±РµСЂС–С‚СЊ РєР°С‚РµРіРѕСЂС–СЋ'
+                      ? 'Будь ласка, оберіть категорію'
                       : null,
                 ),
               const SizedBox(height: 20),
@@ -440,7 +431,7 @@ class _AddEditPlanScreenState extends State<AddEditPlanScreen> {
                     child: TextFormField(
                       controller: _amountController,
                       decoration: InputDecoration(
-                        labelText: 'Р—Р°РїР»Р°РЅРѕРІР°РЅР° СЃСѓРјР°',
+                        labelText: 'Запланована сума',
                         border: const OutlineInputBorder(),
                         prefixIcon: _selectedPlanCurrency != null
                             ? Padding(
@@ -465,14 +456,14 @@ class _AddEditPlanScreenState extends State<AddEditPlanScreen> {
                           const TextInputType.numberWithOptions(decimal: true),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Р‘СѓРґСЊ Р»Р°СЃРєР°, РІРІРµРґС–С‚СЊ СЃСѓРјСѓ';
+                          return 'Будь ласка, введіть суму';
                         }
                         final cleanValue = value.replaceAll(',', '.');
                         if (double.tryParse(cleanValue) == null) {
-                          return 'Р’РІРµРґС–С‚СЊ РєРѕСЂРµРєС‚РЅРµ С‡РёСЃР»Рѕ';
+                          return 'Введіть коректне число';
                         }
                         if (double.parse(cleanValue) <= 0) {
-                          return 'РЎСѓРјР° > 0';
+                          return 'Сума > 0';
                         }
                         return null;
                       },
@@ -482,9 +473,9 @@ class _AddEditPlanScreenState extends State<AddEditPlanScreen> {
                   Expanded(
                     flex: 2,
                     child: DropdownButtonFormField<Currency>(
-                      value: _selectedPlanCurrency,
+                      initialValue: _selectedPlanCurrency,
                       decoration: const InputDecoration(
-                        labelText: 'Р’Р°Р»СЋС‚Р°',
+                        labelText: 'Валюта',
                         border: OutlineInputBorder(),
                       ),
                       items: _availableCurrencies
@@ -507,7 +498,7 @@ class _AddEditPlanScreenState extends State<AddEditPlanScreen> {
                         }
                       },
                       validator: (value) =>
-                          value == null ? 'РћР±РµСЂС–С‚СЊ' : null,
+                          value == null ? 'Оберіть' : null,
                     ),
                   ),
                 ],
@@ -541,8 +532,7 @@ class _AddEditPlanScreenState extends State<AddEditPlanScreen> {
                         textAlign: TextAlign.center,
                       ),
                       TextButton(
-                        child:
-                            const Text('Р’РІРµСЃС‚Рё РєСѓСЂСЃ РІСЂСѓС‡РЅСѓ?'),
+                        child: const Text('Ввести курс вручну?'),
                         onPressed: () {
                           if (mounted) {
                             setState(() {
@@ -570,17 +560,20 @@ class _AddEditPlanScreenState extends State<AddEditPlanScreen> {
                           decoration: InputDecoration(
                             labelText:
                                 '1 ${_selectedPlanCurrency?.code} = X UAH',
-                            hintText: 'Р’РІРµРґС–С‚СЊ РєСѓСЂСЃ',
+                            hintText: 'Введіть курс',
                             border: const OutlineInputBorder(),
                           ),
                           validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Р’РєР°Р¶С–С‚СЊ РєСѓСЂСЃ';
-                            }
-                            final val =
-                                double.tryParse(value.replaceAll(',', '.'));
-                            if (val == null || val <= 0) {
-                              return 'РќРµРІС–СЂРЅРµ Р·РЅР°С‡РµРЅРЅСЏ';
+                            if (_isManuallyEnteringRate) {
+                              if (value == null || value.isEmpty) {
+                                return 'Вкажіть курс';
+                              }
+                              final val = double.tryParse(
+                                value.replaceAll(',', '.'),
+                              );
+                              if (val == null || val <= 0) {
+                                return 'Невірне значення';
+                              }
                             }
                             return null;
                           },
@@ -591,13 +584,12 @@ class _AddEditPlanScreenState extends State<AddEditPlanScreen> {
                           Icons.check_circle_outline,
                           color: Colors.green,
                         ),
-                        tooltip: 'Р—Р°СЃС‚РѕСЃСѓРІР°С‚Рё РєСѓСЂСЃ',
+                        tooltip: 'Застосувати курс',
                         onPressed: _applyManualRate,
                       ),
                       IconButton(
                         icon: const Icon(Icons.cancel_outlined),
-                        tooltip:
-                            'РЎРєР°СЃСѓРІР°С‚Рё СЂСѓС‡РЅРµ РІРІРµРґРµРЅРЅСЏ',
+                        tooltip: 'Скасувати ручне введення',
                         onPressed: () {
                           if (mounted) {
                             setState(() {
@@ -622,19 +614,21 @@ class _AddEditPlanScreenState extends State<AddEditPlanScreen> {
                   padding: const EdgeInsets.only(top: 4, bottom: 8),
                   child: Text(
                     _manualRateSetByButton
-                        ? 'Р’СЃС‚Р°РЅРѕРІР»РµРЅРѕ РІСЂСѓС‡РЅСѓ: 1 ${_selectedPlanCurrency!.code} = ${_currentRateInfo!.rate.toStringAsFixed(4)} $_baseCurrencyCode'
-                        : '1 ${_selectedPlanCurrency!.code} в‰€ ${_currentRateInfo!.rate.toStringAsFixed(4)} $_baseCurrencyCode РЅР° ${DateFormat('dd.MM.yy').format(_currentRateInfo!.effectiveRateDate)}${_currentRateInfo!.isRateStale ? ' (Р·Р°СЃС‚Р°СЂС–Р»РёР№)' : ''}',
+                        ? 'Встановлено вручну: 1 ${_selectedPlanCurrency!.code} = ${_currentRateInfo!.rate.toStringAsFixed(4)} $_baseCurrencyCode'
+                        : '1 ${_selectedPlanCurrency!.code} ≈ ${_currentRateInfo!.rate.toStringAsFixed(4)} $_baseCurrencyCode на ${DateFormat('dd.MM.yy').format(_currentRateInfo!.effectiveRateDate)}${_currentRateInfo!.isRateStale ? ' (застарілий)' : ''}',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: _manualRateSetByButton
                               ? Theme.of(context).colorScheme.primary
-                              : Theme.of(context).colorScheme.onSurfaceVariant,
+                              : Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
                         ),
                     textAlign: TextAlign.center,
                   ),
                 ),
               const SizedBox(height: 12),
               Text(
-                'РџРµСЂС–РѕРґ РїР»Р°РЅСѓРІР°РЅРЅСЏ:',
+                'Період планування:',
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 8),
@@ -644,7 +638,7 @@ class _AddEditPlanScreenState extends State<AddEditPlanScreen> {
                     child: TextButton.icon(
                       icon: const Icon(Icons.calendar_today_outlined),
                       label: Text(
-                        'Р—: ${DateFormat('dd.MM.yyyy').format(_startDate)}',
+                        'З: ${DateFormat('dd.MM.yyyy').format(_startDate)}',
                       ),
                       onPressed: () => _pickDate(context, isStartDate: true),
                     ),
@@ -654,7 +648,7 @@ class _AddEditPlanScreenState extends State<AddEditPlanScreen> {
                     child: TextButton.icon(
                       icon: const Icon(Icons.calendar_today),
                       label: Text(
-                        'РџРѕ: ${DateFormat('dd.MM.yyyy').format(_endDate)}',
+                        'По: ${DateFormat('dd.MM.yyyy').format(_endDate)}',
                       ),
                       onPressed: () => _pickDate(context, isStartDate: false),
                     ),
@@ -665,7 +659,7 @@ class _AddEditPlanScreenState extends State<AddEditPlanScreen> {
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
-                    'Р”Р°С‚Р° Р·Р°РєС–РЅС‡РµРЅРЅСЏ РЅРµ РјРѕР¶Рµ Р±СѓС‚Рё СЂР°РЅС–С€Рµ РґР°С‚Рё РїРѕС‡Р°С‚РєСѓ.',
+                    'Дата закінчення не може бути раніше дати початку.',
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.error,
                       fontSize: 12,
@@ -679,9 +673,7 @@ class _AddEditPlanScreenState extends State<AddEditPlanScreen> {
                 ElevatedButton.icon(
                   icon: const Icon(Icons.save_outlined),
                   label: Text(
-                    _isEditing
-                        ? 'Р—Р±РµСЂРµРіС‚Рё Р·РјС–РЅРё'
-                        : 'РЎС‚РІРѕСЂРёС‚Рё РїР»Р°РЅ',
+                    _isEditing ? 'Зберегти зміни' : 'Створити план',
                     style: const TextStyle(fontSize: 16),
                   ),
                   onPressed: (canSave && !_endDate.isBefore(_startDate))

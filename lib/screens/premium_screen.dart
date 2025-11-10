@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:wislet/core/di/injector.dart';
 import 'package:wislet/providers/pro_status_provider.dart';
@@ -44,7 +44,7 @@ class PremiumScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Р РѕР·Р±Р»РѕРєСѓР№С‚Рµ РџРѕРІРЅРёР№ РџРѕС‚РµРЅС†С–Р°Р»',
+                    'Розблокуйте Повний Потенціал',
                     textAlign: TextAlign.center,
                     style: textTheme.headlineMedium?.copyWith(
                       color: theme.colorScheme.onPrimary,
@@ -53,7 +53,7 @@ class PremiumScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'РћС‚СЂРёРјР°Р№С‚Рµ РґРѕСЃС‚СѓРї РґРѕ РµРєСЃРєР»СЋР·РёРІРЅРёС… С„СѓРЅРєС†С–Р№, С‰РѕР± РґРѕСЃСЏРіС‚Рё С„С–РЅР°РЅСЃРѕРІРѕС— РјР°Р№СЃС‚РµСЂРЅРѕСЃС‚С–.',
+                    'Отримайте доступ до ексклюзивних функцій, щоб досягти фінансової майстерності.',
                     textAlign: TextAlign.center,
                     style: textTheme.bodyLarge?.copyWith(
                       color: theme.colorScheme.onPrimary.withAlpha(204),
@@ -70,31 +70,30 @@ class PremiumScreen extends StatelessWidget {
                   _buildFeatureTile(
                     context,
                     icon: Icons.auto_awesome,
-                    title: 'AI-РђСЃРёСЃС‚РµРЅС‚ РґР»СЏ РєР°С‚РµРіРѕСЂС–Р№',
+                    title: 'AI-Асистент для категорій',
                     subtitle:
-                        'Р”РѕР·РІРѕР»СЊС‚Рµ С€С‚СѓС‡РЅРѕРјСѓ С–РЅС‚РµР»РµРєС‚Сѓ Р°РІС‚РѕРјР°С‚РёС‡РЅРѕ РІРёР·РЅР°С‡Р°С‚Рё РєР°С‚РµРіРѕСЂС–С— РІР°С€РёС… С‚СЂР°РЅР·Р°РєС†С–Р№.',
+                        'Дозвольте штучному інтелекту автоматично визначати категорії ваших транзакцій.',
                   ),
                   _buildFeatureTile(
                     context,
                     icon: Icons.document_scanner_outlined,
-                    title: 'РЎРєР°РЅСѓРІР°РЅРЅСЏ С‡РµРєС–РІ (OCR)',
+                    title: 'Сканування чеків (OCR)',
                     subtitle:
-                        'Р¤РѕС‚РѕРіСЂР°С„СѓР№С‚Рµ С‡РµРєРё, Р° РґРѕРґР°С‚РѕРє СЃР°Рј Р·Р°РїРѕРІРЅРёС‚СЊ РґР°РЅС– РїСЂРѕ С‚СЂР°РЅР·Р°РєС†С–СЋ.',
+                        'Фотографуйте чеки, а додаток сам заповнить дані про транзакцію.',
                   ),
                   _buildFeatureTile(
                     context,
                     icon: Icons.insights_outlined,
-                    title:
-                        'Р РѕР·С€РёСЂРµРЅР° Р°РЅР°Р»С–С‚РёРєР° С‚Р° Р·РІС–С‚Рё',
+                    title: 'Розширена аналітика та звіти',
                     subtitle:
-                        'РћС‚СЂРёРјСѓР№С‚Рµ РіР»РёР±РѕРєС– Р·РІС–С‚Рё, РµРєСЃРїРѕСЂС‚СѓР№С‚Рµ РґР°РЅС– РІ PDF/CSV РґР»СЏ РґРµС‚Р°Р»СЊРЅРѕРіРѕ Р°РЅР°Р»С–Р·Сѓ.',
+                        'Отримуйте глибокі звіти, експортуйте дані в PDF/CSV для детального аналізу.',
                   ),
                   _buildFeatureTile(
                     context,
                     icon: Icons.cloud_sync_outlined,
-                    title: 'РҐРјР°СЂРЅР° СЃРёРЅС…СЂРѕРЅС–Р·Р°С†С–СЏ',
+                    title: 'Хмарна синхронізація',
                     subtitle:
-                        'Р‘РµР·РїРµС‡РЅРѕ СЃРёРЅС…СЂРѕРЅС–Р·СѓР№С‚Рµ РІР°С€С– РґР°РЅС– РјС–Р¶ СѓСЃС–РјР° РїСЂРёСЃС‚СЂРѕСЏРјРё, РІРєР»СЋС‡Р°СЋС‡Рё РІРµР±-РІРµСЂСЃС–СЋ.',
+                        'Безпечно синхронізуйте ваші дані між усіма пристроями, включаючи веб-версію.',
                   ),
                   const SizedBox(height: 40),
                   SizedBox(
@@ -109,8 +108,8 @@ class PremiumScreen extends StatelessWidget {
                       child: Center(
                         child: Text(
                           proStatusProvider.isPro
-                              ? 'Pro-РІРµСЂСЃС–СЏ РІР¶Рµ Р°РєС‚РёРІРЅР°'
-                              : 'РђРєС‚РёРІСѓРІР°С‚Рё Pro',
+                              ? 'Pro-версія вже активна'
+                              : 'Активувати Pro',
                         ),
                       ),
                     ),

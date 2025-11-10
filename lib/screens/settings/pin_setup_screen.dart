@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -28,9 +28,9 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
   String get _title {
     switch (_stage) {
       case _PinSetupStage.createNew:
-        return 'РЎС‚РІРѕСЂС–С‚СЊ РЅРѕРІРёР№ PIN-РєРѕРґ';
+        return 'Створіть новий PIN-код';
       case _PinSetupStage.confirm:
-        return 'РџС–РґС‚РІРµСЂРґСЊС‚Рµ PIN-РєРѕРґ';
+        return 'Підтвердьте PIN-код';
     }
   }
 
@@ -65,10 +65,10 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
       if (_currentPin == _firstPinAttempt) {
         await _savePin();
       } else {
-        HapticFeedback.heavyImpact();
+        await HapticFeedback.heavyImpact();
         setState(() {
           _errorMessage =
-              'PIN-РєРѕРґРё РЅРµ Р·Р±С–РіР°СЋС‚СЊСЃСЏ. РЎРїСЂРѕР±СѓР№С‚Рµ С‰Рµ СЂР°Р·.';
+              'PIN-коди не збігаються. Спробуйте ще раз.';
           _firstPinAttempt = '';
           _currentPin = '';
           _stage = _PinSetupStage.createNew;
@@ -86,14 +86,14 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
       await _authService.setPin(_currentPin);
       messenger.showSnackBar(
         const SnackBar(
-          content: Text('PIN-РєРѕРґ СѓСЃРїС–С€РЅРѕ РІСЃС‚Р°РЅРѕРІР»РµРЅРѕ!'),
+          content: Text('PIN-код успішно встановлено!'),
         ),
       );
       navigator.pop(true);
     } on Exception catch (e) {
       messenger.showSnackBar(
         SnackBar(
-          content: Text('РџРѕРјРёР»РєР° Р·Р±РµСЂРµР¶РµРЅРЅСЏ PIN-РєРѕРґСѓ: $e'),
+          content: Text('Помилка збереження PIN-коду: $e'),
         ),
       );
     } finally {
@@ -107,7 +107,7 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Р’СЃС‚Р°РЅРѕРІР»РµРЅРЅСЏ PIN-РєРѕРґСѓ'),
+        title: const Text('Встановлення PIN-коду'),
       ),
       body: SafeArea(
         child: Padding(

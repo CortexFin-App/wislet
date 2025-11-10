@@ -1,6 +1,7 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:wislet/core/di/injector.dart';
 import 'package:wislet/data/repositories/goal_repository.dart';
 import 'package:wislet/models/currency_model.dart';
@@ -8,7 +9,6 @@ import 'package:wislet/models/financial_goal.dart';
 import 'package:wislet/providers/wallet_provider.dart';
 import 'package:wislet/screens/financial_goals/add_edit_financial_goal_screen.dart';
 import 'package:wislet/services/notification_service.dart';
-import 'package:shimmer/shimmer.dart';
 
 class FinancialGoalsListScreen extends StatefulWidget {
   const FinancialGoalsListScreen({this.goalIdToHighlight, super.key});
@@ -83,20 +83,20 @@ class FinancialGoalsListScreenState extends State<FinancialGoalsListScreen> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Р’РёРґР°Р»РёС‚Рё С†С–Р»СЊ?'),
+          title: const Text('Видалити ціль?'),
           content: Text(
-            'Р¤С–РЅР°РЅСЃРѕРІСѓ С†С–Р»СЊ "${goalToDelete.name}" Р±СѓРґРµ РІРёРґР°Р»РµРЅРѕ. Р¦СЋ РґС–СЋ РЅРµРјРѕР¶Р»РёРІРѕ СЃРєР°СЃСѓРІР°С‚Рё.',
+            'Фінансову ціль "${goalToDelete.name}" буде видалено. Цю дію неможливо скасувати.',
           ),
           actions: <Widget>[
             TextButton(
-              child: const Text('РЎРєР°СЃСѓРІР°С‚Рё'),
+              child: const Text('Скасувати'),
               onPressed: () => Navigator.of(dialogContext).pop(false),
             ),
             TextButton(
               style: TextButton.styleFrom(
                 foregroundColor: Theme.of(context).colorScheme.error,
               ),
-              child: const Text('Р’РёРґР°Р»РёС‚Рё'),
+              child: const Text('Видалити'),
               onPressed: () => Navigator.of(dialogContext).pop(true),
             ),
           ],
@@ -118,7 +118,7 @@ class FinancialGoalsListScreenState extends State<FinancialGoalsListScreen> {
     messenger.showSnackBar(
       SnackBar(
         content: Text(
-          'Р¤С–РЅР°РЅСЃРѕРІСѓ С†С–Р»СЊ "${goalToDelete.name}" РІРёРґР°Р»РµРЅРѕ',
+          'Фінансову ціль "${goalToDelete.name}" видалено',
         ),
       ),
     );
@@ -132,15 +132,15 @@ class FinancialGoalsListScreenState extends State<FinancialGoalsListScreen> {
         DateTime(targetDate.year, targetDate.month, targetDate.day);
 
     if (targetDay.isBefore(today)) {
-      return 'РўРµСЂРјС–РЅ РІРёР№С€РѕРІ';
+      return 'Термін вийшов';
     }
     final difference = targetDay.difference(today).inDays;
-    if (difference == 0) return 'РЎСЊРѕРіРѕРґРЅС–!';
-    if (difference == 1) return 'Р—Р°Р»РёС€РёРІСЃСЏ 1 РґРµРЅСЊ';
+    if (difference == 0) return 'Сьогодні!';
+    if (difference == 1) return 'Залишився 1 день';
     if (difference > 1 && difference < 5) {
-      return 'Р—Р°Р»РёС€РёР»РѕСЃСЊ $difference РґРЅС–';
+      return 'Залишилось $difference дні';
     }
-    return 'Р—Р°Р»РёС€РёР»РѕСЃСЊ $difference РґРЅС–РІ';
+    return 'Залишилось $difference днів';
   }
 
   @override
@@ -160,7 +160,7 @@ class FinancialGoalsListScreenState extends State<FinancialGoalsListScreen> {
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Text(
-                  'РџРѕРјРёР»РєР° Р·Р°РІР°РЅС‚Р°Р¶РµРЅРЅСЏ С†С–Р»РµР№: ${snapshot.error}',
+                  'Помилка завантаження цілей: ${snapshot.error}',
                 ),
               ),
             );
@@ -184,9 +184,9 @@ class FinancialGoalsListScreenState extends State<FinancialGoalsListScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _navigateToAddGoal,
-        tooltip: 'Р”РѕРґР°С‚Рё РЅРѕРІСѓ С„С–РЅР°РЅСЃРѕРІСѓ С†С–Р»СЊ',
+        tooltip: 'Додати нову фінансову ціль',
         icon: const Icon(Icons.add),
-        label: const Text('РќРѕРІР° С†С–Р»СЊ'),
+        label: const Text('Нова ціль'),
       ),
     );
   }
@@ -217,7 +217,7 @@ class FinancialGoalsListScreenState extends State<FinancialGoalsListScreen> {
         '${currencyFormatter.format(goal.originalCurrentAmount)} / ${currencyFormatter.format(goal.originalTargetAmount)}';
     if (goal.isAchieved) {
       progressText =
-          'Р”РѕСЃСЏРіРЅСѓС‚Рѕ! ${currencyFormatter.format(goal.originalTargetAmount)}';
+          'Досягнуто! ${currencyFormatter.format(goal.originalTargetAmount)}';
     }
 
     final isHighlighted = goal.id == _highlightedGoalId;
@@ -285,11 +285,11 @@ class FinancialGoalsListScreenState extends State<FinancialGoalsListScreen> {
                     itemBuilder: (context) => <PopupMenuEntry<String>>[
                       const PopupMenuItem<String>(
                         value: 'edit',
-                        child: Text('Р РµРґР°РіСѓРІР°С‚Рё'),
+                        child: Text('Редагувати'),
                       ),
                       const PopupMenuItem<String>(
                         value: 'delete',
-                        child: Text('Р’РёРґР°Р»РёС‚Рё'),
+                        child: Text('Видалити'),
                       ),
                     ],
                   ),
@@ -362,13 +362,13 @@ class FinancialGoalsListScreenState extends State<FinancialGoalsListScreen> {
             ),
             const SizedBox(height: 24),
             Text(
-              'Р¤С–РЅР°РЅСЃРѕРІРёС… С†С–Р»РµР№ С‰Рµ РЅРµРјР°С”',
+              'Фінансових цілей ще немає',
               style: Theme.of(context).textTheme.headlineSmall,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
             Text(
-              'РЎС‚РІРѕСЂСЋР№С‚Рµ С†С–Р»С–, С‰РѕР± РІС–РґСЃС‚РµР¶СѓРІР°С‚Рё СЃРІС–Р№ РїСЂРѕРіСЂРµСЃ Сѓ РЅР°РєРѕРїРёС‡РµРЅРЅСЏС…!',
+              'Створюйте цілі, щоб відстежувати свій прогрес у накопиченнях!',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),

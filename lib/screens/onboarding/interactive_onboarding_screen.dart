@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -118,9 +118,9 @@ class _InteractiveOnboardingState extends State<InteractiveOnboarding> {
                   'Let’s tailor Wislet for you: choose currency, add your first wallet, pick categories, security, and sync.',
             ),
             const SizedBox(height: 12),
-            Wrap(
+            const Wrap(
               spacing: 8,
-              children: const [
+              children: [
                 Chip(label: Text('Track expenses')),
                 Chip(label: Text('Budgeting')),
                 Chip(label: Text('Subscriptions')),
@@ -137,7 +137,7 @@ class _InteractiveOnboardingState extends State<InteractiveOnboarding> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             DropdownButtonFormField<Currency>(
-              value: _selectedCurrency,
+              initialValue: _selectedCurrency,
               items: data.appCurrencies
                   .map(
                     (Currency c) => DropdownMenuItem<Currency>(
@@ -179,8 +179,8 @@ class _InteractiveOnboardingState extends State<InteractiveOnboarding> {
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(
-                labelText: l?.t('starting_balance') ??
-                    'Starting balance (optional)',
+                labelText:
+                    l?.t('starting_balance') ?? 'Starting balance (optional)',
                 border: const OutlineInputBorder(),
               ),
             ),

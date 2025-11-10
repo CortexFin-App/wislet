@@ -1,9 +1,9 @@
-import 'package:fpdart/fpdart.dart';
+﻿import 'package:fpdart/fpdart.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:wislet/core/error/failures.dart';
 import 'package:wislet/data/repositories/debt_loan_repository.dart';
 import 'package:wislet/models/debt_loan_model.dart';
 import 'package:wislet/services/error_monitoring_service.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseDebtLoanRepositoryImpl implements DebtLoanRepository {
   SupabaseDebtLoanRepositoryImpl(this._client);
@@ -19,8 +19,8 @@ class SupabaseDebtLoanRepositoryImpl implements DebtLoanRepository {
             .where(
               (debt) => debt.isDeleted == false && debt.walletId == walletId,
             )
-            .toList();
-        debts.sort((a, b) => b.creationDate.compareTo(a.creationDate));
+            .toList()
+            ..sort((a, b) => b.creationDate.compareTo(a.creationDate));
         return debts;
       },
     );

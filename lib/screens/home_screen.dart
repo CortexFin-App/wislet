@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:wislet/providers/dashboard_provider.dart';
@@ -58,7 +58,7 @@ class HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final provider = context.watch<DashboardProvider>();
     final currencyFormat =
-        NumberFormat.currency(locale: 'uk_UA', symbol: 'в‚ґ', decimalDigits: 0);
+        NumberFormat.currency(locale: 'uk_UA', symbol: '₴', decimalDigits: 0);
     final theme = Theme.of(context);
 
     return RefreshIndicator(
@@ -70,7 +70,7 @@ class HomeScreenState extends State<HomeScreen> {
               children: [
                 const SizedBox(height: 16),
                 Text(
-                  'Р—Р°РіР°Р»СЊРЅРёР№ Р±Р°Р»Р°РЅСЃ',
+                  'Загальний баланс',
                   textAlign: TextAlign.center,
                   style: theme.textTheme.titleMedium
                       ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
@@ -95,7 +95,7 @@ class HomeScreenState extends State<HomeScreen> {
                   children: [
                     Expanded(
                       child: SummaryCard(
-                        title: 'Р”РѕС…РѕРґРё',
+                        title: 'Доходи',
                         amount: provider.health.income,
                         color: Colors.green.shade400,
                         icon: Icons.arrow_downward_rounded,
@@ -104,7 +104,7 @@ class HomeScreenState extends State<HomeScreen> {
                     const SizedBox(width: 16),
                     Expanded(
                       child: SummaryCard(
-                        title: 'Р’РёС‚СЂР°С‚Рё',
+                        title: 'Витрати',
                         amount: provider.health.expenses,
                         color: Colors.red.shade400,
                         icon: Icons.arrow_upward_rounded,

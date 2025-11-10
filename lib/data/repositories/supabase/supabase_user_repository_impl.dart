@@ -1,6 +1,6 @@
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:wislet/data/repositories/user_repository.dart';
 import 'package:wislet/models/user.dart' as fin_user;
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseUserRepositoryImpl implements UserRepository {
   SupabaseUserRepositoryImpl(this._client);

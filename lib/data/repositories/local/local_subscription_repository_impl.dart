@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 
 import 'package:fpdart/fpdart.dart';
 import 'package:wislet/core/error/failures.dart';
@@ -27,9 +27,9 @@ class LocalSubscriptionRepositoryImpl implements SubscriptionRepository {
       final db = await _dbHelper.database;
       var newId = -1;
       await db.transaction((txn) async {
-        final map = sub.toMap();
-        map.remove('id');
-        map[DatabaseHelper.colSubWalletId] = walletId;
+        final map = sub.toMap()
+        ..remove('id')
+        ..[DatabaseHelper.colSubWalletId] = walletId;
         newId = await txn.insert(DatabaseHelper.tableSubscriptions, map);
 
         await txn.insert(DatabaseHelper.tableSyncQueue, {

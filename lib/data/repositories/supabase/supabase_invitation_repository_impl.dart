@@ -1,6 +1,6 @@
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:wislet/data/repositories/invitation_repository.dart';
 import 'package:wislet/models/invitation_model.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseInvitationRepositoryImpl implements InvitationRepository {
   SupabaseInvitationRepositoryImpl(this._client);

@@ -84,13 +84,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
         mimeType: 'application/json',
         name: fileName,
       );
-
-      // ✅ Сумісно з твоєю версією share_plus
-      await Share.shareXFiles(
-        [xfile],
-        text: 'Export completed',
+       await SharePlus.instance.share(
+        ShareParams(
+        files: [xfile],
+         text: 'Export completed',
         subject: 'Backup',
-      );
+         ),
+        );
+
     } finally {
       if (mounted) setState(() => _isProcessingBackup = false);
     }
@@ -179,18 +180,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 showDragHandle: true,
                 builder: (context) {
                   return ListView(
-                    children: data.appCurrencies
-                        .map(
-                          (Currency c) => RadioListTile<Currency>(
+                   children: [
+                      RadioGroup<Currency>(
+                         groupValue: currencyProvider.selectedCurrency,
+                        onChanged: (Currency? v) => Navigator.pop(context, v),
+                         child: Column(
+                            children: data.appCurrencies.map((c) {
+                             return RadioMenuButton<Currency>(
                             value: c,
-                            groupValue: currencyProvider.selectedCurrency,
-                            onChanged: (Currency? v) =>
-                                Navigator.pop(context, v),
-                            title: Text('${c.name} (${c.code})'),
-                            subtitle: Text(c.symbol),
-                          ),
-                        )
-                        .toList(),
+                                groupValue: currencyProvider.selectedCurrency,
+                             onChanged: (Currency? v) => Navigator.pop(context, v),
+                                child: ListTile(
+                                  title: Text('${c.name} (${c.code})'),
+                                     subtitle: Text(c.symbol),
+                                ),
+                             );
+                             }).toList(),
+                         ),
+                        ),
+
+                    ],
+
                   );
                 },
               );

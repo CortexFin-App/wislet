@@ -1,5 +1,6 @@
-import 'package:collection/collection.dart';
+﻿import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wislet/core/constants/app_constants.dart';
 import 'package:wislet/core/di/injector.dart';
 import 'package:wislet/data/repositories/category_repository.dart';
@@ -8,7 +9,6 @@ import 'package:wislet/data/repositories/wallet_repository.dart';
 import 'package:wislet/models/wallet.dart';
 import 'package:wislet/providers/app_mode_provider.dart';
 import 'package:wislet/services/auth_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class WalletProvider with ChangeNotifier {
   WalletProvider({
@@ -74,7 +74,7 @@ class WalletProvider with ChangeNotifier {
 
     final result = await walletRepository.getAllWallets();
 
-    result.fold(
+    await result.fold(
       (failure) {
         _errorMessage = failure.userMessage;
         _wallets = [];

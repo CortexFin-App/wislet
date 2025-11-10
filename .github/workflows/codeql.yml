@@ -38,7 +38,7 @@ jobs:
       - name: Analyze
         uses: github/codeql-action/analyze@v3
 
-  # ---------- CodeQL for C/C++ (лише якщо є такі файли) ----------
+  # ---------- C/C++: тільки якщо є такі файли ----------
   codeql-cpp:
     name: CodeQL (C/C++)
     runs-on: ubuntu-latest

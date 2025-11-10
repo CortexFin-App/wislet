@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:wislet/models/financial_story.dart';
 
 class TopExpenseStoryCard extends StatelessWidget {
@@ -13,7 +13,7 @@ class TopExpenseStoryCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'РљСѓРґРё РїС–С€Р»Рё РіСЂРѕС€С– ${story.period}?',
+            'Куди пішли гроші ${story.period}?',
             style: theme.textTheme.titleLarge?.copyWith(
               color: theme.colorScheme.onSurface,
               fontWeight: FontWeight.bold,
@@ -114,7 +114,7 @@ class ComparisonStoryCard extends StatelessWidget {
               ),
               const Spacer(),
               Text(
-                'Р§СѓРґРѕРІР° СЂРѕР±РѕС‚Р°! рџ’Є',
+                'Чудова робота! 💪',
                 style: TextStyle(color: theme.colorScheme.onSurface),
               ),
             ],

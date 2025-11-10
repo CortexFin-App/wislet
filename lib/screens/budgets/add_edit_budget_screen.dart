@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:wislet/core/di/injector.dart';
@@ -52,7 +52,7 @@ class _AddEditBudgetScreenState extends State<AddEditBudgetScreen> {
       _startDate = DateTime(now.year, now.month);
       _endDate = DateTime(now.year, now.month + 1, 0);
       _nameController = TextEditingController(
-        text: 'Р‘СЋРґР¶РµС‚ РЅР° ${DateFormat.yMMMM('uk_UA').format(now)}',
+        text: 'Бюджет на ${DateFormat.yMMMM('uk_UA').format(now)}',
       );
     }
 
@@ -80,7 +80,7 @@ class _AddEditBudgetScreenState extends State<AddEditBudgetScreen> {
       (name) {
         if (mounted) {
           setState(() {
-            _nameController.text = 'Р‘СЋРґР¶РµС‚ РЅР° "$name"';
+            _nameController.text = 'Бюджет на "$name"';
           });
         }
       },
@@ -114,7 +114,7 @@ class _AddEditBudgetScreenState extends State<AddEditBudgetScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
-              'РџРѕРјРёР»РєР°: Р°РєС‚РёРІРЅРёР№ РіР°РјР°РЅРµС†СЊ РЅРµ Р·РЅР°Р№РґРµРЅРѕ.',
+              'Помилка: активний гаманець не знайдено.',
             ),
           ),
         );
@@ -138,10 +138,10 @@ class _AddEditBudgetScreenState extends State<AddEditBudgetScreen> {
             double.parse(_amountController.text.replaceAll(',', '.'));
         final newBudgetResult =
             await _budgetRepository.createBudget(budget, walletId);
-        await newBudgetResult.fold((l) => throw l, (newBudgetId) async {
+        await newBudgetResult.fold((l) => throw Exception(l.toString()), (newBudgetId) async {
           final envelope = BudgetEnvelope(
             budgetId: newBudgetId,
-            name: 'Р›С–РјС–С‚ РЅР° РєР°С‚РµРіРѕСЂС–СЋ',
+            name: 'Ліміт на категорію',
             categoryId: widget.isFirstBudgetForCategory!,
             originalPlannedAmount: amount,
             originalCurrencyCode: 'UAH',
@@ -163,7 +163,7 @@ class _AddEditBudgetScreenState extends State<AddEditBudgetScreen> {
     } on Exception catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('РџРѕРјРёР»РєР° Р·Р±РµСЂРµР¶РµРЅРЅСЏ: $e')),
+          SnackBar(content: Text('Помилка збереження: $e')),
         );
       }
     } finally {
@@ -183,23 +183,23 @@ class _AddEditBudgetScreenState extends State<AddEditBudgetScreen> {
 
   Widget _buildFirstBudgetDialog() {
     return AlertDialog(
-      title: const Text('РЎС‚РІРѕСЂРёРјРѕ РїРµСЂС€РёР№ Р±СЋРґР¶РµС‚'),
+      title: const Text('Створімо перший бюджет'),
       content: Form(
         key: _formKey,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Р§СѓРґРѕРІРѕ! РўРµРїРµСЂ РІСЃС‚Р°РЅРѕРІС–С‚СЊ РјС–СЃСЏС‡РЅРёР№ Р»С–РјС–С‚ РґР»СЏ РєР°С‚РµРіРѕСЂС–С—, СЏРєСѓ РІРё С‰РѕР№РЅРѕ РІРёРєРѕСЂРёСЃС‚Р°Р»Рё. Р¦Рµ РґРѕРїРѕРјРѕР¶Рµ РІР°Рј РєРѕРЅС‚СЂРѕР»СЋРІР°С‚Рё РІРёС‚СЂР°С‚Рё.',
+              'Чудово! Тепер встановіть місячний ліміт для категорії, яку ви щойно використали. Це допоможе вам контролювати витрати.',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 24),
             TextFormField(
               controller: _nameController,
               decoration:
-                  const InputDecoration(labelText: 'РќР°Р·РІР° Р±СЋРґР¶РµС‚Сѓ'),
+                  const InputDecoration(labelText: 'Назва бюджету'),
               validator: (value) => value == null || value.trim().isEmpty
-                  ? 'Р’РІРµРґС–С‚СЊ РЅР°Р·РІСѓ'
+                  ? 'Введіть назву'
                   : null,
             ),
             const SizedBox(height: 16),
@@ -209,15 +209,15 @@ class _AddEditBudgetScreenState extends State<AddEditBudgetScreen> {
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
               decoration: const InputDecoration(
-                labelText: 'Р’СЃС‚Р°РЅРѕРІС–С‚СЊ Р»С–РјС–С‚, РіСЂРЅ',
+                labelText: 'Встановіть ліміт, грн',
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Р’РІРµРґС–С‚СЊ СЃСѓРјСѓ';
+                  return 'Введіть суму';
                 }
                 final amount = double.tryParse(value.replaceAll(',', '.'));
                 if (amount == null || amount <= 0) {
-                  return 'РЎСѓРјР° РјР°С” Р±СѓС‚Рё Р±С–Р»СЊС€РѕСЋ Р·Р° РЅСѓР»СЊ';
+                  return 'Сума має бути більшою за нуль';
                 }
                 return null;
               },
@@ -234,7 +234,7 @@ class _AddEditBudgetScreenState extends State<AddEditBudgetScreen> {
                   width: 20,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Text('Р“РѕС‚РѕРІРѕ'),
+              : const Text('Готово'),
         ),
       ],
     );
@@ -244,9 +244,7 @@ class _AddEditBudgetScreenState extends State<AddEditBudgetScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          _isEditing
-              ? 'Р РµРґР°РіСѓРІР°С‚Рё Р‘СЋРґР¶РµС‚'
-              : 'РЎС‚РІРѕСЂРёС‚Рё Р‘СЋРґР¶РµС‚',
+          _isEditing ? 'Редагувати Бюджет' : 'Створити Бюджет',
         ),
       ),
       body: SingleChildScrollView(
@@ -259,11 +257,11 @@ class _AddEditBudgetScreenState extends State<AddEditBudgetScreen> {
               TextFormField(
                 controller: _nameController,
                 decoration: const InputDecoration(
-                  labelText: 'РќР°Р·РІР° Р±СЋРґР¶РµС‚Сѓ',
+                  labelText: 'Назва бюджету',
                   prefixIcon: Icon(Icons.drive_file_rename_outline),
                 ),
                 validator: (value) => value == null || value.trim().isEmpty
-                    ? 'Р’РІРµРґС–С‚СЊ РЅР°Р·РІСѓ'
+                    ? 'Введіть назву'
                     : null,
               ),
               const SizedBox(height: 24),
@@ -277,7 +275,7 @@ class _AddEditBudgetScreenState extends State<AddEditBudgetScreen> {
                 ),
                 tileColor: Theme.of(context).colorScheme.surface,
                 leading: const Icon(Icons.date_range_outlined),
-                title: const Text('РџРµСЂС–РѕРґ Р±СЋРґР¶РµС‚Сѓ'),
+                title: const Text('Період бюджету'),
                 subtitle: Text(
                   '${DateFormat('dd.MM.yyyy').format(_startDate)} - ${DateFormat('dd.MM.yyyy').format(_endDate)}',
                 ),
@@ -285,9 +283,9 @@ class _AddEditBudgetScreenState extends State<AddEditBudgetScreen> {
               ),
               const SizedBox(height: 24),
               DropdownButtonFormField<BudgetStrategyType>(
-                value: _selectedStrategy,
+                initialValue: _selectedStrategy,
                 decoration: const InputDecoration(
-                  labelText: 'РЎС‚СЂР°С‚РµРіС–СЏ Р±СЋРґР¶РµС‚СѓРІР°РЅРЅСЏ',
+                  labelText: 'Стратегія бюджетування',
                   prefixIcon: Icon(Icons.rule_rounded),
                 ),
                 items: BudgetStrategyType.values.map((strategy) {
@@ -306,7 +304,7 @@ class _AddEditBudgetScreenState extends State<AddEditBudgetScreen> {
               ),
               const SizedBox(height: 16),
               SwitchListTile(
-                title: const Text('Р‘СЋРґР¶РµС‚ Р°РєС‚РёРІРЅРёР№'),
+                title: const Text('Бюджет активний'),
                 value: _isActive,
                 onChanged: (value) => setState(() => _isActive = value),
                 tileColor:
@@ -328,9 +326,7 @@ class _AddEditBudgetScreenState extends State<AddEditBudgetScreen> {
                         ),
                       )
                     : Text(
-                        _isEditing
-                            ? 'Р—Р±РµСЂРµРіС‚Рё Р‘СЋРґР¶РµС‚'
-                            : 'РЎС‚РІРѕСЂРёС‚Рё Р‘СЋРґР¶РµС‚',
+                        _isEditing ? 'Зберегти Бюджет' : 'Створити Бюджет',
                       ),
               ),
             ],

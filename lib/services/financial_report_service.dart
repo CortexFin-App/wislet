@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:wislet/core/di/injector.dart';
 import 'package:wislet/data/repositories/category_repository.dart';
 import 'package:wislet/data/repositories/transaction_repository.dart';
@@ -38,7 +38,7 @@ class FinancialReportService {
           if (totalExpenses > 0) {
             stories.add(
               TopExpensesStory(
-                period: 'РІ С†СЊРѕРјСѓ РјС–СЃСЏС†С–',
+                period: 'в цьому місяці',
                 topExpenses: expenses
                     .take(3)
                     .map(
@@ -87,10 +87,9 @@ class FinancialReportService {
               final percentChange = (diff / lastMonthExpenses) * 100;
               stories.add(
                 ComparisonStory(
-                  title:
-                      'РџРѕСЂС–РІРЅСЏРЅРЅСЏ Р· РјРёРЅСѓР»РёРј РјС–СЃСЏС†РµРј',
+                  title: 'Порівняння з минулим місяцем',
                   comparisonText:
-                      'Р’РёС‚СЂР°С‚Рё С†СЊРѕРіРѕ РјС–СЃСЏС†СЏ ${diff > 0 ? 'РјРµРЅС€С–' : 'Р±С–Р»СЊС€С–'} РЅР° ${diff.abs().toStringAsFixed(0)} РіСЂРЅ',
+                      'Витрати цього місяця ${diff > 0 ? 'менші' : 'більші'} на ${diff.abs().toStringAsFixed(0)} грн',
                   changePercentage: percentChange,
                   isPositiveChange: diff > 0,
                 ),

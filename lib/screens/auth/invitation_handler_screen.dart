@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:wislet/core/di/injector.dart';
 import 'package:wislet/data/repositories/invitation_repository.dart';
@@ -32,12 +32,12 @@ class _InvitationHandlerScreenState extends State<InvitationHandlerScreen> {
         await walletProvider.loadWallets();
         messenger.showSnackBar(
           const SnackBar(
-            content: Text('Р—Р°РїСЂРѕС€РµРЅРЅСЏ РїСЂРёР№РЅСЏС‚Рѕ!'),
+            content: Text('Запрошення прийнято!'),
           ),
         );
         navigator.pop();
       } on Exception catch (e) {
-        messenger.showSnackBar(SnackBar(content: Text('РџРѕРјРёР»РєР°: $e')));
+        messenger.showSnackBar(SnackBar(content: Text('Помилка: $e')));
       }
     } else {
       await navigator.pushReplacement(
@@ -58,7 +58,7 @@ class _InvitationHandlerScreenState extends State<InvitationHandlerScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Р—Р°РїСЂРѕС€РµРЅРЅСЏ РґРѕ РіР°РјР°РЅС†СЏ'),
+        title: const Text('Запрошення до гаманця'),
       ),
       body: Center(
         child: Padding(
@@ -69,13 +69,13 @@ class _InvitationHandlerScreenState extends State<InvitationHandlerScreen> {
               const Icon(Icons.mail_outline, size: 80, color: Colors.grey),
               const SizedBox(height: 24),
               Text(
-                'Р’Р°СЃ Р·Р°РїСЂРѕСЃРёР»Рё РґРѕ СЃРїС–Р»СЊРЅРѕРіРѕ РіР°РјР°РЅС†СЏ',
+                'Вас запросили до спільного гаманця',
                 style: Theme.of(context).textTheme.headlineSmall,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
               const Text(
-                'РџСЂРёР№РјС–С‚СЊ Р·Р°РїСЂРѕС€РµРЅРЅСЏ, С‰РѕР± РѕС‚СЂРёРјР°С‚Рё РґРѕСЃС‚СѓРї, Р°Р±Рѕ РІС–РґС…РёР»С–С‚СЊ, СЏРєС‰Рѕ РІРё РЅРµ РѕС‡С–РєСѓРІР°Р»Рё РЅР° С†Рµ.',
+                'Прийміть запрошення, щоб отримати доступ, або відхиліть, якщо ви не очікували на це.',
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 40),
@@ -87,12 +87,12 @@ class _InvitationHandlerScreenState extends State<InvitationHandlerScreen> {
                   children: [
                     OutlinedButton(
                       onPressed: Navigator.of(context).pop,
-                      child: const Text('Р’С–РґС…РёР»РёС‚Рё'),
+                      child: const Text('Відхилити'),
                     ),
                     const SizedBox(width: 16),
                     ElevatedButton(
                       onPressed: _handleInvitation,
-                      child: const Text('РџСЂРёР№РЅСЏС‚Рё'),
+                      child: const Text('Прийняти'),
                     ),
                   ],
                 ),

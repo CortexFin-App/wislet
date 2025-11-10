@@ -1,4 +1,4 @@
-import 'package:fl_chart/fl_chart.dart';
+﻿import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -59,7 +59,7 @@ class _NetWorthScreenState extends State<NetWorthScreen> {
         children: <Widget>[
           ListTile(
             leading: Icon(Icons.arrow_upward, color: Colors.green.shade400),
-            title: const Text('Р”РѕРґР°С‚Рё РђРєС‚РёРІ'),
+            title: const Text('Додати Актив'),
             onTap: () {
               Navigator.pop(ctx);
               Navigator.push<void>(
@@ -70,7 +70,7 @@ class _NetWorthScreenState extends State<NetWorthScreen> {
           ),
           ListTile(
             leading: Icon(Icons.arrow_downward, color: Colors.red.shade400),
-            title: const Text('Р”РѕРґР°С‚Рё РџР°СЃРёРІ'),
+            title: const Text('Додати Пасив'),
             onTap: () {
               Navigator.pop(ctx);
               Navigator.push<void>(
@@ -98,8 +98,7 @@ class _NetWorthScreenState extends State<NetWorthScreen> {
           }
           if (snapshot.hasError || !snapshot.hasData) {
             return const Center(
-              child:
-                  Text('РќРµ РІРґР°Р»РѕСЃСЏ Р·Р°РІР°РЅС‚Р°Р¶РёС‚Рё РґР°РЅС–.'),
+              child: Text('Не вдалося завантажити дані.'),
             );
           }
           final data = snapshot.data!;
@@ -131,7 +130,7 @@ class _NetWorthScreenState extends State<NetWorthScreen> {
           ),
           const SizedBox(height: 24),
           Text(
-            'Р’С–РґСЃС‚РµР¶СѓР№С‚Рµ СЃРІС–Р№ РєР°РїС–С‚Р°Р»',
+            'Відстежуйте свій капітал',
             style: theme.textTheme.headlineSmall,
             textAlign: TextAlign.center,
           ),
@@ -139,7 +138,7 @@ class _NetWorthScreenState extends State<NetWorthScreen> {
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 32),
             child: Text(
-              'Р”РѕРґР°Р№С‚Рµ СЃРІРѕС— Р°РєС‚РёРІРё (РЅРµСЂСѓС…РѕРјС–СЃС‚СЊ, Р°РІС‚Рѕ) С‚Р° РїР°СЃРёРІРё (РєСЂРµРґРёС‚Рё, С–РїРѕС‚РµРєРё), С‰РѕР± Р±Р°С‡РёС‚Рё РїРѕРІРЅСѓ С„С–РЅР°РЅСЃРѕРІСѓ РєР°СЂС‚РёРЅСѓ.',
+              'Додайте свої активи (нерухомість, авто) та пасиви (кредити, іпотеки), щоб бачити повну фінансову картину.',
               textAlign: TextAlign.center,
             ),
           ),
@@ -151,13 +150,13 @@ class _NetWorthScreenState extends State<NetWorthScreen> {
   Widget _buildNetWorthDashboard(NetWorthData data) {
     final theme = Theme.of(context);
     final currencyFormat =
-        NumberFormat.currency(locale: 'uk_UA', symbol: 'в‚ґ', decimalDigits: 0);
+        NumberFormat.currency(locale: 'uk_UA', symbol: '₴', decimalDigits: 0);
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
       children: [
         Text(
-          'Р§РёСЃС‚РёР№ РєР°РїС–С‚Р°Р»',
+          'Чистий капітал',
           style: theme.textTheme.titleMedium
               ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
           textAlign: TextAlign.center,
@@ -176,14 +175,9 @@ class _NetWorthScreenState extends State<NetWorthScreen> {
           child: _buildPieChart(data),
         ),
         const SizedBox(height: 24),
-        _buildDetailSection('РђРєС‚РёРІРё', data.assets, currencyFormat, true),
+        _buildDetailSection('Активи', data.assets, currencyFormat, true),
         const SizedBox(height: 16),
-        _buildDetailSection(
-          'РџР°СЃРёРІРё',
-          data.liabilities,
-          currencyFormat,
-          false,
-        ),
+        _buildDetailSection('Пасиви', data.liabilities, currencyFormat, false),
       ],
     );
   }
@@ -195,7 +189,7 @@ class _NetWorthScreenState extends State<NetWorthScreen> {
     if (!hasAssets && !hasLiabilities) {
       return Center(
         child: Text(
-          'Р”РѕРґР°Р№С‚Рµ Р°РєС‚РёРІРё С‚Р° РїР°СЃРёРІРё',
+          'Додайте активи та пасиви',
           style:
               TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
         ),
@@ -236,9 +230,9 @@ class _NetWorthScreenState extends State<NetWorthScreen> {
     );
   }
 
-  Widget _buildDetailSection(
+  Widget _buildDetailSection<T>(
     String title,
-    List<dynamic> items,
+    List<T> items,
     NumberFormat formatter,
     bool isAsset,
   ) {
@@ -250,16 +244,29 @@ class _NetWorthScreenState extends State<NetWorthScreen> {
         if (items.isEmpty)
           const Padding(
             padding: EdgeInsets.all(8),
-            child: Text('РќРµРјР°С” Р·Р°РїРёСЃС–РІ'),
+            child: Text('Немає записів'),
           )
         else
           ...items.map(
-            (item) => _buildItemTile(
-              item.name as String,
-              isAsset ? (item as Asset).value : (item as Liability).amount,
-              formatter,
-              isAsset,
-            ),
+            (item) {
+              if (item is Asset) {
+                return _buildItemTile(
+                  item.name,
+                  item.value,
+                  formatter,
+                  true,
+                );
+              } else if (item is Liability) {
+                return _buildItemTile(
+                  item.name,
+                  item.amount,
+                  formatter,
+                  false,
+                );
+              } else {
+                return const SizedBox.shrink();
+              }
+            },
           ),
       ],
     );

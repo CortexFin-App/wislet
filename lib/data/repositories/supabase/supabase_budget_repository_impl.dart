@@ -1,10 +1,10 @@
-import 'package:fpdart/fpdart.dart';
+﻿import 'package:fpdart/fpdart.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:wislet/core/error/failures.dart';
 import 'package:wislet/data/repositories/budget_repository.dart';
 import 'package:wislet/models/budget_models.dart';
 import 'package:wislet/models/transaction.dart' as fin_transaction;
 import 'package:wislet/services/error_monitoring_service.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseBudgetRepositoryImpl implements BudgetRepository {
   SupabaseBudgetRepositoryImpl(this._client);
@@ -22,8 +22,7 @@ class SupabaseBudgetRepositoryImpl implements BudgetRepository {
             )
             .map(Budget.fromMap)
             .toList();
-        budgets.sort((a, b) => b.startDate.compareTo(a.startDate));
-        return budgets;
+        return budgets..sort((a, b) => b.startDate.compareTo(a.startDate));
       },
     );
   }

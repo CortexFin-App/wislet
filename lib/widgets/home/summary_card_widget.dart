@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 class SummaryCard extends StatelessWidget {
@@ -19,7 +19,7 @@ class SummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final currencyFormat =
-        NumberFormat.currency(locale: 'uk_UA', symbol: 'в‚ґ', decimalDigits: 0);
+        NumberFormat.currency(locale: 'uk_UA', symbol: '₴', decimalDigits: 0);
 
     return Card(
       child: Padding(

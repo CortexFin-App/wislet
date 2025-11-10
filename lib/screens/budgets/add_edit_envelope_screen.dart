@@ -116,7 +116,7 @@ class _AddEditEnvelopeScreenState extends State<AddEditEnvelopeScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Р‘СѓРґСЊ Р»Р°СЃРєР°, РѕР±РµСЂС–С‚СЊ РєР°С‚РµРіРѕСЂС–СЋ.',
+            'Будь ласка, оберіть категорію.',
           ),
         ),
       );
@@ -150,7 +150,7 @@ class _AddEditEnvelopeScreenState extends State<AddEditEnvelopeScreen> {
     } on Exception catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('РџРѕРјРёР»РєР° Р·Р±РµСЂРµР¶РµРЅРЅСЏ: $e')),
+          SnackBar(content: Text('Помилка збереження: $e')),
         );
       }
     } finally {
@@ -165,9 +165,7 @@ class _AddEditEnvelopeScreenState extends State<AddEditEnvelopeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          _isEditing
-              ? 'Р РµРґР°РіСѓРІР°С‚Рё РљРѕРЅРІРµСЂС‚'
-              : 'РќРѕРІРёР№ РљРѕРЅРІРµСЂС‚',
+          _isEditing ? 'Редагувати Конверт' : 'Новий Конверт',
         ),
       ),
       body: _isLoadingCategories
@@ -182,18 +180,18 @@ class _AddEditEnvelopeScreenState extends State<AddEditEnvelopeScreen> {
                     TextFormField(
                       controller: _nameController,
                       decoration: const InputDecoration(
-                        labelText: 'РќР°Р·РІР° РєРѕРЅРІРµСЂС‚Р°',
+                        labelText: 'Назва конверта',
                       ),
                       validator: (value) =>
                           value == null || value.trim().isEmpty
-                              ? 'Р’РІРµРґС–С‚СЊ РЅР°Р·РІСѓ'
+                              ? 'Введіть назву'
                               : null,
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<Category>(
-                      value: _selectedCategory,
+                      initialValue: _selectedCategory,
                       decoration: const InputDecoration(
-                        labelText: 'РљР°С‚РµРіРѕСЂС–СЏ РІРёС‚СЂР°С‚',
+                        labelText: 'Категорія витрат',
                       ),
                       items: _availableCategories
                           .map(
@@ -205,9 +203,8 @@ class _AddEditEnvelopeScreenState extends State<AddEditEnvelopeScreen> {
                           .toList(),
                       onChanged: (cat) =>
                           setState(() => _selectedCategory = cat),
-                      validator: (value) => value == null
-                          ? 'РћР±РµСЂС–С‚СЊ РєР°С‚РµРіРѕСЂС–СЋ'
-                          : null,
+                      validator: (value) =>
+                          value == null ? 'Оберіть категорію' : null,
                     ),
                     const SizedBox(height: 16),
                     Row(
@@ -217,18 +214,20 @@ class _AddEditEnvelopeScreenState extends State<AddEditEnvelopeScreen> {
                           child: TextFormField(
                             controller: _amountController,
                             decoration: const InputDecoration(
-                              labelText: 'Р—Р°РїР»Р°РЅРѕРІР°РЅР° СЃСѓРјР°',
+                              labelText: 'Запланована сума',
                             ),
-                            keyboardType: const TextInputType.numberWithOptions(
+                            keyboardType:
+                                const TextInputType.numberWithOptions(
                               decimal: true,
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return 'Р’РІРµРґС–С‚СЊ СЃСѓРјСѓ';
+                                return 'Введіть суму';
                               }
-                              if (double.tryParse(value.replaceAll(',', '.')) ==
+                              if (double.tryParse(
+                                      value.replaceAll(',', '.'),) ==
                                   null) {
-                                return 'РќРµРІС–СЂРЅРµ С‡РёСЃР»Рѕ';
+                                return 'Невірне число';
                               }
                               return null;
                             },
@@ -237,9 +236,9 @@ class _AddEditEnvelopeScreenState extends State<AddEditEnvelopeScreen> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: DropdownButtonFormField<Currency>(
-                            value: _selectedCurrency,
+                            initialValue: _selectedCurrency,
                             decoration: const InputDecoration(
-                              labelText: 'Р’Р°Р»СЋС‚Р°',
+                              labelText: 'Валюта',
                             ),
                             items: appCurrencies
                                 .map(
@@ -262,8 +261,8 @@ class _AddEditEnvelopeScreenState extends State<AddEditEnvelopeScreen> {
                           ? const CircularProgressIndicator(color: Colors.white)
                           : Text(
                               _isEditing
-                                  ? 'Р—Р±РµСЂРµРіС‚Рё РљРѕРЅРІРµСЂС‚'
-                                  : 'РЎС‚РІРѕСЂРёС‚Рё РљРѕРЅРІРµСЂС‚',
+                                  ? 'Зберегти Конверт'
+                                  : 'Створити Конверт',
                             ),
                     ),
                   ],
