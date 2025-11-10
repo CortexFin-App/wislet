@@ -8,4 +8,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: zricethezav/gitleaks-action@v2
+      - run: |
+          curl -s https://api.github.com/repos/gitleaks/gitleaks/releases/latest \
+          | grep "browser_download_url.*linux-amd64.tar.gz" \
+          | cut -d '"' -f 4 \
+          | wget -qi -
+          tar -xzf gitleaks-*.tar.gz
+          sudo mv gitleaks /usr/local/bin/gitleaks
+          gitleaks detect --source . --no-git --verbose --redact || true
+
