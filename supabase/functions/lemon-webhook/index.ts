@@ -1,12 +1,7 @@
-// @ts-nocheck
-/// <reference lib="deno.ns" />
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
 // ── ENV ────────────────────────────────────────────────────────────────────────
 // обов'язково додай в функцію (Dashboard → Edge Functions → lemon-webhook → Env):
 // SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ADMIN_KEY (як у /admin-export),
 // ANON_PUBLIC (твій anon jwt), LEMON_SIGNING_SECRET (Secret з Lemon Squeezy)
-const SUPABASE_URL  = Deno.env.get("SUPABASE_URL")!;
 const ADMIN_KEY     = Deno.env.get("ADMIN_KEY")!;
 const ANON          = Deno.env.get("ANON_PUBLIC")!;
 const LEMON_SECRET  = Deno.env.get("LEMON_SIGNING_SECRET")!;
