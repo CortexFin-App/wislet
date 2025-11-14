@@ -91,7 +91,7 @@ jobs:
         if: ${{ steps.detect_flutter.outputs.has == 'true' }}
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.24.3"
+          flutter-version: "3.35.7"
           channel: stable
 
       - name: Verify Flutter version
