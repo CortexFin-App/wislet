@@ -6,7 +6,7 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const FONDY_MERCHANT_ID = Deno.env.get("FONDY_MERCHANT_ID")!;
 const FONDY_SECRET      = Deno.env.get("FONDY_SECRET")!;
 const PUBLIC_BASE       = Deno.env.get("PUBLIC_BASE") || "https://cortexfinapp.com";
-const FUNCTIONS_BASE    = `const FUNCTIONS_BASE = `${SUPABASE_URL.replace(".supabase.co","")}.functions.supabase.co`;
+const FUNCTIONS_BASE = `${SUPABASE_URL.replace(".supabase.co", "")}.functions.supabase.co`;
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -67,7 +67,6 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ checkout_url: j.response.checkout_url }), {
       headers: { ...cors, "Content-Type": "application/json" }
     });
-
   } catch (e) {
     console.error("pay-fondy fatal", e);
 
@@ -75,7 +74,7 @@ Deno.serve(async (req) => {
         e instanceof Error
          ? e.message
           : (typeof e === "string" ? e: "Unknown error")
-      );
+    );
 
     return new Response(JSON.stringify({ error: msg }), { status: 500, headers: cors });
   }
