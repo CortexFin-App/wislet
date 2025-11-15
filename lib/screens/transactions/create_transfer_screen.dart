@@ -1,4 +1,4 @@
-import 'package:collection/collection.dart';
+﻿import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -83,7 +83,7 @@ class _CreateTransferScreenState extends State<CreateTransferScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('РџРѕРјРёР»РєР° РїРµСЂРµРєР°Р·Сѓ: $e')),
+          SnackBar(content: Text('Помилка переказу: $e')),
         );
       }
     } finally {
@@ -100,10 +100,10 @@ class _CreateTransferScreenState extends State<CreateTransferScreen> {
 
     if (wallets.length < 2) {
       return Scaffold(
-        appBar: AppBar(title: const Text('РќРѕРІРёР№ РїРµСЂРµРєР°Р·')),
+        appBar: AppBar(title: const Text('Новий переказ')),
         body: const Center(
           child: Text(
-            'Р”Р»СЏ Р·РґС–Р№СЃРЅРµРЅРЅСЏ РїРµСЂРµРєР°Р·С–РІ РїРѕС‚СЂС–Р±РЅРѕ РјР°С‚Рё С…РѕС‡Р° Р± РґРІР° РіР°РјР°РЅС†С–.',
+            'Для здійснення переказів потрібно мати хоча б два гаманці.',
           ),
         ),
       );
@@ -111,7 +111,7 @@ class _CreateTransferScreenState extends State<CreateTransferScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('РќРѕРІРёР№ РїРµСЂРµРєР°Р·'),
+        title: const Text('Новий переказ'),
         actions: [
           IconButton(
             icon: const Icon(Icons.check),
@@ -125,9 +125,9 @@ class _CreateTransferScreenState extends State<CreateTransferScreen> {
           padding: const EdgeInsets.all(16),
           children: [
             DropdownButtonFormField<Wallet>(
-              value: _fromWallet,
+              initialValue: _fromWallet,
               decoration: const InputDecoration(
-                labelText: 'Р— РіР°РјР°РЅС†СЏ',
+                labelText: 'З гаманця',
                 border: OutlineInputBorder(),
               ),
               items: wallets
@@ -141,14 +141,13 @@ class _CreateTransferScreenState extends State<CreateTransferScreen> {
                 }
                 setState(() => _fromWallet = wallet);
               },
-              validator: (v) =>
-                  v == null ? 'РћР±РµСЂС–С‚СЊ РіР°РјР°РЅРµС†СЊ' : null,
+              validator: (v) => v == null ? 'Оберіть гаманець' : null,
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<Wallet>(
-              value: _toWallet,
+              initialValue: _toWallet,
               decoration: const InputDecoration(
-                labelText: 'РќР° РіР°РјР°РЅРµС†СЊ',
+                labelText: 'На гаманець',
                 border: OutlineInputBorder(),
               ),
               items: wallets
@@ -156,8 +155,7 @@ class _CreateTransferScreenState extends State<CreateTransferScreen> {
                   .map((w) => DropdownMenuItem(value: w, child: Text(w.name)))
                   .toList(),
               onChanged: (wallet) => setState(() => _toWallet = wallet),
-              validator: (v) =>
-                  v == null ? 'РћР±РµСЂС–С‚СЊ РіР°РјР°РЅРµС†СЊ' : null,
+              validator: (v) => v == null ? 'Оберіть гаманець' : null,
             ),
             const SizedBox(height: 16),
             Row(
@@ -168,20 +166,20 @@ class _CreateTransferScreenState extends State<CreateTransferScreen> {
                   child: TextFormField(
                     controller: _amountController,
                     decoration: const InputDecoration(
-                      labelText: 'РЎСѓРјР°',
+                      labelText: 'Сума',
                       border: OutlineInputBorder(),
                     ),
                     keyboardType:
                         const TextInputType.numberWithOptions(decimal: true),
                     validator: (v) {
                       if (v == null || v.isEmpty) {
-                        return 'Р’РІРµРґС–С‚СЊ СЃСѓРјСѓ';
+                        return 'Введіть суму';
                       }
                       if (double.tryParse(v.replaceAll(',', '.')) == null) {
-                        return 'РќРµРІС–СЂРЅРµ С‡РёСЃР»Рѕ';
+                        return 'Невірне число';
                       }
                       if (double.parse(v.replaceAll(',', '.')) <= 0) {
-                        return 'РЎСѓРјР° > 0';
+                        return 'Сума > 0';
                       }
                       return null;
                     },
@@ -191,9 +189,9 @@ class _CreateTransferScreenState extends State<CreateTransferScreen> {
                 Expanded(
                   flex: 2,
                   child: DropdownButtonFormField<Currency>(
-                    value: _selectedCurrency,
+                    initialValue: _selectedCurrency,
                     decoration: const InputDecoration(
-                      labelText: 'Р’Р°Р»СЋС‚Р°',
+                      labelText: 'Валюта',
                       border: OutlineInputBorder(),
                     ),
                     items: appCurrencies
@@ -203,7 +201,7 @@ class _CreateTransferScreenState extends State<CreateTransferScreen> {
                         )
                         .toList(),
                     onChanged: (val) => setState(() => _selectedCurrency = val),
-                    validator: (v) => v == null ? 'РћР±РµСЂС–С‚СЊ' : null,
+                    validator: (v) => v == null ? 'Оберіть' : null,
                   ),
                 ),
               ],
@@ -212,7 +210,7 @@ class _CreateTransferScreenState extends State<CreateTransferScreen> {
             ListTile(
               contentPadding: EdgeInsets.zero,
               title: Text(
-                "Р”Р°С‚Р°: ${DateFormat('dd.MM.yyyy').format(_selectedDate)}",
+                "Дата: ${DateFormat('dd.MM.yyyy').format(_selectedDate)}",
               ),
               trailing: const Icon(Icons.calendar_today_outlined),
               onTap: _pickDate,
@@ -221,7 +219,7 @@ class _CreateTransferScreenState extends State<CreateTransferScreen> {
             TextFormField(
               controller: _descriptionController,
               decoration: const InputDecoration(
-                labelText: 'РћРїРёСЃ (РѕРїС†С–РѕРЅР°Р»СЊРЅРѕ)',
+                labelText: 'Опис (опціонально)',
                 border: OutlineInputBorder(),
               ),
             ),
@@ -233,7 +231,7 @@ class _CreateTransferScreenState extends State<CreateTransferScreen> {
               ),
               child: _isSaving
                   ? const CircularProgressIndicator()
-                  : const Text('Р—РґС–Р№СЃРЅРёС‚Рё РїРµСЂРµРєР°Р·'),
+                  : const Text('Здійснити переказ'),
             ),
           ],
         ),

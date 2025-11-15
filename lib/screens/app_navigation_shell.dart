@@ -1,16 +1,12 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 /// Оболонка з вкладеною навігацією на базі go_router StatefulNavigationShell.
 /// ВАЖЛИВО: floatingActionButtonLocation існує лише у Scaffold.
 class AppNavigationShell extends StatelessWidget {
-  final StatefulNavigationShell shell;
-  final Widget? floatingActionButton;
-  final List<NavigationDestination> destinations;
 
   const AppNavigationShell({
-    super.key,
-    required this.shell,
+    required this.shell, super.key,
     this.floatingActionButton,
     this.destinations = const <NavigationDestination>[
       NavigationDestination(
@@ -30,6 +26,9 @@ class AppNavigationShell extends StatelessWidget {
       ),
     ],
   });
+  final StatefulNavigationShell shell;
+  final Widget? floatingActionButton;
+  final List<NavigationDestination> destinations;
 
   @override
   Widget build(BuildContext context) {

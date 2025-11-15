@@ -71,6 +71,14 @@ Deno.serve(async (req) => {
     });
   } catch (e) {
     console.error("public-metrics error", e);
-    return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: cors });
+    
+    // виводимо акуратне повідомлення для користувача
+    const msg = (
+        e instanceof Error
+          ? e.message
+         : (typeof e === "string" ? e: "Unknown error")
+      );
+
+    return new Response(JSON.stringify({ error: msg }), { status: 500, headers: cors });
   }
 });

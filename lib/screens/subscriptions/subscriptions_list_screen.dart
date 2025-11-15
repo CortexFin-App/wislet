@@ -1,8 +1,9 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:wislet/core/di/injector.dart';
 import 'package:wislet/data/repositories/category_repository.dart';
 import 'package:wislet/data/repositories/subscription_repository.dart';
@@ -15,7 +16,6 @@ import 'package:wislet/services/exchange_rate_service.dart';
 import 'package:wislet/services/notification_service.dart';
 import 'package:wislet/utils/app_palette.dart';
 import 'package:wislet/widgets/scaffold/patterned_scaffold.dart';
-import 'package:shimmer/shimmer.dart';
 
 class SubscriptionsListScreen extends StatefulWidget {
   const SubscriptionsListScreen({super.key});
@@ -168,7 +168,7 @@ class _SubscriptionsListScreenState extends State<SubscriptionsListScreen> {
       ),
     );
 
-    if (confirmDelete == true && mounted) {
+    if ((confirmDelete ?? false) && mounted) {
       if (sub.id == null) return;
       await _subscriptionRepository.deleteSubscription(sub.id!);
 

@@ -1,8 +1,7 @@
-enum BillingCycle { daily, weekly, monthly, quarterly, yearly, custom }
+﻿enum BillingCycle { daily, weekly, monthly, quarterly, yearly, custom }
 
 extension BillingCycleX on BillingCycle {
-  static BillingCycle fromName(String name) =>
-      BillingCycle.values.byName(name);
+  static BillingCycle fromName(String name) => BillingCycle.values.byName(name);
 }
 
 class Subscription {
@@ -26,7 +25,7 @@ class Subscription {
   });
 
   factory Subscription.fromMap(Map<String, dynamic> map) {
-    bool _bool(dynamic v, [bool def = false]) {
+    bool asBool(dynamic v, {bool def = false}) {
       if (v is bool) return v;
       if (v is num) return v != 0;
       return def;
@@ -43,13 +42,13 @@ class Subscription {
       categoryId: map['category_id'] as int?,
       paymentMethod: map['payment_method'] as String?,
       notes: map['notes'] as String?,
-      isActive: _bool(map['is_active'], true),
+      isActive: asBool(map['is_active'], def: true),
       website: map['website'] as String?,
       reminderDaysBefore: (map['reminder_days_before'] as num?)?.toInt() ?? 1,
       updatedAt: map['updated_at'] != null
           ? DateTime.parse(map['updated_at'] as String)
           : null,
-      isDeleted: _bool(map['is_deleted'], false),
+      isDeleted: asBool(map['is_deleted']),
       subscriptionColor: map['subscription_color'] as int?, // ARGB int
     );
   }

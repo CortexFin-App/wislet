@@ -1,13 +1,13 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:wislet/core/di/injector.dart';
 import 'package:wislet/data/repositories/budget_repository.dart';
 import 'package:wislet/models/budget_models.dart';
 import 'package:wislet/providers/wallet_provider.dart';
 import 'package:wislet/screens/budgets/add_edit_budget_screen.dart';
 import 'package:wislet/screens/budgets/budget_detail_screen.dart';
-import 'package:shimmer/shimmer.dart';
 
 class BudgetsListScreen extends StatefulWidget {
   const BudgetsListScreen({super.key});
@@ -87,7 +87,7 @@ class BudgetsListScreenState extends State<BudgetsListScreen> {
           if (snapshot.hasError) {
             return Center(
               child: Text(
-                'РџРѕРјРёР»РєР° Р·Р°РІР°РЅС‚Р°Р¶РµРЅРЅСЏ Р±СЋРґР¶РµС‚С–РІ: ${snapshot.error}',
+                'Помилка завантаження бюджетів: ${snapshot.error}',
               ),
             );
           }
@@ -130,7 +130,9 @@ class BudgetsListScreenState extends State<BudgetsListScreen> {
                   subtitle: Padding(
                     padding: const EdgeInsets.only(top: 4),
                     child: Text(
-                      '${DateFormat('dd.MM.yy', 'uk_UA').format(budget.startDate)} - ${DateFormat('dd.MM.yy', 'uk_UA').format(budget.endDate)}\n${budgetStrategyTypeToString(budget.strategyType)}',
+                      '${DateFormat('dd.MM.yy', 'uk_UA').format(budget.startDate)} - '
+                      '${DateFormat('dd.MM.yy', 'uk_UA').format(budget.endDate)}\n'
+                      '${budgetStrategyTypeToString(budget.strategyType)}',
                       style: theme.textTheme.bodySmall
                           ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                     ),
@@ -150,7 +152,7 @@ class BudgetsListScreenState extends State<BudgetsListScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _navigateToAddBudget,
-        label: const Text('РќРѕРІРёР№ Р‘СЋРґР¶РµС‚'),
+        label: const Text('Новий Бюджет'),
         icon: const Icon(Icons.add_rounded),
       ),
     );
@@ -171,13 +173,13 @@ class BudgetsListScreenState extends State<BudgetsListScreen> {
             ),
             const SizedBox(height: 24),
             Text(
-              'Р–РѕРґРЅРѕРіРѕ Р±СЋРґР¶РµС‚Сѓ С‰Рµ РЅРµ СЃС‚РІРѕСЂРµРЅРѕ',
+              'Жодного бюджету ще не створено',
               style: theme.textTheme.headlineSmall,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
             Text(
-              'РЎС‚РІРѕСЂС–С‚СЊ СЃРІС–Р№ РїРµСЂС€РёР№ Р±СЋРґР¶РµС‚, С‰РѕР± РїРѕС‡Р°С‚Рё РїР»Р°РЅСѓРІР°С‚Рё С„С–РЅР°РЅСЃРё Р·Р° РѕР±СЂР°РЅРѕСЋ СЃС‚СЂР°С‚РµРіС–С”СЋ.',
+              'Створіть свій перший бюджет, щоб почати планувати фінанси за обраною стратегією.',
               style: theme.textTheme.bodyMedium
                   ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
               textAlign: TextAlign.center,

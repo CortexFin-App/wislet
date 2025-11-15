@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+﻿import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
@@ -8,7 +8,8 @@ class NotificationService {
   NotificationService._internal();
   static final NotificationService _instance = NotificationService._internal();
 
-  final FlutterLocalNotificationsPlugin _plugin = FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin _plugin =
+      FlutterLocalNotificationsPlugin();
   bool _initialized = false;
 
   static const String _defaultChannelId = 'default_channel';
@@ -26,10 +27,19 @@ class NotificationService {
       requestBadgePermission: false,
       requestSoundPermission: false,
     );
+    const windowsInit = WindowsInitializationSettings(
+     appName: 'Wislet',
+     appUserModelId: 'com.wislet.app',
+     guid: '3cd718db-80d7-41b0-9995-6ad6f77ac0e7',
+     );
+
+
+
     const settings = InitializationSettings(
       android: androidInit,
       iOS: darwinInit,
       macOS: darwinInit,
+      windows: windowsInit,
     );
     await _plugin.initialize(
       settings,
@@ -53,15 +63,18 @@ class NotificationService {
   Future<void> requestPermissions() async {
     await _ensureInit();
     try {
-      final a = _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+      final a = _plugin.resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
       await a?.requestNotificationsPermission();
     } catch (_) {}
     try {
-      final i = _plugin.resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();
+      final i = _plugin.resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin>();
       await i?.requestPermissions(alert: true, badge: true, sound: true);
     } catch (_) {}
     try {
-      final m = _plugin.resolvePlatformSpecificImplementation<MacOSFlutterLocalNotificationsPlugin>();
+      final m = _plugin.resolvePlatformSpecificImplementation<
+          MacOSFlutterLocalNotificationsPlugin>();
       await m?.requestPermissions(alert: true, badge: true, sound: true);
     } catch (_) {}
   }
@@ -116,9 +129,10 @@ class NotificationService {
       body,
       when,
       details,
-      androidScheduleMode: allowWhileIdle ? AndroidScheduleMode.exactAllowWhileIdle : AndroidScheduleMode.inexact,
+      androidScheduleMode: allowWhileIdle
+          ? AndroidScheduleMode.exactAllowWhileIdle
+          : AndroidScheduleMode.inexact,
       payload: payload,
-      matchDateTimeComponents: null,
     );
   }
 

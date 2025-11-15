@@ -1,7 +1,7 @@
+import 'package:sqflite/sqflite.dart';
 import 'package:wislet/data/repositories/user_repository.dart';
 import 'package:wislet/models/user.dart';
 import 'package:wislet/utils/database_helper.dart';
-import 'package:sqflite/sqflite.dart';
 
 class LocalUserRepositoryImpl implements UserRepository {
   LocalUserRepositoryImpl(this._dbHelper);

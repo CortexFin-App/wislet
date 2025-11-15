@@ -1,4 +1,4 @@
-class FinancialGoal {
+﻿class FinancialGoal {
   FinancialGoal({
     required this.name,
     required this.originalTargetAmount,
@@ -18,7 +18,7 @@ class FinancialGoal {
   });
 
   factory FinancialGoal.fromMap(Map<String, dynamic> map) {
-    bool _bool(dynamic v, [bool def = false]) {
+    bool asBool(dynamic v, {bool def = false}) {
       if (v is bool) return v;
       if (v is num) return v != 0;
       return def;
@@ -28,8 +28,7 @@ class FinancialGoal {
       id: map['id'] as int?,
       name: map['name'] as String,
       originalTargetAmount: (map['original_target_amount'] as num).toDouble(),
-      originalCurrentAmount:
-          (map['original_current_amount'] as num).toDouble(),
+      originalCurrentAmount: (map['original_current_amount'] as num).toDouble(),
       currencyCode: map['currency_code'] as String,
       exchangeRateUsed: (map['exchange_rate_used'] as num?)?.toDouble(),
       targetAmountInBaseCurrency:
@@ -42,11 +41,11 @@ class FinancialGoal {
       creationDate: DateTime.parse(map['creation_date'] as String),
       iconName: map['icon_name'] as String?,
       notes: map['notes'] as String?,
-      isAchieved: _bool(map['is_achieved'], false),
+      isAchieved: asBool(map['is_achieved']),
       updatedAt: map['updated_at'] != null
           ? DateTime.parse(map['updated_at'] as String)
           : null,
-      isDeleted: _bool(map['is_deleted'], false),
+      isDeleted: asBool(map['is_deleted']),
     );
   }
 
@@ -105,8 +104,7 @@ class FinancialGoal {
     return FinancialGoal(
       id: id ?? this.id,
       name: name ?? this.name,
-      originalTargetAmount:
-          originalTargetAmount ?? this.originalTargetAmount,
+      originalTargetAmount: originalTargetAmount ?? this.originalTargetAmount,
       originalCurrentAmount:
           originalCurrentAmount ?? this.originalCurrentAmount,
       currencyCode: currencyCode ?? this.currencyCode,

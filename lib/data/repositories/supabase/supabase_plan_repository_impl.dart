@@ -1,10 +1,10 @@
 import 'package:fpdart/fpdart.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:wislet/core/error/failures.dart';
 import 'package:wislet/data/repositories/plan_repository.dart';
 import 'package:wislet/models/plan.dart';
 import 'package:wislet/models/plan_view_data.dart';
 import 'package:wislet/services/error_monitoring_service.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabasePlanRepositoryImpl implements PlanRepository {
   SupabasePlanRepositoryImpl(this._client);

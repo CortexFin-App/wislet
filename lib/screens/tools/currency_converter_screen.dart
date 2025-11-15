@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:wislet/core/di/injector.dart';
 import 'package:wislet/models/currency_model.dart';
@@ -113,14 +113,14 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
         decimalDigits: 2,
       );
       final rateDateInfo =
-          '(РєСѓСЂСЃ РІС–Рґ ${DateFormat('dd.MM.yy').format(rateInfo.effectiveRateDate)})';
+          '(курс від ${DateFormat('dd.MM.yy').format(rateInfo.effectiveRateDate)})';
 
       if (mounted) {
         setState(() {
           _convertedAmountStr = targetCurrencyFormat.format(convertedValue);
           _rateInfoMessage = rateInfo.isRateStale
-              ? 'Р’РёРєРѕСЂРёСЃС‚Р°РЅРѕ РєРµС€РѕРІР°РЅРёР№ РєСѓСЂСЃ $rateDateInfo'
-              : 'РђРєС‚СѓР°Р»СЊРЅРёР№ РєСѓСЂСЃ $rateDateInfo';
+              ? 'Використано кешований курс $rateDateInfo'
+              : 'Актуальний курс $rateDateInfo';
         });
       }
     } on Exception catch (e) {
@@ -128,7 +128,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
         setState(() {
           _convertedAmountStr = '';
           _errorMessage =
-              'РџРѕРјРёР»РєР°: ${e.toString().replaceFirst('Exception: ', '')}';
+              'Помилка: ${e.toString().replaceFirst('Exception: ', '')}';
           _rateInfoMessage = null;
         });
       }
@@ -157,7 +157,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
   Widget build(BuildContext context) {
     return PatternedScaffold(
       appBar: AppBar(
-        title: const Text('РљРѕРЅРІРµСЂС‚РµСЂ РІР°Р»СЋС‚'),
+        title: const Text('Конвертер валют'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -167,7 +167,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
             TextFormField(
               controller: _amountController,
               decoration: InputDecoration(
-                labelText: 'РЎСѓРјР° РґР»СЏ РєРѕРЅРІРµСЂС‚Р°С†С–С—',
+                labelText: 'Сума для конвертації',
                 prefixIcon: _fromCurrency != null
                     ? Padding(
                         padding: const EdgeInsets.all(12),
@@ -186,9 +186,9 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
               children: [
                 Expanded(
                   child: DropdownButtonFormField<Currency>(
-                    value: _fromCurrency,
+                    initialValue: _fromCurrency,
                     decoration:
-                        const InputDecoration(labelText: 'Р— РІР°Р»СЋС‚Рё'),
+                        const InputDecoration(labelText: 'З валюти'),
                     isExpanded: true,
                     items: _availableCurrencies.map((currency) {
                       return DropdownMenuItem<Currency>(
@@ -218,9 +218,9 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
                 ),
                 Expanded(
                   child: DropdownButtonFormField<Currency>(
-                    value: _toCurrency,
+                    initialValue: _toCurrency,
                     decoration:
-                        const InputDecoration(labelText: 'Р’ РІР°Р»СЋС‚Сѓ'),
+                        const InputDecoration(labelText: 'У валюту'),
                     isExpanded: true,
                     items: _availableCurrencies.map((currency) {
                       return DropdownMenuItem<Currency>(
@@ -246,7 +246,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
             ListTile(
               contentPadding: EdgeInsets.zero,
               title: Text(
-                'РљСѓСЂСЃ РЅР° РґР°С‚Сѓ: ${DateFormat('dd.MM.yyyy').format(_selectedRateDate)}',
+                'Курс на дату: ${DateFormat('dd.MM.yyyy').format(_selectedRateDate)}',
               ),
               trailing: const Icon(Icons.calendar_today_outlined),
               onTap: _pickRateDate,
@@ -262,7 +262,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
                   child: Column(
                     children: [
                       Text(
-                        'Р РµР·СѓР»СЊС‚Р°С‚:',
+                        'Результат:',
                         style: Theme.of(context)
                             .textTheme
                             .titleMedium

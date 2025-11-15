@@ -1,6 +1,3 @@
-// @ts-nocheck
-/// <reference lib="deno.ns" />
-
 // Створення Fondy checkout URL: повертає { checkout_url }
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const FONDY_MERCHANT_ID = Deno.env.get("FONDY_MERCHANT_ID")!;
@@ -67,7 +64,6 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ checkout_url: j.response.checkout_url }), {
       headers: { ...cors, "Content-Type": "application/json" }
     });
-
   } catch (e) {
     console.error("pay-fondy fatal", e);
     return new Response(JSON.stringify({ error: "Internal Server Error" }), { status: 500, headers: cors });

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:fpdart/fpdart.dart';
+import 'package:sqflite/sqflite.dart';
 import 'package:wislet/core/di/injector.dart';
 import 'package:wislet/core/error/failures.dart';
 import 'package:wislet/data/repositories/category_repository.dart';
@@ -9,7 +10,6 @@ import 'package:wislet/models/category.dart';
 import 'package:wislet/services/auth_service.dart';
 import 'package:wislet/services/error_monitoring_service.dart';
 import 'package:wislet/utils/database_helper.dart';
-import 'package:sqflite/sqflite.dart';
 
 class LocalCategoryRepositoryImpl implements CategoryRepository {
   LocalCategoryRepositoryImpl(this._dbHelper);
@@ -147,7 +147,8 @@ class LocalCategoryRepositoryImpl implements CategoryRepository {
       final db = await _dbHelper.database;
       final maps = await db.query(
         DatabaseHelper.tableCategories,
-        where: '${DatabaseHelper.colCategoryWalletId} = ? AND ${DatabaseHelper.colCategoryIsDeleted} = 0',
+        where:
+            '${DatabaseHelper.colCategoryWalletId} = ? AND ${DatabaseHelper.colCategoryIsDeleted} = 0',
         whereArgs: [walletId],
       );
       return Right(

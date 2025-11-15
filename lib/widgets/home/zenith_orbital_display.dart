@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:wislet/providers/dashboard_provider.dart';
@@ -43,7 +43,7 @@ class _ZenithOrbitalDisplayState extends State<ZenithOrbitalDisplay>
   Widget build(BuildContext context) {
     final provider = context.watch<DashboardProvider>();
     final currencyFormat =
-        NumberFormat.currency(locale: 'uk_UA', symbol: 'в‚ґ', decimalDigits: 0);
+        NumberFormat.currency(locale: 'uk_UA', symbol: '₴', decimalDigits: 0);
 
     if (provider.isLoading) {
       return const Center(child: CircularProgressIndicator());

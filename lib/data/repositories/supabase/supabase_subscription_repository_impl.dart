@@ -1,9 +1,9 @@
-import 'package:fpdart/fpdart.dart';
+﻿import 'package:fpdart/fpdart.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:wislet/core/error/failures.dart';
 import 'package:wislet/data/repositories/subscription_repository.dart';
 import 'package:wislet/models/subscription_model.dart';
 import 'package:wislet/services/error_monitoring_service.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseSubscriptionRepositoryImpl implements SubscriptionRepository {
   SupabaseSubscriptionRepositoryImpl(this._client);
@@ -20,9 +20,8 @@ class SupabaseSubscriptionRepositoryImpl implements SubscriptionRepository {
                   item['wallet_id'] == walletId && item['is_deleted'] == false,
             )
             .map(Subscription.fromMap)
-            .toList();
-        subscriptions
-            .sort((a, b) => a.nextPaymentDate.compareTo(b.nextPaymentDate));
+            .toList()
+            ..sort((a, b) => a.nextPaymentDate.compareTo(b.nextPaymentDate));
         return subscriptions;
       },
     );
