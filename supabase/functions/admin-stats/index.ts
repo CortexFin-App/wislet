@@ -172,7 +172,7 @@ serve(async (req)=>{
       }
     });
   } catch (e) {
-    console.error("admin-stats error:", e?.message || e);
-    return J({ ok:false, error:String(e?.message || e) }, 500);
+    console.error("admin-stats error:", e);
+    return J({ ok:false, error: "Internal Server Error" }, 500);
   }
 });
