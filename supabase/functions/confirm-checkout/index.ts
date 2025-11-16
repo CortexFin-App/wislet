@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
 
     return new Response(JSON.stringify({ ok: true, card }), { headers: { ...CORS, "Content-Type": "application/json" } });
   } catch (e) {
-    console.error("confirm-checkout crash", e);
-    return new Response(JSON.stringify({ ok: false, error: String(e) }), { status: 200, headers: CORS });
+    console.error("confirm-checkout error:", e);
+    return new Response(JSON.stringify({ ok: false, error: "Internal Error" }), { status: 200, headers: CORS });
   }
 });
