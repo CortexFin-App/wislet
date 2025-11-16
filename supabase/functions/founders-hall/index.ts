@@ -58,6 +58,7 @@ serve(async (req) => {
 
     return J(data);
   } catch (e) {
-    return J({ ok:false, error: String(e?.message || e) }, 500);
+    console.error("founders-hall error:", e);
+    return J({ ok:false, error: "Internal Server Error" }, 500);
   }
 });
