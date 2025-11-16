@@ -50,8 +50,8 @@ serve(async (req) => {
 
     const res = await pg(`holds?id=eq.${id}`, { method:'PATCH', body: JSON.stringify(patch) });
     return new Response(JSON.stringify({ok:true, updated: Array.isArray(res)? res.length: 0, data:res}), { headers:CORS });
-  }catch(e){
-    console.error('admin-update-hold error', e?.message||e);
-    return new Response(JSON.stringify({ok:false,error:String(e?.message||e)}), { status:500, headers:CORS });
+  } catch(e){
+    console.error('admin-update-hold error:', e);
+    return new Response(JSON.stringify({ok: false, error: "Internal Server Error" }), { status:500, headers:CORS });
   }
 });
