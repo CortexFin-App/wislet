@@ -1,5 +1,3 @@
-// @ts-nocheck
-/// <reference lib="deno.ns" />
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const supabase = createClient(
@@ -71,14 +69,6 @@ Deno.serve(async (req) => {
     });
   } catch (e) {
     console.error("public-metrics error", e);
-    
-    // виводимо акуратне повідомлення для користувача
-    const msg = (
-        e instanceof Error
-          ? e.message
-         : (typeof e === "string" ? e: "Unknown error")
-      );
-
-    return new Response(JSON.stringify({ error: msg }), { status: 500, headers: cors });
+    return new Response(JSON.stringify({ error: "Internal Server Error" }), { status: 500, headers: cors });
   }
 });
