@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
       .single();
 
     if (hErr) {
-      return new Response(JSON.stringify({ error: hErr.message }), {
+      return new Response(JSON.stringify({ error: "Bad Request" }), {
         status: 400,
         headers: { "content-type": "application/json", ...cors },
       });
@@ -64,7 +64,7 @@ Deno.serve(async (req) => {
       .single();
 
     if (bErr) {
-      return new Response(JSON.stringify({ error: bErr.message }), {
+      return new Response(JSON.stringify({ error: "Bad Request" }), {
         status: 400,
         headers: { "content-type": "application/json", ...cors },
       });
@@ -104,7 +104,8 @@ Deno.serve(async (req) => {
       headers: { "content-type": "application/json", ...cors },
     });
   } catch (e) {
-    return new Response(JSON.stringify({ error: String(e) }), {
+    console.error("create-checkout error:", e);
+    return new Response(JSON.stringify({ error: "Internal Server Error" }), {
       status: 500,
       headers: { "content-type": "application/json", ...cors },
     });
