@@ -22,6 +22,6 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({ token: data.token, invite_token: data.token }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 });
   } catch (e) {
-    return new Response(JSON.stringify({ error: String(e) }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 });
+    return new Response(JSON.stringify({ error: "Internal Server Error" }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 });
   }
 });
