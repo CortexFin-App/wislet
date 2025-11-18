@@ -7,6 +7,12 @@ const ADMIN_KEY    = Deno.env.get("ADMIN_EXPORT_KEYS")!;
 const FONDY_SECRET = Deno.env.get("FONDY_SECRET")!;
 const FUNCTIONS_BASE = `${SUPABASE_URL.replace(".supabase.co","")}.functions.supabase.co`;
 
+const cors = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST,OPTIONS",
+  "Access-Control-Allow-Headers": "content-type"
+};
+
 // TODO: перевірка підпису відповідно до доки Fondy
 function verifyFondySignature(_body:any, _secret:string)
 {
@@ -50,17 +56,18 @@ Deno.serve(async (req) =>
         currency
       })
     });
-    if (!r.ok) 
-      {
-      console.error("convert failed", await r.text());
+    
+    if (!r.ok) {
+      const brief = (await r.text()).slice(0, 500);
+      console.error("convert failed:", r.status, brief);
       return new Response("convert failed", { status: 500 });
     }
     return new Response("ok", { status: 200 });
 
-  } 
-  catch (e) 
-  {
-    console.error("fondy-webhook error:", e);
-    return new Response(JSON.stringify({ error: "Internal Server Error" }), { status: 500, headers: cors });
-  }
+  } catch (e) {
+      const msg = e instanceof Error ? (e.message || e.name) : String(e);
+      console.error("fondy-webhook error:", msg);
+      return new Response(JSON.stringify({ error: "Internal Server Error" }), { status: 500, headers: cors }
+      );
+    }
 });
