@@ -13,7 +13,7 @@ const CORS = {
   "access-control-allow-headers":"authorization,apikey,content-type,x-admin-token",
   "content-type":"application/json",
 };
-function J(x: unknown, status=200){ return new Response(JSON.stringify(x), {status, headers:CORS}); }
+function J(x: unknown, status = 200){ return new Response(JSON.stringify(x), {status, headers:CORS}); }
 
 async function pg(path: string, init: RequestInit = {}) {
   if (!SUPABASE_URL || !SRV_KEY) throw new Error("env-missing SUPABASE_URL/SERVICE_ROLE_KEY");
@@ -22,48 +22,55 @@ async function pg(path: string, init: RequestInit = {}) {
     headers:{
       ...(init.headers||{}),
       apikey: SRV_KEY,
-      authorization:`Bearer ${SRV_KEY}`,
-      "content-type":"application/json",
-      prefer:"return=representation",
+      authorization: `Bearer ${SRV_KEY}`,
+      "content-type": "application/json",
+      prefer: "return=representation",
     }
   });
-  const txt=await r.text();
-  if(!r.ok) throw new Error(`postgrest ${r.status}: ${txt}`);
-  try{ return JSON.parse(txt); }catch{ return txt; }
+  const txt = await r.text();
+  if(!r.ok) {
+    const err = txt.length > 500 ? txt.slice(0, 500) + "..." : txt;
+    throw new Error(`postgrest ${r.status}: ${err}`);
+  }
+  try { return JSON.parse(txt); } catch { return txt; }
 }
 
 /** rate-limit: не більше 10 конвертів за 10s */
 const RL_WINDOW = 10_000, RL_MAX = 10;
 const bucket = new Map<string, {n:number, t:number}>();
-const kReq = (r:Request)=> (r.headers.get("x-admin-token")||"")+":"+(r.headers.get("x-forwarded-for")||"");
-const okRate = (r:Request)=>{ const k=kReq(r), now=Date.now(), cur=bucket.get(k); if(!cur||now-cur.t>RL_WINDOW){bucket.set(k,{n:1,t:now});return true;} if(cur.n>=RL_MAX)return false; cur.n++; return true; };
-
+const kReq = (r:Request) => (r.headers.get("x-admin-token")||"") + ":" + (r.headers.get("x-forwarded-for")||"");
+const okRate = (r:Request) => { const k=kReq(r), now=Date.now(), cur=bucket.get(k); if (!cur||now-cur.t>RL_WINDOW){bucket.set(k,{n:1,t:now}); return true; } if(cur.n>=RL_MAX) return false; cur.n++; return true; };
 const TIER = new Set(["PF","GF","SE"]);
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
   if (!ADMIN_TOKEN || req.headers.get("x-admin-token") !== ADMIN_TOKEN) {
-    return J({ok:false,error:"forbidden"}, 403);
+    return J({ok: false, error: "forbidden"}, 403);
   }
-  if (!okRate(req)) return J({ok:false,error:"rate_limited"}, 429);
+  if (!okRate(req)) return J({ok: false, error: "rate_limited"}, 429);
 
   try{
     const body = await req.json();
     const email = String(body.email||"").trim().toLowerCase();
     const tier  = String(body.tier||"").toUpperCase();
-    const hold_id = body.hold_id==null ? null : Number(body.hold_id);
+    const hold_id = body.hold_id == null ? null : Number(body.hold_id);
+    if (hold_id !== null && (!Number.isInteger(hold_id) || hold_id < 0)) {
+        throw new Error("invalid hold_id");
+    }
     const note  = body.note ? String(body.note).slice(0, 1000) : null;
 
-    if (!email || !TIER.has(tier)) throw new Error("email/tier invalid");
-
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRe.test(email)) throw new Error("email invalid");
+    if (!TIER.has(tier)) throw new Error("tier invalid");
+    
     // 1) спроба виклику RPC якщо він є
     try{
       const rpc = await pg(`rpc/admin_manual_convert`, {
-        method:"POST",
+        method: "POST",
         body: JSON.stringify({ email, tier, hold_id, note })
       });
-      return J({ok:true, via:"rpc", data:rpc});
-    }catch(_e){
+      return J({ok: true, via: "rpc", data: rpc});
+    } catch(_e) {
       // 2) запасний шлях — черга в таблицю manual_convert_requests
       const row = {
         email, tier, hold_id,
@@ -73,8 +80,9 @@ serve(async (req) => {
       const ins = await pg(`manual_convert_requests`, { method:"POST", body: JSON.stringify([row]) });
       return J({ok:true, via:"queue", data:ins});
     }
-  }catch(e){
-    console.error("admin-manual-convert error", e?.message||e);
-    return J({ok:false,error:String(e?.message||e)}, 500);
+  } catch(e) {
+    const msg = e instanceof Error ? (e.message || e.name) : String(e);
+    console.error("admin-manual-convert error:", msg);
+    return J({ ok: false, error: "Internal Server Error" }, 500);
   }
 });
