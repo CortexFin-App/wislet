@@ -65,7 +65,9 @@ Deno.serve(async (req) => {
       headers: { ...cors, "Content-Type": "application/json" }
     });
   } catch (e) {
-    console.error("pay-fondy error:", e);
-    return new Response(JSON.stringify({ error: "Internal Server Error" }), { status: 500, headers: cors });
-  }
+      const msg = e instanceof Error ? (e.message || e.name) : String(e);
+      console.error("pay-fondy error:", msg);
+      return new Response(JSON.stringify({ error: "Internal Server Error" }), { status: 500, headers: cors }
+      );
+    }
 });
