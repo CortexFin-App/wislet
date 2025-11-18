@@ -60,7 +60,7 @@ Deno.serve(async (req) =>
   } 
   catch (e) 
   {
-    console.error("fondy-webhook fatal", e);
-    return new Response("err", { status: 500 });
+    console.error("fondy-webhook error:", e);
+    return new Response(JSON.stringify({ error: "Internal Server Error" }), { status: 500, headers: cors });
   }
 });
