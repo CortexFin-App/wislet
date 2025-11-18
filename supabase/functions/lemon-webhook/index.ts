@@ -129,7 +129,9 @@ Deno.serve(async (req) => {
 
     return new Response(JSON.stringify({ ok: true, converted: resp }), { status: 200 });
   } catch (e) {
-    console.error("lemon-webhook error:", e);
-    return new Response(JSON.stringify({ ok: false, error: "Internal Server Error" }), { status: 500 });
-  }
+      const msg = e instanceof Error ? (e.message || e.name) : String(e);
+      console.error("lemon-webhook error:", msg);
+      return new Response(JSON.stringify({ ok: false, error: "Internal Server Error" }), { status: 500 }
+      );
+    }
 });
