@@ -90,8 +90,9 @@ serve(async (req) => {
       "content-type":"text/csv; charset=utf-8",
       "content-disposition":`attachment; filename="${filename}"`
     });
-  }catch(e){
-    console.error('admin-export error:', e?.message||e);
-    return json({ok:false,error:String(e?.message||e)}, 500);
-  }
+  } catch (e) {
+  const msg = e instanceof Error ? (e.message || e.name) : String(e);
+  console.error("admin-export error:", msg);
+  return json({ ok: false, error: "Internal Server Error" }, 500);
+    }  
 });
