@@ -54,8 +54,9 @@ serve(async (req) => {
     const patch:any = mark ? { chased:true, chased_at: new Date().toISOString() } : { chased:false, chased_at: null };
     const res = await pg(`holds?id=eq.${id}`, { method:"PATCH", body: JSON.stringify(patch) });
     return J({ok:true, updated: res?.length ?? 0});
-  }catch(e){
-    console.error("admin-mark-chased error", e?.message||e);
-    return J({ok:false,error:String(e?.message||e)}, 500);
+  } catch (e) {
+  const msg = e instanceof Error ? (e.message || e.name) : String(e);
+  console.error("admin-mark-chased error:", msg);
+  return J({ ok: false, error: "Internal Server Error" }, 500);
   }
 });
