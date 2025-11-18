@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
     });
 
   } catch (e) {
-    console.error("pay-mono fatal", e);
+    console.error("pay-mono error:", e);
     return new Response(JSON.stringify({ error: "Internal Server Error" }), { status: 500, headers: cors });
   }
 });
