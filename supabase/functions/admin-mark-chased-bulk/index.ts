@@ -49,8 +49,10 @@ serve(async (req) => {
     const res = await pg(`holds?id=in.(${inList})`, { method:'PATCH', body: JSON.stringify(patch) });
 
     return new Response(JSON.stringify({ok:true, updated: Array.isArray(res)? res.length: 0}), { headers:CORS });
-  }catch(e){
-    console.error('admin-mark-chased-bulk error', e?.message||e);
-    return new Response(JSON.stringify({ok:false,error:String(e?.message||e)}), { status:500, headers:CORS });
+   } catch (e) {
+    const msg = e instanceof Error ? (e.message || e.name) : String(e);
+    console.error("admin-mark-chased-bulk error:", msg);
+    return new Response(JSON.stringify({ ok: false, error: "Internal Server Error" }), { status: 500, headers: CORS }
+    );
   }
 });
