@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
     });
     const j = await r.json();
     if (!j?.pageUrl) {
-      console.error("mono create error", j);
+      console.error("mono create error:", j);
       return new Response(JSON.stringify({ error: "mono error" }), { status: 400, headers: cors });
     }
 
@@ -59,7 +59,9 @@ Deno.serve(async (req) => {
     });
 
   } catch (e) {
-    console.error("pay-mono error:", e);
-    return new Response(JSON.stringify({ error: "Internal Server Error" }), { status: 500, headers: cors });
+      const msg = e instanceof Error ? (e.message || e.name) : String(e);
+      console.error("pay-mono error:", msg);
+      return new Response(JSON.stringify({ error: "Internal Server Error" }), { status: 500, headers: cors }
+    );
   }
 });
