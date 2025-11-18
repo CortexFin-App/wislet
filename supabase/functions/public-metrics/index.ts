@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
       headers: { ...cors, "Content-Type": "application/json", "Cache-Control":"public, max-age=15, s-maxage=60" },
     });
   } catch (e) {
-    console.error("public-metrics error", e);
+    console.error("public-metrics error:", e);
     return new Response(JSON.stringify({ error: "Internal Server Error" }), { status: 500, headers: cors });
   }
 });
