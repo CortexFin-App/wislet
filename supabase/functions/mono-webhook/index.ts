@@ -6,6 +6,12 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const ADMIN_KEY    = Deno.env.get("ADMIN_EXPORT_KEYS")!;
 const FUNCTIONS_BASE = `${SUPABASE_URL.replace(".supabase.co","")}.functions.supabase.co`;
 
+const cors = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST,OPTIONS",
+  "Access-Control-Allow-Headers": "content-type"
+};
+
 // TODO: валідація X-Signature за докою mono (якщо ввімкнена)
 function verifyMono(_req:Request, _body:any){ return true; }
 
@@ -43,13 +49,19 @@ Deno.serve(async (req) => {
     });
 
     if (!r.ok) {
-      console.error("convert failed", await r.text());
-      return new Response("convert failed", { status: 500 });
+      const brief = (await r.text()).slice(0, 500);
+      console.error("convert failed:", r.status, brief);
+      return new Response(JSON.stringify({ error: "convert_failed" }),
+    { status: 500, headers: { ...cors, "Content-Type": "application/json" } }
+      );
     }
     return new Response("ok", { status: 200 });
 
   } catch (e) {
-    console.error("mono-webhook fatal", e);
-    return new Response("err", { status: 500 });
-  }
+      const msg = e instanceof Error ? (e.message || e.name) : String(e);
+      console.error("mono-webhook error:", msg);
+      return new Response(JSON.stringify({ error: "Internal Server Error" }),
+    { status: 500, headers: { ...cors, "Content-Type": "application/json" } }
+      );
+    }
 });
