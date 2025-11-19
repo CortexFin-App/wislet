@@ -18,7 +18,11 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({ ok: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 });
   } catch (e) {
-    return new Response(JSON.stringify({ error: "Internal Server Error" }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 });
-  }
+      const msg = e instanceof Error ? (e.message || e.name) : String(e);
+      console.error("accept-invite error:", msg);
+      return new Response(JSON.stringify({ error: "Internal Server Error" }),
+    { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+      );
+    }
 });
 
