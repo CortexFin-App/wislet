@@ -106,6 +106,8 @@ serve(async (req) => {
 
     throw lastErr ?? new Error("insert failed");
   } catch (e) {
-    return J({ ok:false, error: String(e?.message || e) }, 500);
-  }
+      const msg = e instanceof Error ? (e.message || e.name) : String(e);
+      console.error("admin-mint-founder error:", msg);
+      return J({ ok:false, error: "Internal Server Error" }, 500);
+    }
 });
