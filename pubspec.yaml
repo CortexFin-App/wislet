@@ -61,7 +61,6 @@ flutter:
   generate: true
 
   assets:
-    - .env
     - assets/
     - assets/fonts/
     - assets/patterns/
