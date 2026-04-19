@@ -45,7 +45,7 @@ class AppNavigationShell extends StatelessWidget {
       ),
       floatingActionButton: floatingActionButton ??
           FloatingActionButton(
-            onPressed: () => context.go('/add'),
+            onPressed: () => context.push('/add'),
             child: const Icon(Icons.add),
           ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,

@@ -14,13 +14,13 @@ import 'package:wislet/models/currency_model.dart';
 import 'package:wislet/providers/currency_provider.dart';
 import 'package:wislet/providers/locale_provider.dart';
 import 'package:wislet/screens/categories_screen.dart';
-import 'package:wislet/screens/settings/invitations_screen.dart';
+// import 'package:wislet/screens/settings/invitations_screen.dart';
 import 'package:wislet/screens/settings/language_screen.dart';
-import 'package:wislet/screens/settings/pin_setup_screen.dart';
+// import 'package:wislet/screens/settings/pin_setup_screen.dart';
 import 'package:wislet/screens/settings/wallets_screen.dart';
-import 'package:wislet/screens/tools/currency_converter_screen.dart';
+// import 'package:wislet/screens/tools/currency_converter_screen.dart';
 import 'package:wislet/services/auth_service.dart';
-import 'package:wislet/services/sync_service.dart';
+// import 'package:wislet/services/sync_service.dart';
 import 'package:wislet/utils/database_helper.dart';
 import 'package:wislet/utils/l10n_helpers.dart';
 import 'package:wislet/widgets/scaffold/patterned_scaffold.dart';
@@ -35,11 +35,11 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   late final AuthService _auth;
   late final DatabaseHelper _dbHelper;
-  late final SyncService _syncService;
+  // late final SyncService _syncService;
 
-  bool _deviceSupportsBiometrics = false;
-  bool _isBiometricEnabled = false;
-  bool _isPinSet = false;
+  // bool _deviceSupportsBiometrics = false;
+  // bool _isBiometricEnabled = false;
+  // bool _isPinSet = false;
   bool _isProcessingBackup = false;
   bool _isProcessingRestore = false;
 
@@ -48,11 +48,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.initState();
     _auth = getIt<AuthService>();
     _dbHelper = getIt<DatabaseHelper>();
-    _syncService = getIt<SyncService>();
-    _loadSettings();
+    // _syncService = getIt<SyncService>();
+    // _loadSettings();
   }
 
-  Future<void> _loadSettings() async {
+  /* Future<void> _loadSettings() async {
     final supportsBiometrics = await _auth.canUseBiometrics();
     final biometricsEnabled = await _auth.isBiometricsEnabled();
     final pinSet = await _auth.hasPin();
@@ -63,10 +63,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _isPinSet = pinSet;
       });
     }
-  }
+  } */
 
   Future<void> _logout() async {
-    await _auth.logout();
+    try {
+      await _auth.logout();
+    } catch (_) { }
   }
 
   Future<void> _exportBackup() async {
@@ -124,7 +126,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  Future<void> _runSync() async {
+  /*Future<void> _runSync() async {
     await _syncService.synchronize();
     if (!mounted) return;
     final l = sw.AppLocalizations.of(context)!;
@@ -133,7 +135,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         content: Text(l.t('sync_done')),
       ),
     );
-  }
+  }*/
 
   @override
   Widget build(BuildContext context) {
@@ -180,27 +182,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 showDragHandle: true,
                 builder: (context) {
                   return ListView(
-                   children: [
-                      RadioGroup<Currency>(
-                         groupValue: currencyProvider.selectedCurrency,
-                        onChanged: (Currency? v) => Navigator.pop(context, v),
-                         child: Column(
-                            children: data.appCurrencies.map((c) {
-                             return RadioMenuButton<Currency>(
-                            value: c,
-                                groupValue: currencyProvider.selectedCurrency,
-                             onChanged: (Currency? v) => Navigator.pop(context, v),
-                                child: ListTile(
-                                  title: Text('${c.name} (${c.code})'),
-                                     subtitle: Text(c.symbol),
-                                ),
-                             );
-                             }).toList(),
-                         ),
-                        ),
-
-                    ],
-
+                    children: data.appCurrencies.map((c) {
+                      return ListTile(
+                        title: Text('${c.name} (${c.code})'),
+                        subtitle: Text(c.symbol),
+                        trailing: currencyProvider.selectedCurrency.code == c.code
+                            ? const Icon(Icons.check)
+                            : null,
+                        onTap: () => Navigator.pop(context, c),
+                      );
+                    }).toList(),
                   );
                 },
               );
@@ -209,7 +200,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               }
             },
           ),
-          _SettingsTile(
+          /* _SettingsTile(
             icon: Icons.swap_calls_outlined,
             title: l.t('currency_converter'),
             onTap: () => Navigator.push<void>(
@@ -218,18 +209,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 builder: (_) => const CurrencyConverterScreen(),
               ),
             ),
-          ),
+          ), */
           const Divider(height: 24),
           Text(
             l.t('data_and_sync'),
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 8),
-          _SettingsTile(
+          /* _SettingsTile(
             icon: Icons.sync_outlined,
             title: l.t('sync_now'),
             onTap: _runSync,
-          ),
+          ), */
           _SettingsTile(
             icon: Icons.backup_outlined,
             title: l.t('backup'),
@@ -271,7 +262,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
           ),
-          _SettingsTile(
+          /* _SettingsTile(
             icon: Icons.group_add_outlined,
             title: l.t('invitations'),
             onTap: () => Navigator.push<void>(
@@ -280,14 +271,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 builder: (_) => const InvitationsScreen(),
               ),
             ),
-          ),
+          ),*/
           const Divider(height: 24),
-          Text(
+          /*Text(
             l.t('security'),
             style: Theme.of(context).textTheme.titleMedium,
-          ),
+          ),*/
           const SizedBox(height: 8),
-          _SettingsTile(
+          /*_SettingsTile(
             icon: Icons.pin_outlined,
             title: _isPinSet ? l.t('change_pin') : l.t('enable_pin'),
             onTap: () async {
@@ -301,8 +292,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 await _loadSettings();
               }
             },
-          ),
-          SwitchListTile.adaptive(
+          ),*/
+          /*SwitchListTile.adaptive(
             value: _isBiometricEnabled,
             onChanged: null,
             secondary: const Icon(Icons.fingerprint),
@@ -312,7 +303,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ? l.t('biometrics_configured')
                   : l.t('biometrics_not_supported'),
             ),
-          ),
+          ),*/
           const Divider(height: 24),
           _SettingsTile(
             icon: Icons.logout_outlined,

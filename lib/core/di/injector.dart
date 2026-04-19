@@ -46,10 +46,7 @@ import 'package:wislet/data/repositories/theme_repository.dart';
 import 'package:wislet/data/repositories/transaction_repository.dart';
 import 'package:wislet/data/repositories/user_repository.dart';
 import 'package:wislet/data/repositories/wallet_repository.dart';
-import 'package:wislet/providers/app_mode_provider.dart';
-import 'package:wislet/providers/currency_provider.dart';
-import 'package:wislet/providers/pro_status_provider.dart';
-import 'package:wislet/providers/theme_provider.dart';
+// import 'package:wislet/providers/app_mode_provider.dart';
 import 'package:wislet/services/ai_categorization_service.dart';
 import 'package:wislet/services/ai_insight_service.dart';
 import 'package:wislet/services/analytics_service.dart';
@@ -120,11 +117,7 @@ Future<void> configureDependencies() async {
           getIt(instanceName: 'supabase'),
           getIt(instanceName: 'supabase'),
         ),)
-    ..registerLazySingleton(NetWorthService.new)
-    ..registerLazySingleton(() => AppModeProvider(getIt()))
-    ..registerLazySingleton(() => ThemeProvider(getIt<ThemeRepository>()))
-    ..registerLazySingleton(CurrencyProvider.new)
-    ..registerLazySingleton(ProStatusProvider.new);
+    ..registerLazySingleton(NetWorthService.new);
 
   // ініціалізація тих, кому це потрібно
   await getIt<NotificationService>().init();
@@ -226,7 +219,7 @@ void _registerSupabaseRepositories() {
         instanceName: 'supabase',);
 }
 
-void _registerActiveRepositoryFactories() {
+/* void _registerActiveRepositoryFactories() {
   getIt
     ..registerFactory<WalletRepository>(() => getIt<AppModeProvider>().isOnline
         ? getIt(instanceName: 'supabase')
@@ -278,4 +271,36 @@ void _registerActiveRepositoryFactories() {
         getIt<AppModeProvider>().isOnline
             ? getIt(instanceName: 'supabase')
             : getIt(instanceName: 'local'),);
+} */
+
+void _registerActiveRepositoryFactories() {
+  getIt
+    ..registerFactory<WalletRepository>(
+            () => getIt(instanceName: 'local'),)
+    ..registerFactory<CategoryRepository>(
+            () => getIt(instanceName: 'local'),)
+    ..registerFactory<TransactionRepository>(
+            () => getIt(instanceName: 'local'),)
+    ..registerFactory<BudgetRepository>(
+            () => getIt(instanceName: 'local'),)
+    ..registerFactory<DebtLoanRepository>(
+            () => getIt(instanceName: 'local'),)
+    ..registerFactory<GoalRepository>(
+            () => getIt(instanceName: 'local'),)
+    ..registerFactory<InvitationRepository>(
+            () => getIt(instanceName: 'local'),)
+    ..registerFactory<NotificationRepository>(
+            () => getIt(instanceName: 'local'),)
+    ..registerFactory<PlanRepository>(
+            () => getIt(instanceName: 'local'),)
+    ..registerFactory<RepeatingTransactionRepository>(
+            () => getIt(instanceName: 'local'),)
+    ..registerFactory<SubscriptionRepository>(
+            () => getIt(instanceName: 'local'),)
+    ..registerFactory<UserRepository>(
+            () => getIt(instanceName: 'local'),)
+    ..registerFactory<AssetRepository>(
+            () => getIt(instanceName: 'local'),)
+    ..registerFactory<LiabilityRepository>(
+            () => getIt(instanceName: 'local'),);
 }

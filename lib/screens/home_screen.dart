@@ -3,8 +3,8 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:wislet/providers/dashboard_provider.dart';
 import 'package:wislet/providers/wallet_provider.dart';
-import 'package:wislet/widgets/home/health_score_widget.dart';
-import 'package:wislet/widgets/home/main_goal_card_widget.dart';
+// import 'package:wislet/widgets/home/health_score_widget.dart';
+// import 'package:wislet/widgets/home/main_goal_card_widget.dart';
 import 'package:wislet/widgets/home/summary_card_widget.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -84,12 +84,12 @@ class HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                if (provider.healthScoreProfile != null &&
+                /* if (provider.healthScoreProfile != null &&
                     provider.aiAdvice != null)
-                  HealthScoreWidget(
+                    HealthScoreWidget(
                     profile: provider.healthScoreProfile!,
                     advice: provider.aiAdvice!,
-                  ),
+                  ), */
                 const SizedBox(height: 16),
                 Row(
                   children: [
@@ -112,10 +112,10 @@ class HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
                 ),
-                if (provider.mainGoal != null) ...[
+                /* if (provider.mainGoal != null) ...[
                   const SizedBox(height: 16),
                   MainGoalCard(goal: provider.mainGoal!),
-                ],
+                ], */
               ],
             ),
     );

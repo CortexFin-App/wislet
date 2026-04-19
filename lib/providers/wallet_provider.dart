@@ -151,7 +151,7 @@ class WalletProvider with ChangeNotifier {
         _appModeProvider.isOnline ? _authService.currentUser?.id : '1';
     if (ownerId == null) {
       _errorMessage =
-          'РќРµ РІРґР°Р»РѕСЃСЏ РІРёР·РЅР°С‡РёС‚Рё РІР»Р°СЃРЅРёРєР° РіР°РјР°РЅС†СЏ.';
+          'Не вдалося визначити власника гаманця.';
       notifyListeners();
       return;
     }

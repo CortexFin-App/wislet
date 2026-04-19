@@ -1,13 +1,15 @@
-// C:\wislet\android\build.gradle.kts
+﻿// C:\wislet\android\build.gradle.kts
 
-buildscript {
+allprojects {
     repositories {
         google()
         mavenCentral()
     }
-    dependencies {
-        // Повертаємо стару версію, бо цей блок ігнорується
-        classpath("com.android.tools.build:gradle:8.2.2")
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.23")
-    }
+}
+
+rootProject.layout.buildDirectory.set(file("../build"))
+
+subprojects {
+    val newBuildDir = rootProject.layout.buildDirectory.dir(project.name)
+    project.layout.buildDirectory.set(newBuildDir)
 }

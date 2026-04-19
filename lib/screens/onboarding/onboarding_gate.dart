@@ -1,19 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-import 'package:wislet/screens/onboarding/interactive_onboarding_screen.dart';
 import 'package:wislet/screens/onboarding/simple_onboarding.dart';
 
 class OnboardingGate extends StatefulWidget {
   const OnboardingGate({required this.child, super.key});
-
   final Widget child;
 
   @override
   State<OnboardingGate> createState() => _OnboardingGateState();
 }
 
-enum _Stage { loading, simple, interactive, done }
+enum _Stage { loading, onboarding, done }
 
 class _OnboardingGateState extends State<OnboardingGate> {
   _Stage _stage = _Stage.loading;
@@ -26,28 +23,13 @@ class _OnboardingGateState extends State<OnboardingGate> {
 
   Future<void> _load() async {
     final p = await SharedPreferences.getInstance();
-    final simpleDone = p.getBool('simple_onboarding_done') ?? false;
-    final interactiveDone = p.getBool('interactive_onboarding_done') ?? false;
-
-    setState(() {
-      if (!simpleDone) {
-        _stage = _Stage.simple;
-      } else if (!interactiveDone) {
-        _stage = _Stage.interactive;
-      } else {
-        _stage = _Stage.done;
-      }
-    });
+    final done = p.getBool('simple_onboarding_done') ?? false;
+    setState(() => _stage = done ? _Stage.done : _Stage.onboarding);
   }
 
-  Future<void> _onSimpleDone() async {
+  Future<void> _onDone() async {
     final p = await SharedPreferences.getInstance();
     await p.setBool('simple_onboarding_done', true);
-    setState(() => _stage = _Stage.interactive);
-  }
-
-  Future<void> _onInteractiveDone() async {
-    final p = await SharedPreferences.getInstance();
     await p.setBool('interactive_onboarding_done', true);
     setState(() => _stage = _Stage.done);
   }
@@ -56,23 +38,11 @@ class _OnboardingGateState extends State<OnboardingGate> {
   Widget build(BuildContext context) {
     switch (_stage) {
       case _Stage.loading:
-        return const MaterialApp(
-          debugShowCheckedModeBanner: false,
-          home: Scaffold(body: Center(child: CircularProgressIndicator())),
+        return const Scaffold(
+          body: Center(child: CircularProgressIndicator()),
         );
-      case _Stage.simple:
-        return MaterialApp(
-          debugShowCheckedModeBanner: false,
-          theme: ThemeData(useMaterial3: true),
-          home: SimpleOnboarding(onFinished: _onSimpleDone),
-        );
-      case _Stage.interactive:
-        return MaterialApp(
-          debugShowCheckedModeBanner: false,
-          theme: ThemeData(useMaterial3: true),
-          // Використовуємо InteractiveOnboarding з interactive_onboarding_screen.dart
-          home: InteractiveOnboarding(onFinished: _onInteractiveDone),
-        );
+      case _Stage.onboarding:
+        return SimpleOnboarding(onFinished: _onDone);
       case _Stage.done:
         return widget.child;
     }

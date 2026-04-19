@@ -1,10 +1,10 @@
 import 'dart:async';
 
+import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:uni_links/uni_links.dart';
 
 import 'package:wislet/core/constants/app_constants.dart';
 import 'package:wislet/core/di/injector.dart';
@@ -36,13 +36,14 @@ class AuthWrapper extends StatefulWidget {
 class _AuthWrapperState extends State<AuthWrapper> {
   final AuthService _authService = getIt<AuthService>();
   final SubscriptionService _subscriptionService = getIt<SubscriptionService>();
+  final _appLinks = AppLinks();
   StreamSubscription<Uri?>? _linkSubscription;
   AuthStatus _status = AuthStatus.loading;
 
   @override
   void initState() {
     super.initState();
-    _initUniLinks();
+    _initDeepLinks();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeApp();
     });
@@ -125,20 +126,20 @@ class _AuthWrapperState extends State<AuthWrapper> {
     }
   }
 
-  Future<void> _initUniLinks() async {
-    _linkSubscription = uriLinkStream.listen(
+  Future<void> _initDeepLinks() async {
+    _linkSubscription = _appLinks.uriLinkStream.listen(
       (Uri? uri) {
         if (uri != null && mounted) {
           _handleIncomingLink(uri);
         }
       },
       onError: (Object err) {
-        debugPrint('uni_links error: $err');
+        debugPrint('app_links error: $err');
       },
     );
 
     try {
-      final initialUri = await getInitialUri();
+      final initialUri = await _appLinks.getInitialLink();
       if (initialUri != null && mounted) {
         _handleIncomingLink(initialUri);
       }
@@ -174,7 +175,6 @@ class _AuthWrapperState extends State<AuthWrapper> {
       case AuthStatus.onboarding:
         return OnboardingScreen(onFinished: _handleOnboardingFinished);
       case AuthStatus.interactiveOnboarding:
-        // ВАЖЛИВО: клас називається InteractiveOnboarding
         return InteractiveOnboarding(
           onFinished: _handleInteractiveOnboardingFinished,
         );

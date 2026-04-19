@@ -2,13 +2,14 @@
 
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:go_router/go_router.dart';
+// import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:wislet/core/constants/app_constants.dart';
+// import 'package:wislet/core/constants/app_constants.dart';
 import 'package:wislet/core/di/injector.dart';
-import 'package:wislet/data/repositories/budget_repository.dart';
+// import 'package:wislet/data/repositories/budget_repository.dart';
 import 'package:wislet/data/repositories/category_repository.dart';
 import 'package:wislet/data/repositories/goal_repository.dart';
 import 'package:wislet/data/repositories/transaction_repository.dart';
@@ -18,17 +19,28 @@ import 'package:wislet/models/financial_goal.dart';
 import 'package:wislet/models/transaction.dart' as fin_transaction;
 import 'package:wislet/providers/app_mode_provider.dart';
 import 'package:wislet/providers/currency_provider.dart';
-import 'package:wislet/providers/pro_status_provider.dart';
+// import 'package:wislet/providers/pro_status_provider.dart';
 import 'package:wislet/providers/wallet_provider.dart';
-import 'package:wislet/screens/transactions/create_transfer_screen.dart';
-import 'package:wislet/screens/transactions/qr_scanner_screen.dart';
-import 'package:wislet/services/ai_categorization_service.dart';
-import 'package:wislet/services/analytics_service.dart';
+// import 'package:wislet/screens/transactions/create_transfer_screen.dart';
+// import 'package:wislet/screens/transactions/qr_scanner_screen.dart';
+// import 'package:wislet/services/ai_categorization_service.dart';
+// import 'package:wislet/services/analytics_service.dart';
 import 'package:wislet/services/auth_service.dart';
-import 'package:wislet/services/exchange_rate_service.dart';
-import 'package:wislet/services/ocr_service.dart';
-import 'package:wislet/services/receipt_parser.dart';
+// import 'package:wislet/services/exchange_rate_service.dart';
+// import 'package:wislet/services/ocr_service.dart';
+// import 'package:wislet/services/receipt_parser.dart';
 import 'package:wislet/widgets/scaffold/patterned_scaffold.dart';
+
+class ConversionRateInfo {
+  const ConversionRateInfo({
+    required this.rate,
+    required this.effectiveRateDate,
+    this.isRateStale = false,
+  });
+  final double rate;
+  final DateTime effectiveRateDate;
+  final bool isRateStale;
+}
 
 enum _TransactionScreenMode { expense, income, transfer }
 
@@ -37,7 +49,7 @@ class AddEditTransactionScreen extends StatefulWidget {
     super.key,
     this.transactionToEdit,
     this.isFirstTransaction = false,
-    this.isTransferAllowed = true,
+    this.isTransferAllowed = false,
   });
   final fin_transaction.Transaction? transactionToEdit;
   final bool isFirstTransaction;
@@ -53,17 +65,16 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
   final TransactionRepository _transactionRepo = getIt<TransactionRepository>();
   final CategoryRepository _categoryRepo = getIt<CategoryRepository>();
   final GoalRepository _goalRepo = getIt<GoalRepository>();
-  final BudgetRepository _budgetRepo = getIt<BudgetRepository>();
-  final AICategorizationService _aiCategorizationService =
-      getIt<AICategorizationService>();
-  final OcrService _ocrService = getIt<OcrService>();
-  final ReceiptParser _receiptParser = getIt<ReceiptParser>();
-  final AnalyticsService _analyticsService = getIt<AnalyticsService>();
-  final ExchangeRateService _exchangeRateService = getIt<ExchangeRateService>();
+  // final BudgetRepository _budgetRepo = getIt<BudgetRepository>();
+  // final AICategorizationService _aiCategorizationService = getIt<AICategorizationService>();
+  // final OcrService _ocrService = getIt<OcrService>();
+  // final ReceiptParser _receiptParser = getIt<ReceiptParser>();
+  // final AnalyticsService _analyticsService = getIt<AnalyticsService>();
+  // final ExchangeRateService _exchangeRateService = getIt<ExchangeRateService>();
 
   Timer? _debounce;
   bool _showDetails = false;
-  bool _userHasManuallySelectedCategory = false;
+  // bool _userHasManuallySelectedCategory = false;
 
   _TransactionScreenMode _selectedMode = _TransactionScreenMode.expense;
   final TextEditingController _amountController = TextEditingController();
@@ -73,7 +84,7 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
   Currency? _selectedInputCurrency;
 
   bool _isSaving = false;
-  bool _isScanning = false;
+  final bool _isScanning = false;
   List<Category> _availableCategories = [];
   bool _isLoadingCategories = true;
   bool get _isEditing => widget.transactionToEdit != null;
@@ -151,12 +162,10 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
     super.dispose();
   }
 
-  Future<void> _onDescriptionChanged() async {
-    if (_userHasManuallySelectedCategory) {
-      return;
-    }
-
-    final prefs = await SharedPreferences.getInstance();
+  // AI categorization disabled for MVP 0.1
+  Future<void> _onDescriptionChanged()
+  async {
+    /* final prefs = await SharedPreferences.getInstance();
     final isAiEnabled =
         prefs.getBool(AppConstants.prefsKeyAiCategorization) ?? true;
     if (!mounted || !isAiEnabled) return;
@@ -181,7 +190,7 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
           !_userHasManuallySelectedCategory) {
         setState(() => _selectedCategory = suggestedCategory);
       }
-    });
+    }); */
   }
 
   Future<void> _saveTransaction() async {
@@ -214,13 +223,13 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
       return;
     }
 
-    if (_selectedCategory!.id != null &&
+    /* if (_selectedCategory!.id != null &&
         _descriptionController.text.trim().isNotEmpty) {
       await _aiCategorizationService.rememberUserChoice(
         _descriptionController.text.trim(),
         _selectedCategory!,
       );
-    }
+    } */
 
     final finalExchangeRate = _currentRateInfo?.rate ?? 1.0;
 
@@ -279,11 +288,15 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
         }
         await _runPostSaveChecks(finalTransaction, currentWalletId);
         if (mounted) {
-          final returnData = {
-            'transaction': finalTransaction,
-            'isIncome': _selectedMode == _TransactionScreenMode.income,
-          };
-          navigator.pop(widget.isFirstTransaction ? returnData : true);
+          if (navigator.canPop()) {
+            final returnData = {
+              'transaction': finalTransaction,
+              'isIncome': _selectedMode == _TransactionScreenMode.income,
+            };
+            navigator.pop(widget.isFirstTransaction ? returnData : true);
+          } else {
+            context.go('/home'); 
+          }
         }
       } catch (e) {
         if (mounted) {
@@ -304,8 +317,9 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
     });
   }
 
+  // OCR disabled for MVP 0.1
   Future<void> _scanReceipt() async {
-    final proStatusProvider = context.read<ProStatusProvider>();
+   /* final proStatusProvider = context.read<ProStatusProvider>();
     final messenger = ScaffoldMessenger.of(context);
     if (!mounted) return;
 
@@ -356,11 +370,12 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
       );
     } finally {
       if (mounted) setState(() => _isScanning = false);
-    }
+    } */
   }
 
+  // QR disabled for MVP 0.1
   Future<void> _scanQrCode() async {
-    final proStatusProvider = context.read<ProStatusProvider>();
+    /* final proStatusProvider = context.read<ProStatusProvider>();
     if (!mounted) return;
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
@@ -399,7 +414,7 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
           content: Text('Дані з QR-коду заповнено!'),
         ),
       );
-    }
+    } */
   }
 
   Future<void> _loadAvailableGoals() async {
@@ -421,10 +436,22 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
     if (mounted) setState(() {});
   }
 
-  Future<void> _fetchAndSetExchangeRate({
-    DateTime? date,
+  /* Future<void> _fetchAndSetExchangeRate({
+     DateTime? date,
     Currency? currency,
-  }) async {
+  }) */
+
+Future<void> _fetchAndSetExchangeRate({DateTime? date, Currency? currency}) async {
+  setState(() {
+    _currentRateInfo = ConversionRateInfo(
+      rate: 1,
+      effectiveRateDate: date ?? _selectedDate,
+    );
+    _isLoadingRate = false;
+  });
+}
+
+  /* async {
     final targetDate = date ?? _selectedDate;
     final targetCurrency = currency ?? _selectedInputCurrency;
 
@@ -472,7 +499,7 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
         );
       }
     }
-  }
+  } */
 
   Future<void> _loadCategoriesForType(
     fin_transaction.TransactionType type, {
@@ -600,7 +627,18 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
                   selected: <_TransactionScreenMode>{_selectedMode},
                   onSelectionChanged:
                       (Set<_TransactionScreenMode> newSelection) async {
-                    if (mounted) {
+                        if (mounted) {
+                          // Transfer mode disabled for MVP 0.1
+                          setState(() {
+                            _selectedMode = newSelection.first;
+                            _loadCategoriesForType(
+                              _selectedMode == _TransactionScreenMode.income
+                                  ? fin_transaction.TransactionType.income
+                                  : fin_transaction.TransactionType.expense,
+                            );
+                          });
+                        }
+                    /* if (mounted) {
                       if (newSelection.first ==
                           _TransactionScreenMode.transfer) {
                         final result = await Navigator.push<bool>(
@@ -627,7 +665,7 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
                           );
                         });
                       }
-                    }
+                    } */
                   },
                 ),
                 const SizedBox(height: 20),
@@ -703,7 +741,7 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
                     onChanged: (Category? newValue) {
                       setState(() {
                         _selectedCategory = newValue;
-                        _userHasManuallySelectedCategory = true;
+                        // _userHasManuallySelectedCategory = true;
                       });
                     },
                     validator: (value) =>
@@ -909,10 +947,22 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
     );
   }
 
-  Future<void> _runPostSaveChecks(
+   Future<void> _runPostSaveChecks(
     fin_transaction.Transaction transaction,
     int walletId,
-  ) async {
+  )
+   async {
+     if (transaction.linkedGoalId != null) {
+       await _goalRepo.updateFinancialGoalProgress(transaction.linkedGoalId!);
+     }
+   }
+
+  /* Future<void> _runPostSaveChecks(fin_transaction.Transaction transaction, int walletId, )
+    async {
+
+      if (transaction.linkedGoalId != null) {
+        await _goalRepo.updateFinancialGoalProgress(transaction.linkedGoalId!);
+      }
     await _budgetRepo.checkAndNotifyEnvelopeLimits(transaction, walletId);
     if (transaction.linkedGoalId != null) {
       await _goalRepo.updateFinancialGoalProgress(transaction.linkedGoalId!);
@@ -926,5 +976,5 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
         );
       }
     }
-  }
+  } */
 }
