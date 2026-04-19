@@ -134,8 +134,9 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
         );
       }
     } else {
-      _selectedInputCurrency =
-          context.read<CurrencyProvider>().selectedCurrency;
+      final providerCurrency = context.read<CurrencyProvider>().selectedCurrency;
+      _selectedInputCurrency = appCurrencies.firstWhereOrNull(
+            (c) => c.code == providerCurrency.code,) ?? appCurrencies.firstWhere((c) => c.code == _baseCurrencyCode);
       _fetchAndSetExchangeRate(
         date: _selectedDate,
         currency: _selectedInputCurrency,
@@ -840,7 +841,8 @@ Future<void> _fetchAndSetExchangeRate({DateTime? date, Currency? currency}) asyn
             labelText: 'Валюта',
             prefixIcon: Icon(Icons.currency_exchange_outlined),
           ),
-          initialValue: _selectedInputCurrency,
+          initialValue: appCurrencies.firstWhereOrNull((c) => c.code == _selectedInputCurrency?.code,
+          ),
           items: appCurrencies
               .map(
                 (Currency currency) => DropdownMenuItem<Currency>(
