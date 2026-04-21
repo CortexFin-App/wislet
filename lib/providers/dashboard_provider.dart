@@ -1,14 +1,14 @@
-import 'package:collection/collection.dart';
+﻿import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:fpdart/fpdart.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+// import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:wislet/core/di/injector.dart';
 import 'package:wislet/data/repositories/goal_repository.dart';
 import 'package:wislet/data/repositories/transaction_repository.dart';
 import 'package:wislet/models/financial_goal.dart';
 import 'package:wislet/models/financial_health.dart';
 import 'package:wislet/models/transaction.dart' as fin_transaction;
-import 'package:wislet/services/financial_health_service.dart';
+// import 'package:wislet/services/financial_health_service.dart';
 import 'package:wislet/utils/app_palette.dart';
 
 class AiAdvice {
@@ -38,20 +38,20 @@ class SpendingCategory {
 class DashboardProvider with ChangeNotifier {
   final TransactionRepository _transactionRepo = getIt<TransactionRepository>();
   final GoalRepository _goalRepo = getIt<GoalRepository>();
-  final FinancialHealthService _healthService = FinancialHealthService();
-  final SupabaseClient _supabase = getIt<SupabaseClient>();
+  //final FinancialHealthService _healthService = FinancialHealthService();
+  //final SupabaseClient _supabase = getIt<SupabaseClient>();
 
   FinancialHealth _health = FinancialHealth.initial();
   List<SpendingCategory> _topCategories = [];
   FinancialGoal? _mainGoal;
-  HealthScoreProfile? _healthScoreProfile;
+  // HealthScoreProfile? _healthScoreProfile;
   AiAdvice? _aiAdvice;
   bool _isLoading = true;
 
   FinancialHealth get health => _health;
   List<SpendingCategory> get topCategories => _topCategories;
   FinancialGoal? get mainGoal => _mainGoal;
-  HealthScoreProfile? get healthScoreProfile => _healthScoreProfile;
+  // HealthScoreProfile? get healthScoreProfile => _healthScoreProfile;
   AiAdvice? get aiAdvice => _aiAdvice;
   bool get isLoading => _isLoading;
 
@@ -81,8 +81,7 @@ class DashboardProvider with ChangeNotifier {
       now,
     );
     final goalsEither = _goalRepo.getAllFinancialGoals(walletId);
-    final healthScoreProfileFuture =
-        _healthService.calculateHealthScore(walletId);
+    //final healthScoreProfileFuture = _healthService.calculateHealthScore(walletId);
 
     final results = await Future.wait([
       overallBalanceEither,
@@ -90,8 +89,9 @@ class DashboardProvider with ChangeNotifier {
       monthlyExpensesEither,
       expensesGroupedEither,
       goalsEither,
-      healthScoreProfileFuture,
     ]);
+
+    // _healthScoreProfile = null;
 
     final overallBalance =
         (results[0] as Either<dynamic, double>).getOrElse((_) => 0.0);
@@ -105,7 +105,7 @@ class DashboardProvider with ChangeNotifier {
     final allGoals = (results[4] as Either<dynamic, List<FinancialGoal>>)
         .getOrElse((_) => []);
 
-    _healthScoreProfile = results[5] as HealthScoreProfile;
+    //_healthScoreProfile = results[5] as HealthScoreProfile;
 
     _health = FinancialHealth(
       income: monthlyIncome,
@@ -139,7 +139,7 @@ class DashboardProvider with ChangeNotifier {
       if (monthlyExpenses - topCategoriesSum > 0) {
         _topCategories.add(
           SpendingCategory(
-            name: 'Р†РЅС€Рµ',
+            name: 'Інше',
             amount: monthlyExpenses - topCategoriesSum,
             percentage: (monthlyExpenses - topCategoriesSum) / monthlyExpenses,
             color: Colors.grey.shade700,
@@ -150,7 +150,7 @@ class DashboardProvider with ChangeNotifier {
       _topCategories = [];
     }
 
-    try {
+    /* try {
       final response = await _supabase.functions.invoke(
         'generate-health-advice',
         body: _healthScoreProfile!.toJson(),
@@ -163,7 +163,9 @@ class DashboardProvider with ChangeNotifier {
       );
     } on Exception {
       _aiAdvice = null;
-    }
+    } */
+
+    _aiAdvice = null;
 
     _isLoading = false;
     notifyListeners();

@@ -1,54 +1,41 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:wislet/app_providers.dart';
 import 'package:wislet/core/bootstrap/supabase_env.dart';
 import 'package:wislet/core/di/injector.dart';
 import 'package:wislet/l10n/app_localizations.dart' as sw;
+import 'package:wislet/providers/locale_provider.dart';
 import 'package:wislet/screens/app_navigation_shell.dart';
+import 'package:wislet/screens/home_screen.dart';
 import 'package:wislet/screens/onboarding/onboarding_gate.dart';
+import 'package:wislet/screens/settings_screen.dart';
+import 'package:wislet/screens/transactions/add_edit_transaction_screen.dart';
+import 'package:wislet/screens/transactions_list_screen.dart';
 import 'package:wislet/utils/l10n_helpers.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-await Supabase.initialize(
-  url: SupabaseEnv.url,
-  anonKey: SupabaseEnv.anon,
-);
+  try {
+    await Supabase.initialize(
+      url: SupabaseEnv.url,
+      anonKey: SupabaseEnv.anon,
+    );
+  } catch (_) {
+    // Supabase unavailable - app continues in offline/local mode
+  }
 
   await configureDependencies();
+
   runApp(
-   MultiProvider(
-    providers: 
-      buildAppProviders(),
+    MultiProvider(
+      providers: buildAppProviders(),
       child: const MyApp(),
     ),
   );
-}
-
-class LanguageProvider extends ChangeNotifier {
-  Locale? _locale;
-  Locale? get locale => _locale;
-
-  Future<void> load() async {
-    final p = await SharedPreferences.getInstance();
-    final code = p.getString('app_locale');
-    if (code != null && code.isNotEmpty) {
-      _locale = Locale(code);
-    }
-    notifyListeners();
-  }
-
-  Future<void> setLocale(Locale locale) async {
-    _locale = locale;
-    final p = await SharedPreferences.getInstance();
-    await p.setString('app_locale', locale.languageCode);
-    notifyListeners();
-  }
 }
 
 final _router = GoRouter(
@@ -62,7 +49,7 @@ final _router = GoRouter(
           routes: [
             GoRoute(
               path: '/home',
-              builder: (context, state) => const _HomeScreen(),
+              builder: (context, state) => const HomeScreen(),
             ),
           ],
         ),
@@ -70,7 +57,7 @@ final _router = GoRouter(
           routes: [
             GoRoute(
               path: '/wallet',
-              builder: (context, state) => const _WalletScreen(),
+              builder: (context, state) => const TransactionsListScreen(),
             ),
           ],
         ),
@@ -78,7 +65,7 @@ final _router = GoRouter(
           routes: [
             GoRoute(
               path: '/settings',
-              builder: (context, state) => const _SettingsScreen(),
+              builder: (context, state) => const SettingsScreen(),
             ),
           ],
         ),
@@ -86,16 +73,17 @@ final _router = GoRouter(
     ),
     GoRoute(
       path: '/add',
-      builder: (context, state) => const _AddScreen(),
+      builder: (context, state) => const AddEditTransactionScreen(),
     ),
   ],
 );
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
-    final lp = context.watch<LanguageProvider>();
+    final lp = context.watch<LocaleProvider>();
     return OnboardingGate(
       child: MaterialApp.router(
         locale: lp.locale,
@@ -112,66 +100,6 @@ class MyApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         theme: ThemeData(useMaterial3: true),
       ),
-    );
-  }
-}
-
-class _HomeScreen extends StatelessWidget {
-  const _HomeScreen();
-  @override
-  Widget build(BuildContext context) {
-    final t = sw.AppLocalizations.of(context)!;
-    return Scaffold(
-      appBar: AppBar(title: Text(t.t('app_title'))),
-      body: Center(child: Text(t.t('home'))),
-    );
-  }
-}
-
-class _WalletScreen extends StatelessWidget {
-  const _WalletScreen();
-  @override
-  Widget build(BuildContext context) {
-    final t = sw.AppLocalizations.of(context)!;
-    return Scaffold(
-      appBar: AppBar(title: Text(t.t('wallets'))),
-      body: Center(child: Text(t.t('wallets'))),
-    );
-  }
-}
-
-class _SettingsScreen extends StatelessWidget {
-  const _SettingsScreen();
-  @override
-  Widget build(BuildContext context) {
-    final t = sw.AppLocalizations.of(context)!;
-    final lp = context.read<LanguageProvider>();
-    return Scaffold(
-      appBar: AppBar(title: Text(t.t('settings'))),
-      body: ListView(
-        children: [
-          ListTile(
-            title: const Text('English'),
-            onTap: () => lp.setLocale(const Locale('en')),
-          ),
-          ListTile(
-            title: const Text('Українська'),
-            onTap: () => lp.setLocale(const Locale('uk')),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AddScreen extends StatelessWidget {
-  const _AddScreen();
-  @override
-  Widget build(BuildContext context) {
-    final t = sw.AppLocalizations.of(context)!;
-    return Scaffold(
-      appBar: AppBar(title: Text(t.t('add'))),
-      body: Center(child: Text(t.t('add'))),
     );
   }
 }

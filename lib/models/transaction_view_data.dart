@@ -26,13 +26,13 @@ class TransactionViewData {
     if (map.containsKey('categories') && map['categories'] is Map) {
       final categoryMap = map['categories'] as Map<String, dynamic>;
       categoryNameValue =
-          categoryMap['name'] as String? ?? 'Р‘РµР· РєР°С‚РµРіРѕСЂС–С—';
+          categoryMap['name'] as String? ?? 'Без категорії';
       categoryBucketValue = categoryMap['bucket'] != null
           ? fin_category.stringToExpenseBucket(categoryMap['bucket'] as String?)
           : null;
     } else {
       categoryNameValue =
-          map['categoryName'] as String? ?? 'Р‘РµР· РєР°С‚РµРіРѕСЂС–С—';
+          map['categoryName'] as String? ?? 'Без категорії';
       categoryBucketValue = map[DatabaseHelper.colCategoryBucket] != null
           ? fin_category.stringToExpenseBucket(
               map[DatabaseHelper.colCategoryBucket] as String?,

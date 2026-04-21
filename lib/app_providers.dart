@@ -1,8 +1,7 @@
-import 'package:provider/provider.dart';
+﻿import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
 import 'package:wislet/core/di/injector.dart';
 import 'package:wislet/data/repositories/theme_repository.dart';
-import 'package:wislet/main.dart' show LanguageProvider;
 import 'package:wislet/providers/app_mode_provider.dart';
 import 'package:wislet/providers/currency_provider.dart';
 import 'package:wislet/providers/dashboard_provider.dart';
@@ -16,7 +15,7 @@ import 'package:wislet/services/auth_service.dart';
 
 /// Усі ChangeNotifier-и з твого DI (GetIt)
 List<SingleChildWidget> buildAppProviders() => [
-      Provider(
+      ChangeNotifierProvider(
         create: (_) => getIt<AuthService>(),
       ),
       ChangeNotifierProvider(
@@ -32,13 +31,10 @@ List<SingleChildWidget> buildAppProviders() => [
         create: (_) => ProStatusProvider(),
       ),
       ChangeNotifierProvider(
-        create: (_) => LanguageProvider()..load(),
-      ),
-      ChangeNotifierProvider(
         create: (_) => DashboardProvider(),
       ),
       ChangeNotifierProvider(
-         create: (_) => LocaleProvider(),
+         create: (_) => LocaleProvider()..init(),
       ),
       ChangeNotifierProvider(
         create: (_) => ReportsProvider(),
