@@ -20,6 +20,7 @@ dart_defines.json
 # IDEs
 .idea/
 .vscode/
+.vs/
 *.iml
 *.ipr
 *.iws
