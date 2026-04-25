@@ -89,6 +89,86 @@ class _WalletsScreenState extends State<WalletsScreen> {
     }
   }
 
+  Widget _buildEmptyState(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.account_balance_wallet_outlined,
+              size: 72,
+              color: theme.colorScheme.onSurfaceVariant.withAlpha(128),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Гаманців ще немає',
+              style: theme.textTheme.headlineSmall,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Створіть перший гаманець, щоб почати відстежувати фінанси.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 28),
+            FilledButton.icon(
+              icon: const Icon(Icons.add),
+              label: const Text('Створити гаманець'),
+              onPressed: () => _showAddEditWalletDialog(context),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState(BuildContext context, String error) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline_rounded,
+              size: 64,
+              color: theme.colorScheme.error.withAlpha(180),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Не вдалося завантажити гаманці',
+              style: theme.textTheme.titleMedium,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              error,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('Спробувати знову'),
+              onPressed: _refreshData,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final walletProvider = context.watch<WalletProvider>();
@@ -108,12 +188,16 @@ class _WalletsScreenState extends State<WalletsScreen> {
       ),
       body: walletProvider.isLoading
           ? const Center(child: CircularProgressIndicator())
+          : walletProvider.errorMessage != null
+          ? _buildErrorState(context, walletProvider.errorMessage!)
+          : wallets.isEmpty
+          ? _buildEmptyState(context)
           : RefreshIndicator(
-              onRefresh: _refreshData,
-              child: ListView.builder(
-                padding: const EdgeInsets.fromLTRB(8, 8, 8, 80),
-                itemCount: wallets.length,
-                itemBuilder: (context, index) {
+        onRefresh: _refreshData,
+        child: ListView.builder(
+          padding: const EdgeInsets.fromLTRB(8, 8, 8, 80),
+          itemCount: wallets.length,
+          itemBuilder: (context, index) {
                   final wallet = wallets[index];
                   final isCurrent =
                       wallet.id == walletProvider.currentWallet?.id;

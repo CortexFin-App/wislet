@@ -125,14 +125,13 @@ class _AuthFormState extends State<_AuthForm> {
 
     try {
       final authService = context.read<AuthService>();
-      final navigator = Navigator.of(context);
       if (widget.isLogin) {
         await authService.login(
           _emailController.text.trim(),
           _passwordController.text.trim(),
         );
         await _processInvitation();
-        if (mounted) navigator.popUntil((route) => route.isFirst);
+        if (mounted) Navigator.of(context).pop();
       } else {
         final result = await authService.register(
           _emailController.text.trim(),
@@ -143,7 +142,7 @@ class _AuthFormState extends State<_AuthForm> {
             setState(() => _showConfirmationMessage = true);
           } else if (result == RegistrationResult.success) {
             await _processInvitation();
-            navigator.popUntil((route) => route.isFirst);
+            if (mounted) Navigator.of(context).pop();
           }
         }
       }
