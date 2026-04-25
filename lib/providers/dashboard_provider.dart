@@ -8,6 +8,7 @@ import 'package:wislet/data/repositories/transaction_repository.dart';
 import 'package:wislet/models/financial_goal.dart';
 import 'package:wislet/models/financial_health.dart';
 import 'package:wislet/models/transaction.dart' as fin_transaction;
+import 'package:wislet/models/transaction_view_data.dart';
 // import 'package:wislet/services/financial_health_service.dart';
 import 'package:wislet/utils/app_palette.dart';
 
@@ -46,6 +47,8 @@ class DashboardProvider with ChangeNotifier {
   FinancialGoal? _mainGoal;
   // HealthScoreProfile? _healthScoreProfile;
   AiAdvice? _aiAdvice;
+  List<TransactionViewData> _recentTransactions = [];
+  List<TransactionViewData> get recentTransactions => _recentTransactions;
   bool _isLoading = true;
 
   FinancialHealth get health => _health;
@@ -166,6 +169,12 @@ class DashboardProvider with ChangeNotifier {
     } */
 
     _aiAdvice = null;
+
+    final recentEither = await _transactionRepo.getTransactionsWithDetails(
+      walletId: walletId,
+      limit: 5,
+    );
+    _recentTransactions = recentEither.getOrElse((_) => []);
 
     _isLoading = false;
     notifyListeners();

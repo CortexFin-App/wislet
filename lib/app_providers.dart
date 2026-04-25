@@ -12,6 +12,7 @@ import 'package:wislet/providers/theme_provider.dart';
 import 'package:wislet/providers/transaction_provider.dart';
 import 'package:wislet/providers/wallet_provider.dart';
 import 'package:wislet/services/auth_service.dart';
+import 'package:wislet/services/sync_service.dart';
 
 /// Усі ChangeNotifier-и з твого DI (GetIt)
 List<SingleChildWidget> buildAppProviders() => [
@@ -48,4 +49,7 @@ List<SingleChildWidget> buildAppProviders() => [
          appModeProvider: context.read<AppModeProvider>(),
       ),
      ),
+      ChangeNotifierProvider(
+        create: (_) => getIt<SyncService>(),
+      ),
     ];
