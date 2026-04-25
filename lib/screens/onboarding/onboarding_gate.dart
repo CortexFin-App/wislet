@@ -38,8 +38,11 @@ class _OnboardingGateState extends State<OnboardingGate> {
   Widget build(BuildContext context) {
     switch (_stage) {
       case _Stage.loading:
-        return const Scaffold(
-          body: Center(child: CircularProgressIndicator()),
+        return const MaterialApp(
+          debugShowCheckedModeBanner: false,
+          home: Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          ),
         );
       case _Stage.onboarding:
         return SimpleOnboarding(onFinished: _onDone);

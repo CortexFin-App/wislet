@@ -7,6 +7,7 @@ class SummaryCard extends StatelessWidget {
     required this.amount,
     required this.color,
     required this.icon,
+    this.currencyFormat,
     super.key,
   });
 
@@ -14,12 +15,11 @@ class SummaryCard extends StatelessWidget {
   final double amount;
   final Color color;
   final IconData icon;
+  final NumberFormat? currencyFormat;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final currencyFormat =
-        NumberFormat.currency(locale: 'uk_UA', symbol: '₴', decimalDigits: 0);
 
     return Card(
       child: Padding(
@@ -40,7 +40,7 @@ class SummaryCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              currencyFormat.format(amount),
+              (currencyFormat ?? NumberFormat.currency(symbol: '₴', decimalDigits: 0)).format(amount),
               style: theme.textTheme.headlineSmall?.copyWith(
                 color: color,
                 fontWeight: FontWeight.bold,

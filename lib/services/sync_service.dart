@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -23,20 +24,20 @@ import 'package:wislet/models/transaction.dart' as fin_transaction;
 import 'package:wislet/models/wallet.dart' as fin_wallet;
 import 'package:wislet/utils/database_helper.dart';
 
-class SyncService {
+class SyncService extends ChangeNotifier {
   SyncService(
-    this._dbHelper,
-    this._localWalletRepo,
-    this._supabaseTransactionRepo,
-    this._supabaseCategoryRepo,
-    this._supabaseWalletRepo,
-    this._supabaseGoalRepo,
-    this._supabaseBudgetRepo,
-    this._supabasePlanRepo,
-    this._supabaseSubRepo,
-    this._supabaseDebtRepo,
-    this._supabaseRtRepo,
-  );
+      this._dbHelper,
+      this._localWalletRepo,
+      this._supabaseTransactionRepo,
+      this._supabaseCategoryRepo,
+      this._supabaseWalletRepo,
+      this._supabaseGoalRepo,
+      this._supabaseBudgetRepo,
+      this._supabasePlanRepo,
+      this._supabaseSubRepo,
+      this._supabaseDebtRepo,
+      this._supabaseRtRepo,
+      );
 
   final DatabaseHelper _dbHelper;
   final WalletRepository _localWalletRepo;
@@ -50,23 +51,65 @@ class SyncService {
   final DebtLoanRepository _supabaseDebtRepo;
   final RepeatingTransactionRepository _supabaseRtRepo;
 
+  // Спостережуваний стан
+
   bool _isSyncing = false;
+  bool get isSyncing => _isSyncing;
+
+  DateTime? _lastSyncedAt;
+  DateTime? get lastSyncedAt => _lastSyncedAt;
+
+  String? _lastError;
+  String? get lastError => _lastError;
+
+  Timer? _autoSyncTimer;
+
+  // Публічний API
+
+  /// Викликати один раз після логіну. Виконує миттєву синхронізацію, а потім повторює кожні 15 хв
+  Future<void> startAutoSync() async {
+    await synchronize();
+    _autoSyncTimer?.cancel();
+    _autoSyncTimer = Timer.periodic(
+      const Duration(minutes: 15),
+          (_) => synchronize(),
+    );
+  }
+
+  ///  Зупиняє періодичний таймер. Викликати при logout
+  void stopAutoSync() {
+    _autoSyncTimer?.cancel();
+    _autoSyncTimer = null;
+  }
 
   Future<void> synchronize() async {
     if (_isSyncing) return;
     _isSyncing = true;
+    _lastError = null;
+    notifyListeners();
     debugPrint('SyncService: Synchronization started.');
 
     try {
       await _pushUpdates();
       await _pullUpdates();
+      _lastSyncedAt = DateTime.now();
     } on Exception catch (e) {
+      _lastError = e.toString();
       debugPrint('SyncService: Synchronization failed: $e');
     } finally {
       _isSyncing = false;
+      notifyListeners();
       debugPrint('SyncService: Synchronization finished.');
     }
   }
+
+  @override
+  void dispose() {
+    _autoSyncTimer?.cancel();
+    super.dispose();
+  }
+
+  // Внутрішня логіка
 
   Future<void> _pullUpdates() async {
     debugPrint('SyncService: Starting pull phase...');
@@ -76,19 +119,19 @@ class SyncService {
     final walletsEither = await _localWalletRepo.getAllWallets();
 
     await walletsEither.fold(
-      (failure) async =>
+          (failure) async =>
           debugPrint('SyncService: Could not get local wallets to sync.'),
-      (wallets) async {
+          (wallets) async {
         for (final wallet in wallets) {
           if (wallet.id == null) continue;
 
           final remoteTransactionsResult = await _supabaseTransactionRepo
               .getTransactionsSince(wallet.id!, lastSyncTimestamp);
           await remoteTransactionsResult.fold(
-            (failure) async => debugPrint(
+                (failure) async => debugPrint(
               'SyncService: Failed to pull transactions for wallet ${wallet.id}: ${failure.userMessage}',
             ),
-            (remoteTransactions) async {
+                (remoteTransactions) async {
               if (remoteTransactions.isEmpty) return;
               debugPrint(
                 'SyncService: Pulled ${remoteTransactions.length} transaction updates for wallet ${wallet.id}.',
@@ -153,8 +196,8 @@ class SyncService {
     final type = operation[DatabaseHelper.colSyncActionType] as String;
     final entity = operation[DatabaseHelper.colSyncEntityType] as String;
     final payload =
-        jsonDecode(operation[DatabaseHelper.colSyncPayload] as String)
-            as Map<String, dynamic>;
+    jsonDecode(operation[DatabaseHelper.colSyncPayload] as String)
+    as Map<String, dynamic>;
     final walletId = payload['wallet_id'] as int?;
     final userId = payload['user_id'] as String?;
 
@@ -165,17 +208,9 @@ class SyncService {
           final tx = fin_transaction.Transaction.fromMap(payload);
           switch (type) {
             case 'create':
-              await _supabaseTransactionRepo.createTransaction(
-                tx,
-                walletId,
-                userId,
-              );
+              await _supabaseTransactionRepo.createTransaction(tx, walletId, userId);
             case 'update':
-              await _supabaseTransactionRepo.updateTransaction(
-                tx,
-                walletId,
-                userId,
-              );
+              await _supabaseTransactionRepo.updateTransaction(tx, walletId, userId);
             case 'delete':
               await _supabaseTransactionRepo.deleteTransaction(tx.id!);
           }
@@ -190,7 +225,6 @@ class SyncService {
             case 'delete':
               await _supabaseCategoryRepo.deleteCategory(category.id!);
           }
-
         case 'wallet':
           final wallet = fin_wallet.Wallet.fromMap(payload);
           final ownerId = wallet.ownerUserId;

@@ -58,6 +58,8 @@ class AddEditTransactionScreen extends StatefulWidget {
   @override
   State<AddEditTransactionScreen> createState() =>
       _AddEditTransactionScreenState();
+
+
 }
 
 class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
@@ -143,13 +145,31 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
       );
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadCategoriesForType(
-        _selectedMode == _TransactionScreenMode.income
-            ? fin_transaction.TransactionType.income
-            : fin_transaction.TransactionType.expense,
-        initialCategoryId: widget.transactionToEdit?.categoryId,
-      );
-      _loadAvailableGoals();
+      final walletProvider = context.read<WalletProvider>();
+
+      if (walletProvider.currentWallet != null) {
+        _loadCategoriesForType(
+          _selectedMode == _TransactionScreenMode.income
+              ? fin_transaction.TransactionType.income
+              : fin_transaction.TransactionType.expense,
+          initialCategoryId: widget.transactionToEdit?.categoryId,
+        );
+        _loadAvailableGoals();
+      } else {
+        void listener() {
+          if (walletProvider.currentWallet != null) {
+            walletProvider.removeListener(listener);
+            _loadCategoriesForType(
+              _selectedMode == _TransactionScreenMode.income
+                  ? fin_transaction.TransactionType.income
+                  : fin_transaction.TransactionType.expense,
+              initialCategoryId: widget.transactionToEdit?.categoryId,
+            );
+            _loadAvailableGoals();
+          }
+        }
+        walletProvider.addListener(listener);
+      }
     });
   }
 
@@ -163,7 +183,7 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
     super.dispose();
   }
 
-  // AI categorization disabled for MVP 0.1
+  // AI categorization temporarily disabled, return in 0.3+
   Future<void> _onDescriptionChanged()
   async {
     /* final prefs = await SharedPreferences.getInstance();
@@ -318,9 +338,9 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
     });
   }
 
-  // OCR disabled for MVP 0.1
-  Future<void> _scanReceipt() async {
-   /* final proStatusProvider = context.read<ProStatusProvider>();
+  // OCR temporarily disabled, return in 0.3+
+   /* Future<void> _scanReceipt() async {
+    final proStatusProvider = context.read<ProStatusProvider>();
     final messenger = ScaffoldMessenger.of(context);
     if (!mounted) return;
 
@@ -371,12 +391,12 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
       );
     } finally {
       if (mounted) setState(() => _isScanning = false);
-    } */
-  }
+    }
+  } */
 
-  // QR disabled for MVP 0.1
-  Future<void> _scanQrCode() async {
-    /* final proStatusProvider = context.read<ProStatusProvider>();
+  // QR temporarily disabled, return in 0.3+
+  /* Future<void> _scanQrCode() async {
+     final proStatusProvider = context.read<ProStatusProvider>();
     if (!mounted) return;
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
@@ -415,8 +435,8 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
           content: Text('Дані з QR-коду заповнено!'),
         ),
       );
-    } */
-  }
+    }
+  } */
 
   Future<void> _loadAvailableGoals() async {
     if (!mounted) return;
@@ -557,6 +577,14 @@ Future<void> _fetchAndSetExchangeRate({DateTime? date, Currency? currency}) asyn
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final walletProvider = context.watch<WalletProvider>();
+
+    if (walletProvider.currentWallet == null) {
+      return PatternedScaffold(
+        appBar: AppBar(title: Text(_isEditing ? 'Редагувати транзакцію' : 'Нова транзакція')),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
     final authService = context.watch<AuthService>();
     final appModeProvider = context.watch<AppModeProvider>();
 
@@ -583,7 +611,7 @@ Future<void> _fetchAndSetExchangeRate({DateTime? date, Currency? currency}) asyn
     return PatternedScaffold(
       appBar: AppBar(
         title: Text(titleText),
-        actions: [
+        /* actions: [
           if (!widget.isFirstTransaction) ...[
             IconButton(
               icon: const Icon(Icons.qr_code_scanner_outlined),
@@ -596,7 +624,7 @@ Future<void> _fetchAndSetExchangeRate({DateTime? date, Currency? currency}) asyn
               onPressed: _scanReceipt,
             ),
           ],
-        ],
+        ], */
       ),
       body: Stack(
         children: [
@@ -629,7 +657,7 @@ Future<void> _fetchAndSetExchangeRate({DateTime? date, Currency? currency}) asyn
                   onSelectionChanged:
                       (Set<_TransactionScreenMode> newSelection) async {
                         if (mounted) {
-                          // Transfer mode disabled for MVP 0.1
+                          // Transfer mode temporarily disabled, return in 0.3+
                           setState(() {
                             _selectedMode = newSelection.first;
                             _loadCategoriesForType(
@@ -672,34 +700,34 @@ Future<void> _fetchAndSetExchangeRate({DateTime? date, Currency? currency}) asyn
                 const SizedBox(height: 20),
                 TextFormField(
                   controller: _amountController,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.displaySmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: _selectedMode == _TransactionScreenMode.income
+                        ? theme.colorScheme.tertiary
+                        : theme.colorScheme.tertiaryContainer,
+                  ),
                   decoration: InputDecoration(
                     labelText: 'Сума',
+                    floatingLabelAlignment: FloatingLabelAlignment.center,
                     prefixIcon: _selectedInputCurrency != null
                         ? Padding(
-                            padding: const EdgeInsets.all(14),
-                            child: Text(
-                              _selectedInputCurrency!.symbol,
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          )
+                      padding: const EdgeInsets.only(top: 18, left: 12),
+                      child: Text(
+                        _selectedInputCurrency!.symbol,
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    )
                         : null,
                   ),
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Введіть суму';
-                    }
+                    if (value == null || value.isEmpty) return 'Введіть суму';
                     final cleanValue = value.replaceAll(',', '.');
-                    if (double.tryParse(cleanValue) == null) {
-                      return 'Коректне число';
-                    }
-                    if (double.parse(cleanValue) <= 0) {
-                      return 'Більше нуля';
-                    }
+                    if (double.tryParse(cleanValue) == null) return 'Коректне число';
+                    if (double.parse(cleanValue) <= 0) return 'Більше нуля';
                     return null;
                   },
                 ),
@@ -707,7 +735,7 @@ Future<void> _fetchAndSetExchangeRate({DateTime? date, Currency? currency}) asyn
                 if (_isLoadingCategories)
                   const Center(
                     child: Padding(
-                      padding: EdgeInsets.all(8),
+                      padding: EdgeInsets.symmetric(vertical: 12),
                       child: CircularProgressIndicator(),
                     ),
                   )
@@ -723,30 +751,53 @@ Future<void> _fetchAndSetExchangeRate({DateTime? date, Currency? currency}) asyn
                     ),
                   )
                 else
-                  DropdownButtonFormField<Category>(
-                    initialValue: _selectedCategory,
-                    decoration: const InputDecoration(
-                      labelText: 'Категорія',
-                      prefixIcon: Icon(Icons.category_outlined),
-                    ),
-                    hint: const Text('Оберіть категорію'),
-                    isExpanded: true,
-                    items: _availableCategories
-                        .map(
-                          (Category category) => DropdownMenuItem<Category>(
-                            value: category,
-                            child: Text(category.name),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Text(
+                          'Категорія',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
                           ),
-                        )
-                        .toList(),
-                    onChanged: (Category? newValue) {
-                      setState(() {
-                        _selectedCategory = newValue;
-                        // _userHasManuallySelectedCategory = true;
-                      });
-                    },
-                    validator: (value) =>
-                        value == null ? 'Оберіть категорію' : null,
+                        ),
+                      ),
+                      SizedBox(
+                        height: 44,
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: _availableCategories.length,
+                          separatorBuilder: (_, __) => const SizedBox(width: 8),
+                          itemBuilder: (context, index) {
+                            final category = _availableCategories[index];
+                            final isSelected = _selectedCategory?.id == category.id;
+                            return ChoiceChip(
+                              label: Text(category.name),
+                              selected: isSelected,
+                              onSelected: (_) => setState(() => _selectedCategory = category),
+                              selectedColor: theme.colorScheme.primary,
+                              labelStyle: theme.textTheme.labelMedium?.copyWith(
+                                color: isSelected
+                                    ? theme.colorScheme.onPrimary
+                                    : theme.colorScheme.onSurface,
+                                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      if (_selectedCategory == null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: Text(
+                            'Оберіть категорію',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.error,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 const SizedBox(height: 16),
                 TextFormField(

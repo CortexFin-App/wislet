@@ -37,7 +37,11 @@ class AuthService with ChangeNotifier {
     if (session?.user != null) {
       final user = session!.user;
 
-      await _supabase.rpc<void>('ensure_user_has_wallet');
+      try {
+        await _supabase.rpc<void>('ensure_user_has_wallet');
+      } catch (e) {
+        debugPrint('ensure_user_has_wallet failed: $e');
+      }
 
       currentUser = fin_user.User(
         id: user.id,

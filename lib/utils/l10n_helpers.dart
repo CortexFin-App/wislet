@@ -45,6 +45,9 @@ const Map<String, String> _enStrings = {
   'biometrics_configured': 'Biometrics configured',
   'biometrics_not_supported': 'Biometrics not supported',
   'logout': 'Log out',
+  'account': 'Account',
+  'logged_in': 'Signed in',
+  'sign_in_to_sync': 'Sign in to sync data',
 
   // Budget strategies
   'budget_strategy_category_based': 'Category-based',
@@ -91,6 +94,9 @@ const Map<String, String> _ukStrings = {
   'biometrics_configured': 'Біометрію налаштовано',
   'biometrics_not_supported': 'Біометрія не підтримується',
   'logout': 'Вийти',
+  'account': 'Акаунт',
+  'logged_in': 'Увійшли',
+  'sign_in_to_sync': 'Увійдіть для синхронізації',
 
   // Budget strategies
   'budget_strategy_category_based': 'За категоріями',
